@@ -1,0 +1,126 @@
+@keyframes aui-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+:where(.aui-md[data-status='running'])
+  > :where(:not(ol):not(ul):not(pre)):last-child::after,
+:where(.aui-md[data-status='running']) > pre:last-child code::after,
+:where(.aui-md[data-status='running'])
+  > :where(:is(ol, ul):last-child)
+  > :where(li:last-child:not(:has(* > li)))::after,
+:where(.aui-md[data-status='running'])
+  > :where(:is(ol, ul):last-child)
+  > :where(li:last-child)
+  > :where(:is(ol, ul):last-child)
+  > :where(li:last-child:not(:has(* > li)))::after,
+:where(.aui-md[data-status='running'])
+  > :where(:is(ol, ul):last-child)
+  > :where(li:last-child)
+  > :where(:is(ol, ul):last-child)
+  > :where(li:last-child)
+  > :where(:is(ol, ul):last-child)
+  > :where(li:last-child)::after {
+  animation: aui-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --aui-content: '\25cf';
+  content: var(--aui-content);
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+:where(.aui-md[data-status='running']):empty {
+  position: relative;
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+:where(.aui-md[data-status='running']):empty::after {
+  content: 'Thinking';
+  position: relative;
+  color: var(--foreground, #555);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  animation: text-cycle 9s ease infinite;
+}
+
+/* Text cycling animation */
+@keyframes text-cycle {
+  /* First text: "Thinking" */
+  0%,
+  2% {
+    content: 'Thinking...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  5%,
+  27% {
+    content: 'Thinking...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  30%,
+  33% {
+    content: 'Thinking...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Second text: "Crafting response" */
+  33.1%,
+  35% {
+    content: 'Crafting response...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  38%,
+  60% {
+    content: 'Crafting response...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  63%,
+  66% {
+    content: 'Crafting response...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Third text: "Almost there" */
+  66.1%,
+  68% {
+    content: 'Almost there...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  71%,
+  93% {
+    content: 'Almost there...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  96%,
+  100% {
+    content: 'Almost there...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes aui-pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
