@@ -26,7 +26,6 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { ThreadList } from '@/components/assistant-ui/thread-list';
-import SidebarLanguageToggle from './language-toggle';
 
 // This is sample data.
 const data = {
