@@ -1,10 +1,7 @@
 'use client';
 
 import { Thread } from '@/components/assistant-ui/thread';
-import {
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { MyRuntimeProvider } from '@/contexts/my-runtime-provider';
 export default function Assistant() {

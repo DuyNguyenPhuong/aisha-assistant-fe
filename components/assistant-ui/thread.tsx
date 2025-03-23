@@ -21,6 +21,8 @@ import {
   DropletIcon,
   BarChart3Icon,
   AlertTriangleIcon,
+  BrainIcon,
+  PlusIcon,
   // ExternalLinkIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,8 +34,25 @@ import { useThread } from '@assistant-ui/react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { motion } from 'framer-motion';
 import { backendUrl } from '@/lib/constants';
-
 import { useTranslation } from 'react-i18next';
+import { ToolFallback } from './tool-fallback';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogHeader,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from "sonner";
+
 
 // Add interface for PLC data
 interface PLCData {
@@ -99,7 +118,7 @@ const PLCDataDisplay: FC = () => {
   const [plcData, setPlcData] = useState<PLCData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { t } = useTranslation()
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchPLCData = async () => {
@@ -268,36 +287,35 @@ const ThreadWelcome: FC = () => {
 
   return (
     <ThreadPrimitive.Empty>
-      <div className="relative w-full">
+      <div className='relative w-full'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="flex w-full max-w-[var(--thread-max-width)] flex-col"
-        >
-          <div className="flex flex-col flex-grow justify-center items-center w-full">
+          className='flex w-full max-w-[var(--thread-max-width)] flex-col'>
+          <div className='flex flex-col flex-grow justify-center items-center w-full'>
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: isVisible ? 1 : 0.8, opacity: isVisible ? 1 : 0 }}
+              animate={{
+                scale: isVisible ? 1 : 0.8,
+                opacity: isVisible ? 1 : 0,
+              }}
               transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-              className="flex justify-center items-center mb-6"
-            >
-              <DropletIcon className="w-12 h-12 text-primary" />
+              className='flex justify-center items-center mb-6'>
+              <DropletIcon className='w-12 h-12 text-primary' />
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
               transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
-              className="mb-2 text-4xl font-bold text-center"
-            >
+              className='mb-2 text-4xl font-bold text-center'>
               {t('wastewaterAssistant')}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
               transition={{ duration: 0.5, delay: 0.6, ease: 'easeOut' }}
-              className="mb-10 max-w-md text-lg text-center text-muted-foreground"
-            >
+              className='mb-10 max-w-md text-lg text-center text-muted-foreground'>
               {t('askAnything')}
             </motion.p>
           </div>
@@ -352,9 +370,7 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
           <h3 className='mb-1 font-medium transition-colors group-hover:text-cyan-500'>
             {t('waterQualityTitle')}
           </h3>
-          <p className='text-sm text-muted-foreground'>
-            {t('waterQuality')}
-          </p>
+          <p className='text-sm text-muted-foreground'>{t('waterQuality')}</p>
         </div>
       </ThreadPrimitive.Suggestion>
 
@@ -372,9 +388,7 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
           <h3 className='mb-1 font-medium transition-colors group-hover:text-amber-500'>
             {t('reportsTitle')}
           </h3>
-          <p className='text-sm text-muted-foreground'>
-            {t('reports')}
-          </p>
+          <p className='text-sm text-muted-foreground'>{t('reports')}</p>
         </div>
       </ThreadPrimitive.Suggestion>
 
@@ -392,9 +406,7 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
           <h3 className='mb-1 font-medium transition-colors group-hover:text-emerald-500'>
             {t('knowledgeBaseTitle')}
           </h3>
-          <p className='text-sm text-muted-foreground'>
-            {t('knowledgeBase')}
-          </p>
+          <p className='text-sm text-muted-foreground'>{t('knowledgeBase')}</p>
         </div>
       </ThreadPrimitive.Suggestion>
     </motion.div>
@@ -402,8 +414,10 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
 };
 
 const Composer: FC = () => {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
+  const [isRememberModalOpen, setIsRememberModalOpen] = useState(false);
+  const [rememberContext, setRememberContext] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -413,6 +427,36 @@ const Composer: FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleRememberSubmit = async () => {
+    if (rememberContext.trim()) {
+      try {
+        const response = await fetch(`${backendUrl}/api/context`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ context: rememberContext }),
+        });
+
+        console.log(response);
+
+        if (!response.ok) {
+          toast.error(t('errorSavingContext', 'Failed to save context')); // Display an error message using toast
+          return;
+        }
+        
+        toast.success(t('contextSaved', 'Context saved successfully')); // Display a success message using toast
+
+        // Reset state and close modal
+        setRememberContext('');
+        setIsRememberModalOpen(false);
+      } catch (error) {
+        console.error('Error saving context:', error);
+        // You could add error handling UI here
+      }
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -420,6 +464,21 @@ const Composer: FC = () => {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className='w-full'>
       <ComposerPrimitive.Root className='flex flex-wrap items-center px-4 py-3 w-full rounded-xl border shadow-sm transition-colors ease-in bg-card border-border'>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className='flex justify-center items-center w-8 h-8 rounded-full transition-colors cursor-pointer hover:bg-muted'>
+              <PlusIcon className='w-5 h-5 text-muted-foreground' />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='start' className='p-1'>
+            <DropdownMenuItem
+              className='flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer rounded hover:bg-muted focus:bg-muted outline-none'
+              onClick={() => setIsRememberModalOpen(true)}>
+              <BrainIcon className='mr-2 w-4 h-4' />
+              <span>{t('remember')}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <ComposerPrimitive.Input
           rows={1}
           autoFocus
@@ -428,6 +487,38 @@ const Composer: FC = () => {
         />
         <ComposerAction />
       </ComposerPrimitive.Root>
+
+      {/* Remember Modal */}
+      <Dialog open={isRememberModalOpen} onOpenChange={setIsRememberModalOpen}>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>{t('rememberDialogTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('rememberDialogDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='flex flex-col gap-4 py-4'>
+            <Textarea
+              value={rememberContext}
+              onChange={(e) => setRememberContext(e.target.value)}
+              placeholder={t('rememberDialogPlaceholder')}
+              className='min-h-[150px]'
+            />
+          </div>
+          <DialogFooter className='flex justify-between sm:justify-between'>
+            <Button
+              variant='outline'
+              onClick={() => setIsRememberModalOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={handleRememberSubmit}
+              disabled={!rememberContext.trim()}>
+              {t('rememberButton')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
@@ -533,7 +624,12 @@ const AssistantMessage: FC = () => {
         </Avatar>
         <div className='flex-1'>
           <div className='text-base leading-relaxed break-words'>
-            <MessagePrimitive.Content components={{ Text: MarkdownText }} />
+            <MessagePrimitive.Content
+              components={{
+                Text: MarkdownText,
+                tools: { Fallback: ToolFallback },
+              }}
+            />
           </div>
         </div>
       </div>

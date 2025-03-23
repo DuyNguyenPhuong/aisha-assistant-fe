@@ -36,7 +36,15 @@ i18n
           "alert": "Alert",
           "thinking": "Thinking...",
           "craftingResponse": "Crafting response...",
-          "almostThere": "Almost there..."
+          "almostThere": "Almost there...",
+          "errorSavingContext": "Failed to save context",
+          "contextSaved": "Context saved successfully",
+          "remember": "Remember",
+          "rememberDialogTitle": "Remember Context",
+          "rememberDialogDescription": "Add information you want the assistant to remember for this conversation.",
+          "rememberDialogPlaceholder": "Enter context to remember...",
+          "rememberButton": "Remember",
+          "cancel": "Cancel"
         },
       },
       ru: {
@@ -63,7 +71,15 @@ i18n
           "alert": "Предупреждение",
           "thinking": "Думаю...",
           "craftingResponse": "Формирую ответ...",
-          "almostThere": "Почти готово..."
+          "almostThere": "Почти готово...",
+          "errorSavingContext": "Не удалось сохранить контекст",
+          "contextSaved": "Контекст успешно сохранен",
+          "remember": "Запомнить",
+          "rememberDialogTitle": "Запомнить контекст",
+          "rememberDialogDescription": "Добавьте информацию, которую вы хотите, чтобы ассистент запомнил для этого разговора.",
+          "rememberDialogPlaceholder": "Введите контекст для запоминания...",
+          "rememberButton": "Запомнить",
+          "cancel": "Отмена"
         },
       },
       "vi": {
@@ -90,7 +106,9 @@ i18n
           "alert": "Cảnh báo",
           "thinking": "Đang suy nghĩ...",
           "craftingResponse": "Đang soạn câu trả lời...",
-          "almostThere": "Sắp xong..."
+          "almostThere": "Sắp xong...",
+          "errorSavingContext": "Ghi nhớ thông tin không thành công, vui lòng thử lại",
+          "contextSaved": "Ghi nhớ thông tin thành công"
         }
       }
     },
