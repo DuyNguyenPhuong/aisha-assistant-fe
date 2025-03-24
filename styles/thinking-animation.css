@@ -39,16 +39,27 @@
   justify-content: flex-start;
 }
 
+/* Default (English) */
 :where(.aui-md[data-status='running']):empty::after {
   content: 'Thinking';
   position: relative;
   color: var(--foreground, #555);
   font-family: ui-sans-serif, system-ui, sans-serif;
-  animation: text-cycle 9s ease infinite;
+  animation: text-cycle-en 9s ease infinite;
 }
 
-/* Text cycling animation */
-@keyframes text-cycle {
+/* Russian */
+:where(.aui-lang-ru.aui-md[data-status='running']):empty::after {
+  animation: text-cycle-ru 9s ease infinite;
+}
+
+/* Vietnamese */
+:where(.aui-lang-vi.aui-md[data-status='running']):empty::after {
+  animation: text-cycle-vi 9s ease infinite;
+}
+
+/* English Text cycling animation */
+@keyframes text-cycle-en {
   /* First text: "Thinking" */
   0%,
   2% {
@@ -105,6 +116,132 @@
   96%,
   100% {
     content: 'Almost there...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Russian Text cycling animation */
+@keyframes text-cycle-ru {
+  /* First text: "Thinking" in Russian */
+  0%,
+  2% {
+    content: 'Думаю...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  5%,
+  27% {
+    content: 'Думаю...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  30%,
+  33% {
+    content: 'Думаю...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Second text: "Crafting response" in Russian */
+  33.1%,
+  35% {
+    content: 'Формирую ответ...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  38%,
+  60% {
+    content: 'Формирую ответ...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  63%,
+  66% {
+    content: 'Формирую ответ...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Third text: "Almost there" in Russian */
+  66.1%,
+  68% {
+    content: 'Почти готово...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  71%,
+  93% {
+    content: 'Почти готово...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  96%,
+  100% {
+    content: 'Почти готово...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Vietnamese Text cycling animation */
+@keyframes text-cycle-vi {
+  /* First text: "Thinking" in Vietnamese */
+  0%,
+  2% {
+    content: 'Đang suy nghĩ...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  5%,
+  27% {
+    content: 'Đang suy nghĩ...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  30%,
+  33% {
+    content: 'Đang suy nghĩ...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Second text: "Crafting response" in Vietnamese */
+  33.1%,
+  35% {
+    content: 'Đang soạn câu trả lời...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  38%,
+  60% {
+    content: 'Đang soạn câu trả lời...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  63%,
+  66% {
+    content: 'Đang soạn câu trả lời...';
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Third text: "Almost there" in Vietnamese */
+  66.1%,
+  68% {
+    content: 'Sắp xong...';
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  71%,
+  93% {
+    content: 'Sắp xong...';
+    opacity: 1;
+    transform: translateY(0);
+  }
+  96%,
+  100% {
+    content: 'Sắp xong...';
     opacity: 0;
     transform: translateY(-10px);
   }
