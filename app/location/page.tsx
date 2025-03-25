@@ -12,7 +12,6 @@ const LocationPage: NextPage = () => {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        {/* Removed bg-gray-50 so that SidebarInset background shows */}
         <div className="relative min-h-screen flex flex-col items-center justify-center p-8">
           <div className="absolute top-4 left-4 z-10">
             <SidebarTrigger />
