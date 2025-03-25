@@ -53,7 +53,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 
-
 // Add interface for PLC data
 interface PLCData {
   timestamp: string;
