@@ -14,13 +14,17 @@ import { CheckIcon, CopyIcon } from 'lucide-react';
 
 import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const MarkdownTextImpl = () => {
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language || 'en';
+  
   return (
     <>
       <MarkdownTextPrimitive
         remarkPlugins={[remarkGfm]}
-        className='aui-md'
+        className={`aui-md aui-lang-${currentLang}`}
         components={defaultComponents}
       />
     </>
