@@ -44,7 +44,11 @@ i18n
           "rememberDialogDescription": "Add information you want the assistant to remember for this conversation.",
           "rememberDialogPlaceholder": "Enter context to remember...",
           "rememberButton": "Remember",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "ourLocationTitle": "Our Location",
+          "ourLocationSubTitle": "Our factory is marked on the map below. Explore the area and get a sense of where we are located.",
+          "address": "Address",
+          "phoneNumber": "Phone Number"
         },
       },
       ru: {
@@ -79,7 +83,11 @@ i18n
           "rememberDialogDescription": "Добавьте информацию, которую вы хотите, чтобы ассистент запомнил для этого разговора.",
           "rememberDialogPlaceholder": "Введите контекст для запоминания...",
           "rememberButton": "Запомнить",
-          "cancel": "Отмена"
+          "cancel": "Отмена",
+          "ourLocationTitle": "Наше местоположение",
+          "ourLocationSubTitle": "Наш завод отмечен на карте ниже. Изучите окрестности, чтобы лучше понять, где мы находимся.",
+          "address": "Адрес",
+          "phoneNumber": "Номер телефона"
         },
       },
       "vi": {
@@ -108,7 +116,11 @@ i18n
           "craftingResponse": "Đang soạn câu trả lời...",
           "almostThere": "Sắp xong...",
           "errorSavingContext": "Ghi nhớ thông tin không thành công, vui lòng thử lại",
-          "contextSaved": "Ghi nhớ thông tin thành công"
+          "contextSaved": "Ghi nhớ thông tin thành công",
+          "ourLocationTitle": "Vị trí của chúng tôi",
+          "ourLocationSubTitle": "Nhà máy của chúng tôi được đánh dấu trên bản đồ bên dưới. Hãy khám phá khu vực xung quanh để hiểu rõ hơn về vị trí của chúng tôi.",
+          "address": "Địa chỉ",
+          "phoneNumber": "Số điện thoại"
         }
       }
     },
