@@ -35,9 +35,9 @@ const SidebarLanguageToggle: React.FC = () => {
         >
           <button
             onClick={() => setIsOpen((prev) => !prev)}
-            className="flex items-center justify-between w-full border border-[#1e5631] rounded-md py-1 px-3 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 focus:outline-none transition-colors duration-300"
+            className="flex items-center justify-between w-full border border-primary rounded-md py-1 px-3 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 focus:outline-none transition-colors duration-300"
           >
-            <span className="text-[#1e5631]">Language</span>
+            <span className="text-primary">Language</span>
             <span className="text-xl">{currentFlag}</span>
           </button>
 
@@ -48,7 +48,7 @@ const SidebarLanguageToggle: React.FC = () => {
                   <button
                     key={code}
                     onMouseDown={() => handleLanguageChange(code)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#c0c9c0] flex items-center space-x-2"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-muted flex items-center space-x-2"
                   >
                     <span>{flag}</span>
                     <span>{label}</span>

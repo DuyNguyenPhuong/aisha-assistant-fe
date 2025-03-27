@@ -9,7 +9,6 @@ import {
 import { backendUrl } from '@/lib/constants';
 const MyModelAdapter: ChatModelAdapter = {
   async *run({ messages, abortSignal }) {
-    
     console.log('Backend url:', backendUrl);
     // Get the last user message
     const lastUserMessage = messages.filter((msg) => msg.role === 'user').pop()
