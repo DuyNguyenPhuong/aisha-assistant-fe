@@ -28,7 +28,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import SidebarLanguageToggle from '../language-toggle';
+import SidebarLanguageToggle from '@/components/language-toggle';
 
 export const ThreadList: FC = () => {
   return (

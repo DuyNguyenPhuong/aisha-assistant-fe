@@ -4,6 +4,7 @@ import { NextPage } from 'next';
 import MapComponent from '@/components/locationmap';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
+
 import { useTranslation } from 'react-i18next';
 
 const LocationPage: NextPage = () => {
