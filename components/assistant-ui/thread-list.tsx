@@ -7,7 +7,6 @@ import {
 } from '@assistant-ui/react';
 import {
   ArchiveIcon,
-  PlusIcon,
   MessageSquare,
   ChevronRight,
   MapPin,
