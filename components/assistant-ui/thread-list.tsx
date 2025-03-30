@@ -10,6 +10,7 @@ import {
   PlusIcon,
   MessageSquare,
   ChevronRight,
+  MapPin,
 } from 'lucide-react';
 
 import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button';
@@ -29,6 +30,7 @@ import {
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import SidebarLanguageToggle from '@/components/language-toggle';
+import Link from 'next/link';
 
 export const ThreadList: FC = () => {
   return (
@@ -63,12 +65,14 @@ export const ThreadList: FC = () => {
 const ThreadListNew: FC = () => {
   return (
     <ThreadListPrimitive.New asChild>
-      <SidebarMenuItem>
-        <SidebarMenuButton tooltip='New Thread'>
-          <PlusIcon className='w-4 h-4 text-primary' />
-          <span className='text-primary'>New Thread</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
+      <Link href="/location">
+        <SidebarMenuItem>
+          <SidebarMenuButton tooltip='Location' className='cursor-pointer'>
+            <MapPin className='w-4 h-4' />
+            <span>Location</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </Link>
     </ThreadListPrimitive.New>
   );
 };
