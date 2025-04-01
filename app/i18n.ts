@@ -48,7 +48,9 @@ i18n
           "ourLocationTitle": "Our Location",
           "ourLocationSubTitle": "Our factory is marked on the map below. Explore the area and get a sense of where we are located.",
           "address": "Address",
-          "phoneNumber": "Phone Number"
+          "phoneNumber": "Phone Number",
+          "rememberListTitle": "Remember List",
+          "rememberListSubtitle": "Here are the things you’ve asked me to remember.",
         },
       },
       ru: {
@@ -87,7 +89,9 @@ i18n
           "ourLocationTitle": "Наше местоположение",
           "ourLocationSubTitle": "Наш завод отмечен на карте ниже. Изучите окрестности, чтобы лучше понять, где мы находимся.",
           "address": "Адрес",
-          "phoneNumber": "Номер телефона"
+          "phoneNumber": "Номер телефона",
+          "rememberListTitle": "Список запомненного",
+          "rememberListSubtitle": "Вот что вы просили меня запомнить.",
         },
       },
       "vi": {
@@ -120,7 +124,9 @@ i18n
           "ourLocationTitle": "Vị trí của chúng tôi",
           "ourLocationSubTitle": "Nhà máy của chúng tôi được đánh dấu trên bản đồ bên dưới. Hãy khám phá khu vực xung quanh để hiểu rõ hơn về vị trí của chúng tôi.",
           "address": "Địa chỉ",
-          "phoneNumber": "Số điện thoại"
+          "phoneNumber": "Số điện thoại",
+          "rememberListTitle": "Danh sách đã ghi nhớ",
+          "rememberListSubtitle": "Dưới đây là những điều bạn đã yêu cầu tôi ghi nhớ.",
         }
       }
     },

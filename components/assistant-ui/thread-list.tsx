@@ -10,6 +10,8 @@ import {
   MessageSquare,
   ChevronRight,
   MapPin,
+  Bookmark,
+  List,
 } from 'lucide-react';
 
 import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button';
@@ -61,18 +63,46 @@ export const ThreadList: FC = () => {
   );
 };
 
+// const ThreadListNew: FC = () => {
+//   return (
+//     <ThreadListPrimitive.New asChild>
+//       <Link href="/location">
+//         <SidebarMenuItem>
+//           <SidebarMenuButton tooltip='Location' className='cursor-pointer'>
+//             <MapPin className='w-4 h-4' />
+//             <span>Location</span>
+//           </SidebarMenuButton>
+//         </SidebarMenuItem>
+//       </Link>
+//     </ThreadListPrimitive.New>
+//   );
+// };
+
 const ThreadListNew: FC = () => {
   return (
-    <ThreadListPrimitive.New asChild>
-      <Link href="/location">
-        <SidebarMenuItem>
-          <SidebarMenuButton tooltip='Location' className='cursor-pointer'>
-            <MapPin className='w-4 h-4' />
-            <span>Location</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </Link>
-    </ThreadListPrimitive.New>
+    <>
+      <ThreadListPrimitive.New asChild>
+        <Link href="/location">
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip='Location' className='cursor-pointer'>
+              <MapPin className='w-4 h-4' />
+              <span>Location</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </Link>
+      </ThreadListPrimitive.New>
+
+      <ThreadListPrimitive.New asChild>
+        <Link href="/remember-list">
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip='Remember List' className='cursor-pointer'>
+              <List className='w-4 h-4' />
+              <span>Remember List</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </Link>
+      </ThreadListPrimitive.New>
+    </>
   );
 };
 
