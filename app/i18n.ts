@@ -56,6 +56,7 @@ i18n
           "lastUpdated": "Last Updated",
           "Updated": "Updated",
           "characters": "characters",
+          "Limit": "Limit",
         },
       },
       ru: {
@@ -102,6 +103,7 @@ i18n
           "lastUpdated": "Последнее обновление",
           "Updated": "Обновлено",
           "characters": "символы",
+          "Limit": "Лимит",
         },
       },
       "vi": {
@@ -142,6 +144,7 @@ i18n
           "lastUpdated": "Cập nhật lần cuối",
           "Updated": "Cập nhật",
           "characters": "ký tự",
+          "Limit": "Giới hạn",
         }
       }
     },

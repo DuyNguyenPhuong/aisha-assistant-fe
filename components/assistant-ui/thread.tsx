@@ -215,36 +215,37 @@ const PLCDataDisplay: FC = () => {
               >
                 {item.title}
               </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-                className='mb-1 text-2xl font-bold text-foreground'
-              >
-                {value.toFixed(2)}
-              </motion.div>
+              <div className="flex items-center mb-1">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                  className={`text-2xl font-bold ${
+                    isNormal ? 'text-emerald-600' : 'text-red-600'
+                  }`} // Use emerald-600 for normal state
+                >
+                  {value.toFixed(2)}
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                  className={`ml-2 ${isNormal ? 'text-emerald-600' : 'text-red-600'}`} // Match the checkmark/x color
+                >
+                  {isNormal ? (
+                    <CheckIcon className='w-5 h-5' />
+                  ) : (
+                    <AlertTriangleIcon className='w-5 h-5' />
+                    )}
+                </motion.div>
+              </div>
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
                 className='flex gap-2 items-center'
               >
-                <div
-                  className={`flex items-center ${
-                    isNormal ? 'text-emerald-500' : 'text-red-500'
-                  }`}
-                >
-                  {isNormal ? (
-                    <CheckIcon className='mr-1 w-4 h-4' />
-                  ) : (
-                    <AlertTriangleIcon className='mr-1 w-4 h-4' />
-                  )}
-                  <span className='text-xs'>
-                    {isNormal ? t('normal') : t('alert')}
-                  </span>
+                <div className="text-muted-foreground text-sm font-medium">
+                  {t('Limit')}: {maxValue}
                 </div>
-                <span className='text-xs text-muted-foreground'>
-                  / {maxValue}
-                </span>
-              </motion.div>
+            </motion.div>
             </motion.div>
           );
         })}
