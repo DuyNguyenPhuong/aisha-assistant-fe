@@ -130,6 +130,7 @@ const PLCDataDisplay: FC = () => {
     const fetchPLCData = async () => {
       try {
         setLoading(true);
+        // const response = await fetch(`${backendUrl}/plc/data`);
         const response = await fetch(`${backendUrl}/ftp/latest`);
         if (!response.ok) {
           throw new Error('Failed to fetch PLC data');
@@ -150,6 +151,7 @@ const PLCDataDisplay: FC = () => {
 
     fetchPLCData();
     const interval = setInterval(fetchPLCData, 300000); // Every 5 minutes
+    // const interval = setInterval(fetchPLCData, 172800000); // Every 2 days
     return () => clearInterval(interval);
   }, []);
 
