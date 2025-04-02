@@ -26,9 +26,7 @@
     AlertTriangleIcon,
     BrainIcon,
     PlusIcon,
-    Loader,
     LoaderCircle,
-    CircleArrowLeft,
     // ExternalLinkIcon,
   } from 'lucide-react';
   import { cn } from '@/lib/utils';
@@ -87,9 +85,7 @@
           ['--thread-max-width' as string]: '64rem',
         }}>
           
-        <div>
-          <SidebarTrigger className='fixed top-4 z-50 ml-2' />
-        </div>
+        <SidebarTrigger className='fixed top-4 z-50 ml-2' />
         <div className='mx-auto my-0 h-full w-full max-w-[var(--thread-max-width)]'>
           <ThreadPrimitive.Viewport
             className={cn(
