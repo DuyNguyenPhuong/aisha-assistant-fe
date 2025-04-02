@@ -149,7 +149,7 @@ const PLCDataDisplay: FC = () => {
     };
 
     fetchPLCData();
-    const interval = setInterval(fetchPLCData, 172800000); // Every 2 days
+    const interval = setInterval(fetchPLCData, 300000); // Every 5 minutes
     return () => clearInterval(interval);
   }, []);
 
