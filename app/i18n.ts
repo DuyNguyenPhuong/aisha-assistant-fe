@@ -51,6 +51,11 @@ i18n
           "phoneNumber": "Phone Number",
           "rememberListTitle": "Remember List",
           "rememberListSubtitle": "Here are the things you’ve asked me to remember.",
+          "File": "File",
+          "Length": "Length",
+          "lastUpdated": "Last Updated",
+          "Updated": "Updated",
+          "characters": "characters",
         },
       },
       ru: {
@@ -92,6 +97,11 @@ i18n
           "phoneNumber": "Номер телефона",
           "rememberListTitle": "Список запомненного",
           "rememberListSubtitle": "Вот что вы просили меня запомнить.",
+          "File":"файл",
+          "Length":"Длина",
+          "lastUpdated": "Последнее обновление",
+          "Updated": "Обновлено",
+          "characters": "символы",
         },
       },
       "vi": {
@@ -127,6 +137,11 @@ i18n
           "phoneNumber": "Số điện thoại",
           "rememberListTitle": "Danh sách đã ghi nhớ",
           "rememberListSubtitle": "Dưới đây là những điều bạn đã yêu cầu tôi ghi nhớ.",
+          "File": "Tệp",
+          "Length": "Độ dài",
+          "lastUpdated": "Cập nhật lần cuối",
+          "Updated": "Cập nhật",
+          "characters": "ký tự",
         }
       }
     },

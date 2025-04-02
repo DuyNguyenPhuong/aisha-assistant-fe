@@ -10,7 +10,6 @@ import {
   MessageSquare,
   ChevronRight,
   MapPin,
-  Bookmark,
   List,
 } from 'lucide-react';
 
