@@ -4,7 +4,9 @@
     ComposerPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
-    useComposerRuntime
+    useComposerRuntime,
+    useMessage,
+    useMessageRuntime
   } from '@assistant-ui/react';
   import type { FC } from 'react';
   import { useState, useEffect, useRef, useCallback } from 'react';
@@ -24,6 +26,9 @@
     AlertTriangleIcon,
     BrainIcon,
     PlusIcon,
+    Loader,
+    LoaderCircle,
+    CircleArrowLeft,
     // ExternalLinkIcon,
   } from 'lucide-react';
   import { cn } from '@/lib/utils';
@@ -81,7 +86,10 @@
         style={{
           ['--thread-max-width' as string]: '64rem',
         }}>
-        <SidebarTrigger className='fixed top-4 z-50 ml-2' />
+          
+        <div>
+          <SidebarTrigger className='fixed top-4 z-50 ml-2' />
+        </div>
         <div className='mx-auto my-0 h-full w-full max-w-[var(--thread-max-width)]'>
           <ThreadPrimitive.Viewport
             className={cn(
@@ -635,26 +643,110 @@
     );
   };
 
-  const UserMessage: FC = () => {
+  const UserMessage: React.FC = () => {
+    const message = useMessageRuntime().getState().content[0] as { text: string };
+    const [translatedText, setTranslatedText] = useState<string | null>(null);
+
     return (
-      <MessagePrimitive.Root className='flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2'>
-        <div className='flex gap-3 items-center'>
-          <Avatar className='mt-1 w-8 h-8 rounded-full border border-border'>
+      <MessagePrimitive.Root className="flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2">
+        <div className="flex gap-3 items-center">
+          <Avatar className="mt-1 w-8 h-8 rounded-full border border-border">
             <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className='rounded-full bg-secondary text-secondary-foreground'>
+            <AvatarFallback className="rounded-full bg-secondary text-secondary-foreground">
               {user.name.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className='font-medium break-words textbase'>
+          <div className="font-medium break-words textbase">
             <MessagePrimitive.Content />
+            <div
+              className="mt-2 text-sm text-muted-foreground"
+              style={{ whiteSpace: "pre-wrap" }}
+            >
+              {translatedText}
+            </div>
           </div>
           <UserActionBar />
         </div>
 
-        <div className='flex items-center pl-11'>
-          <BranchPicker className='ml-auto' />
+        <div className="flex items-center pl-11">
+          <BranchPicker className="ml-auto" />
+        </div>
+
+        <div className="pl-11">
+          {message != undefined && (
+            <TranslateButton
+              message={{ content: message.text }}
+              onTranslation={(text: string) => setTranslatedText(text)}
+            />)}
         </div>
       </MessagePrimitive.Root>
+    );
+  };
+
+  interface TranslateButtonProps {
+    message: { content: string };
+    onTranslation: (translation: string) => void;
+  }
+  
+  const TranslateButton: React.FC<TranslateButtonProps> = ({ message, onTranslation }) => {
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [hasTranslated, setHasTranslated] = useState<boolean>(false);
+  
+    const handleTranslate = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${backendUrl}/api/translate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: message.content }),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const text = await response.json()
+        onTranslation(text);
+        setHasTranslated(true);
+      } catch (error) {
+        console.error('Translation failed:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    if (hasTranslated) return null;
+  
+    return (
+      <div className="flex items-center">
+        <button
+          onClick={handleTranslate}
+          className="text-sm text-primary hover:underline"
+          disabled={isLoading}
+        >
+          Translate
+        </button>
+        {isLoading && (
+          <span className="ml-2">
+            <LoaderCircle className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              ></path>
+            </LoaderCircle>
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -697,31 +789,59 @@
     );
   };
 
-  const AssistantMessage: FC = () => {
+  const AssistantMessage: React.FC = () => {
+    const message = useMessage();
+    const [translatedText, setTranslatedText] = useState<string | null>(null);
+  
+    const getMessageText = () => {
+      if (!message || !message.content || !Array.isArray(message.content) || message.content.length === 0) {
+        return '';
+      }
+      const firstContent = message.content[0];
+      return 'text' in firstContent ? firstContent.text : '';
+    };
+  
     return (
-      <MessagePrimitive.Root className='flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2'>
-        <div className='flex gap-3 items-start'>
-          <Avatar className='mt-1 w-8 h-8 rounded-full border bg-primary/10 border-border'>
-            <AvatarImage alt='Assistant' />
-            <AvatarFallback className='rounded-full bg-primary text-accent-foreground'>
-              <DropletIcon className='w-4 h-4' />
+      <MessagePrimitive.Root className="flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2">
+        <div className="flex gap-3 items-start">
+          <Avatar className="mt-1 w-8 h-8 rounded-full border bg-primary/10 border-border">
+            <AvatarImage alt="Assistant" />
+            <AvatarFallback className="rounded-full bg-primary text-accent-foreground">
+              <DropletIcon className="w-4 h-4" />
             </AvatarFallback>
           </Avatar>
-          <div className='flex-1'>
-            <div className='text-base leading-relaxed break-words'>
+          <div className="flex-1">
+            <div className="text-base leading-relaxed break-words">
               <MessagePrimitive.Content
                 components={{
                   Text: MarkdownText,
                   tools: { Fallback: ToolFallback },
                 }}
               />
+              {translatedText && (
+                <div
+                  className="mt-2 text-sm text-muted-foreground"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                >
+                  {translatedText}
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        <div className='flex items-center pl-11'>
+  
+        <div className="flex items-center pl-11">
           <AssistantActionBar />
-          <BranchPicker className='ml-auto' />
+          <BranchPicker className="ml-auto" />
+        </div>
+  
+        <div className="pl-11">
+          {message && message.status && message.status.type === 'complete' && (
+            <TranslateButton
+              message={{ content: getMessageText() }} // Pass extracted text as string
+              onTranslation={(text: string) => setTranslatedText(text)}
+            />
+          )}
         </div>
       </MessagePrimitive.Root>
     );
