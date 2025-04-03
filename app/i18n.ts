@@ -57,7 +57,7 @@ i18n
           "Updated": "Updated",
           "characters": "characters",
           "Limit": "Limit",
-          "realAddress": "West Lake Wastewater Treatment Plant, Intersection 3, Nhật Chiêu Ward, Nhật Tân, Tây Hồ, Hanoi, Vietnam"
+          "realAddress": "West Lake Wastewater Treatment Plant, Intersection 3, Nhat Chieu Ward, Nhat Tan, Tay Ho, Hanoi, Vietnam"
         },
       },
       ru: {
@@ -105,7 +105,7 @@ i18n
           "Updated": "Обновлено",
           "characters": "символы",
           "Limit": "Лимит",
-          "realAddress": "Очистная станция сточных вод Hồ Tây, перекресток 3, ф. Nhật Chiêu, Nhật Tân, Tây Hồ, Ханой, Вьетнам"
+          "realAddress": "Очистная станция сточных вод Hồ Tây, перекресток 3, ф. Nhat Chieu, Nhat Tan, Tay Ho, Ханой, Вьетнам"
         },
       },
       "vi": {
