@@ -33,7 +33,7 @@ const LocationPage: NextPage = () => {
 
           <footer className="mt-8 text-center text-gray-600">
             <p>
-              <strong>{t('address')}</strong>: Nhà máy Xử lý nước thải Hồ Tây, Ngã 3 P. Nhật Chiêu, Nhật Tân, Tây Hồ, Hà Nội, Việt Nam
+              <strong>{t('address')}</strong>: {t('realAddress')}
             </p>
             <p>
               <strong>{t('phoneNumber')}</strong>: +(84) 966666998
