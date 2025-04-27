@@ -9,8 +9,8 @@ const containerStyle = {
 };
 
 const defaultCenter = {
-  lat: 42.91895952548739,
-  lng: 74.51503441433378,
+  lat: 42.9242778,
+  lng: 74.5472777,
   // Uncomment for Ho Tay
   // lat: 21.075343712285203,
   // lng: 105.81956315396978,
