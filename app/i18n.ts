@@ -57,7 +57,9 @@ i18n
           "Updated": "Updated",
           "characters": "characters",
           "Limit": "Limit",
-          "realAddress": "West Lake Wastewater Treatment Plant, Intersection 3, Nhat Chieu Ward, Nhat Tan, Tay Ho, Hanoi, Vietnam"
+          // Uncomment for Ho Tay/WestLake
+          // "realAddress": "West Lake Wastewater Treatment Plant, Intersection 3, Nhat Chieu Ward, Nhat Tan, Tay Ho, Hanoi, Vietnam",
+          "realAddress": "Bishkek Wastewater Treatment Plant, Yubileynaya Street, Bishkek, Kyrgyzstan"
         },
       },
       ru: {
@@ -105,7 +107,9 @@ i18n
           "Updated": "Обновлено",
           "characters": "символы",
           "Limit": "Лимит",
-          "realAddress": "Очистная станция сточных вод Hồ Tây, перекресток 3, ф. Nhat Chieu, Nhat Tan, Tay Ho, Ханой, Вьетнам"
+          // Uncomment for Ho Tay/WestLake
+          // "realAddress": "Очистная станция сточных вод Hồ Tây, перекресток 3, ф. Nhat Chieu, Nhat Tan, Tay Ho, Ханой, Вьетнам",
+          "realAddress": "Бишкекские очистные сооружения, ул. Юбилейная, Бишкек, Кыргызстан",
         },
       },
       "vi": {
@@ -147,7 +151,9 @@ i18n
           "Updated": "Cập nhật",
           "characters": "ký tự",
           "Limit": "Giới hạn",
-          "realAddress": "Nhà máy Xử lý nước thải Hồ Tây, Ngã 3 P. Nhật Chiêu, Nhật Tân, Tây Hồ, Hà Nội, Việt Nam"
+          // Uncomment for Ho Tay/WestLake
+          // "realAddress": "Nhà máy Xử lý nước thải Hồ Tây, Ngã 3 P. Nhật Chiêu, Nhật Tân, Tây Hồ, Hà Nội, Việt Nam",
+          "realAddress": "Nhà máy xử lý nước thải Bishkek, Đường Yubileynaya, Bishkek, Kyrgyzstan",
         }
       }
     },
