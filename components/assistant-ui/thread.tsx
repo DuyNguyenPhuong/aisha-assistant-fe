@@ -135,8 +135,8 @@ const PLCDataDisplay: FC = () => {
     const fetchPLCData = async () => {
       try {
         setLoading(true);
-        // const response = await fetch(`${backendUrl}/plc/data`);
-        const response = await fetch(`${backendUrl}/ftp/latest`);
+        const response = await fetch(`${backendUrl}/plc/data`);
+        // const response = await fetch(`${backendUrl}/ftp/latest`);
         if (!response.ok) {
           throw new Error('Failed to fetch PLC data');
         }
