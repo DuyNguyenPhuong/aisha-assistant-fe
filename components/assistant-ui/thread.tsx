@@ -1,12 +1,13 @@
+// New code is in tempthread.tsx
+
+// This is old working code
 import {
   ActionBarPrimitive,
   BranchPickerPrimitive,
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
-  useComposerRuntime,
-  useMessage,
-  useMessageRuntime
+  useComposerRuntime
 } from '@assistant-ui/react';
 import type { FC } from 'react';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -26,7 +27,7 @@ import {
   AlertTriangleIcon,
   BrainIcon,
   PlusIcon,
-  LoaderCircle,
+  // ExternalLinkIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SidebarTrigger } from '../ui/sidebar';
@@ -61,15 +62,13 @@ import dynamic from 'next/dynamic';
 const VoiceRecorder = dynamic(() => import('@/components/voice-recording'), {
   ssr: false,
 });
-
-// Updated PLCData interface to match the backend response
+// Add interface for PLC data
 interface PLCData {
-  filename: string;
-  date: string;
+  timestamp: string;
   data: Record<string, number>;
   threshold: Record<string, number | [number, number]>;
   status: Record<string, boolean>;
-  alarms: string[];
+  all_normal: boolean;
 }
 
 const user = {
@@ -85,9 +84,7 @@ export const Thread: FC = () => {
       style={{
         ['--thread-max-width' as string]: '64rem',
       }}>
-      <div>
-        <SidebarTrigger className='fixed top-4 z-50 ml-2' />
-      </div>
+      <SidebarTrigger className='fixed top-4 z-50 ml-2' />
       <div className='mx-auto my-0 h-full w-full max-w-[var(--thread-max-width)]'>
         <ThreadPrimitive.Viewport
           className={cn(
@@ -124,7 +121,7 @@ export const Thread: FC = () => {
   );
 };
 
-// Updated PLCDataDisplay to use threshold and status from backend
+// New component to fetch and display PLC data
 const PLCDataDisplay: FC = () => {
   const [plcData, setPlcData] = useState<PLCData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,14 +133,11 @@ const PLCDataDisplay: FC = () => {
       try {
         setLoading(true);
         const response = await fetch(`${backendUrl}/plc/data`);
-        // const response = await fetch(`${backendUrl}/ftp/latest`);
+        // const response = await fetch(`${backendUrl}/ftp/latest`)
         if (!response.ok) {
           throw new Error('Failed to fetch PLC data');
         }
         const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
         setPlcData(data);
         setError(null);
       } catch (err) {
@@ -155,8 +149,9 @@ const PLCDataDisplay: FC = () => {
     };
 
     fetchPLCData();
-    const interval = setInterval(fetchPLCData, 300000); // Every 5 minutes
-    // const interval = setInterval(fetchPLCData, 172800000); // Every 2 days
+    // Refresh data every 30 seconds
+    // const interval = setInterval(fetchPLCData, 30000);
+    const interval = setInterval(fetchPLCData, 172800000);
     return () => clearInterval(interval);
   }, []);
 
@@ -181,11 +176,32 @@ const PLCDataDisplay: FC = () => {
     );
   }
 
+  // Map PLC data to display format
   const metrics = [
-    { title: t('TSSOutput'), key: 'TSS', color: 'emerald', delay: 1.1 },
-    { title: t('CODOutput'), key: 'COD', color: 'blue', delay: 1.2 },
-    { title: t('NH4Output'), key: 'NH4+', color: 'violet', delay: 1.3 },
-    { title: t('pHLevel'), key: 'pH', color: 'amber', delay: 1.4 },
+    {
+      title: t('TSSOutput'),
+      key: 'TSS_OUT',
+      color: 'emerald',
+      delay: 1.1,
+    },
+    {
+      title: t('CODOutput'),
+      key: 'COD_OUT',
+      color: 'blue',
+      delay: 1.2,
+    },
+    {
+      title: t('NH4Output'),
+      key: 'NH4_OUT',
+      color: 'violet',
+      delay: 1.3,
+    },
+    {
+      title: t('pHLevel'),
+      key: 'pH_OUT',
+      color: 'amber',
+      delay: 1.4,
+    },
   ];
 
   return (
@@ -193,59 +209,59 @@ const PLCDataDisplay: FC = () => {
       {plcData &&
         metrics.map((item, index) => {
           const value = plcData.data[item.key] || 0;
-          const isNormal = plcData.status[item.key] ?? true; // Fallback to true if status missing
+          const isNormal =
+            plcData.status[item.key] !== undefined
+              ? plcData.status[item.key]
+              : true;
           const threshold = plcData.threshold[item.key];
           const maxValue = Array.isArray(threshold)
             ? `${threshold[0]} - ${threshold[1]}`
-            : threshold?.toString() || 'N/A';
+            : threshold?.toString() || '0';
 
           return (
             <motion.div
               key={index}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+              whileHover={{
+                scale: 1.02,
+                transition: { duration: 0.2 },
+              }}
               transition={{ duration: 0.3, delay: item.delay }}
-              className={`flex-1 flex flex-col p-4 bg-gradient-to-br rounded-xl border from-${item.color}-50/50 to-slate-50 dark:from-${item.color}-900/20 dark:to-slate-800/50 border-border hover:shadow-lg hover:border-${item.color}-200 dark:hover:border-${item.color}-700 transition-all duration-300 ease-in-out cursor-default`}
-            >
+              className={`flex-1 flex flex-col p-4 bg-gradient-to-br rounded-xl border from-${item.color}-50/50 to-slate-50 dark:from-${item.color}-900/20 dark:to-slate-800/50 border-border hover:shadow-lg hover:border-${item.color}-200 dark:hover:border-${item.color}-700 transition-all duration-300 ease-in-out cursor-default`}>
               <motion.div
                 whileHover={{ x: 3 }}
                 transition={{ duration: 0.2 }}
-                className='mb-2 text-sm font-medium text-muted-foreground'
-              >
+                className='mb-2 text-sm font-medium text-muted-foreground'>
                 {item.title}
               </motion.div>
-              <div className="flex items-center mb-1">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                  className={`text-2xl font-bold ${
-                    isNormal ? 'text-emerald-600' : 'text-red-600'
-                  }`} // Use emerald-600 for normal state
-                >
-                  {value.toFixed(2)}
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                  className={`ml-2 ${isNormal ? 'text-emerald-600' : 'text-red-600'}`} // Match the checkmark/x color
-                >
-                  {isNormal ? (
-                    <CheckIcon className='w-5 h-5' />
-                  ) : (
-                    <AlertTriangleIcon className='w-5 h-5' />
-                    )}
-                </motion.div>
-              </div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+                className='mb-1 text-2xl font-bold text-foreground'>
+                {value.toFixed(2)}
+              </motion.div>
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
-                className='flex gap-2 items-center'
-              >
-                <div className="text-muted-foreground text-sm font-medium">
-                  {t('Limit')}: {maxValue}
+                className='flex gap-2 items-center'>
+                <div
+                  className={`flex items-center ${
+                    isNormal ? 'text-emerald-500' : 'text-red-500'
+                  }`}>
+                  {isNormal ? (
+                    <CheckIcon className='mr-1 w-4 h-4' />
+                  ) : (
+                    <AlertTriangleIcon className='mr-1 w-4 h-4' />
+                  )}
+                  <span className='text-xs'>
+                    {isNormal ? t('normal') : t('alert')}
+                  </span>
                 </div>
-            </motion.div>
+                <span className='text-xs text-muted-foreground'>
+                  / {maxValue}
+                </span>
+              </motion.div>
             </motion.div>
           );
         })}
@@ -418,7 +434,7 @@ const Composer: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   
   const [inputValue, setInputValue] = useState(composerRuntime.getState().text);
-  const isRecordingActiveRef = useRef(false);
+  const isRecordingActiveRef = useRef(false)
 
   useEffect(() => {
     const unsubscribe = composerRuntime.subscribe(() => {
@@ -623,109 +639,26 @@ const CircleStopIcon = () => {
   );
 };
 
-const UserMessage: React.FC = () => {
-  const message = useMessageRuntime().getState().content[0] as { text: string };
-  const [translatedText, setTranslatedText] = useState<string | null>(null);
+const UserMessage: FC = () => {
   return (
-    <MessagePrimitive.Root className="flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2">
-        <div className="flex gap-3 items-center">
-          <Avatar className="mt-1 w-8 h-8 rounded-full border border-border">
+    <MessagePrimitive.Root className='flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2'>
+      <div className='flex gap-3 items-center'>
+        <Avatar className='mt-1 w-8 h-8 rounded-full border border-border'>
           <AvatarImage src={user.avatar} alt={user.name} />
-          <AvatarFallback className="rounded-full bg-secondary text-secondary-foreground">
+          <AvatarFallback className='rounded-full bg-secondary text-secondary-foreground'>
             {user.name.substring(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div className="font-medium break-words textbase">
+        <div className='font-medium break-words textbase'>
           <MessagePrimitive.Content />
-          <div
-               className="mt-2 text-sm text-muted-foreground"
-               style={{ whiteSpace: "pre-wrap" }}
-             >
-               {translatedText}
-             </div>
         </div>
         <UserActionBar />
       </div>
 
-      <div className="flex items-center pl-11">
-           <BranchPicker className="ml-auto" />
-         </div>
- 
-         <div className="pl-11">
-           {message != undefined && (
-             <TranslateButton
-               message={{ content: message.text }}
-               onTranslation={(text: string) => setTranslatedText(text)}
-             />)}
+      <div className='flex items-center pl-11'>
+        <BranchPicker className='ml-auto' />
       </div>
     </MessagePrimitive.Root>
-  );
-};
-
-interface TranslateButtonProps {
-  message: { content: string };
-  onTranslation: (translation: string) => void;
-}
-
-const TranslateButton: React.FC<TranslateButtonProps> = ({ message, onTranslation }) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [hasTranslated, setHasTranslated] = useState<boolean>(false);
-
-  const handleTranslate = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${backendUrl}/api/translate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: message.content }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const text = await response.json()
-      onTranslation(text);
-      setHasTranslated(true);
-    } catch (error) {
-      console.error('Translation failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (hasTranslated) return null;
-
-  return (
-    <div className="flex items-center">
-      <button
-        onClick={handleTranslate}
-        className="text-sm text-primary hover:underline"
-        disabled={isLoading}
-      >
-        Translate
-      </button>
-      {isLoading && (
-        <span className="ml-2">
-          <LoaderCircle className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            ></path>
-          </LoaderCircle>
-        </span>
-      )}
-    </div>
   );
 };
 
@@ -768,59 +701,31 @@ const EditComposer: FC = () => {
   );
 };
 
-const AssistantMessage: React.FC = () => {
-  const message = useMessage();
-  const [translatedText, setTranslatedText] = useState<string | null>(null);
-
-  const getMessageText = () => {
-    if (!message || !message.content || !Array.isArray(message.content) || message.content.length === 0) {
-      return '';
-    }
-    const firstContent = message.content[0];
-    return 'text' in firstContent ? firstContent.text : '';
-  };
-
+const AssistantMessage: FC = () => {
   return (
-    <MessagePrimitive.Root className="flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2">
-         <div className="flex gap-3 items-start">
-           <Avatar className="mt-1 w-8 h-8 rounded-full border bg-primary/10 border-border">
-             <AvatarImage alt="Assistant" />
-             <AvatarFallback className="rounded-full bg-primary text-accent-foreground">
-               <DropletIcon className="w-4 h-4" />
+    <MessagePrimitive.Root className='flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2'>
+      <div className='flex gap-3 items-start'>
+        <Avatar className='mt-1 w-8 h-8 rounded-full border bg-primary/10 border-border'>
+          <AvatarImage alt='Assistant' />
+          <AvatarFallback className='rounded-full bg-primary text-accent-foreground'>
+            <DropletIcon className='w-4 h-4' />
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1">
-             <div className="text-base leading-relaxed break-words">
+        <div className='flex-1'>
+          <div className='text-base leading-relaxed break-words'>
             <MessagePrimitive.Content
               components={{
                 Text: MarkdownText,
                 tools: { Fallback: ToolFallback },
               }}
             />
-            {translatedText && (
-                 <div
-                   className="mt-2 text-sm text-muted-foreground"
-                   style={{ whiteSpace: 'pre-wrap' }}
-                 >
-                   {translatedText}
-                 </div>
-               )}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center pl-11">
+      <div className='flex items-center pl-11'>
         <AssistantActionBar />
-        <BranchPicker className="ml-auto" />
-         </div>
-   
-         <div className="pl-11">
-           {message && message.status && message.status.type === 'complete' && (
-             <TranslateButton
-               message={{ content: getMessageText() }} // Pass extracted text as string
-               onTranslation={(text: string) => setTranslatedText(text)}
-             />
-           )}
+        <BranchPicker className='ml-auto' />
       </div>
     </MessagePrimitive.Root>
   );
@@ -885,94 +790,96 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   );
 };
 
-  // // Add source attribution links at the bottom of assistant messages
-  // const SourceAttribution: FC = () => {
-  //   return (
-  //     <div className='pt-3 mt-4 border-t border-slate-100'>
-  //       <h4 className='mb-2 text-xs font-medium text-slate-500'>Sources</h4>
-  //       <div className='flex flex-wrap gap-2'>
-  //         {[1, 2, 3].map((i) => (
-  //           <a
-  //             key={i}
-  //             href='#'
-  //             className='inline-flex gap-1 items-center px-2 py-1 text-xs rounded-md border bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'>
-  //             <span>Source {i}</span>
-  //             <ExternalLinkIcon className='w-3 h-3' />
-  //           </a>
-  //         ))}
-  //       </div>
-  //     </div>
-  //   );
-  // };
+// // Add source attribution links at the bottom of assistant messages
+// const SourceAttribution: FC = () => {
+//   return (
+//     <div className='pt-3 mt-4 border-t border-slate-100'>
+//       <h4 className='mb-2 text-xs font-medium text-slate-500'>Sources</h4>
+//       <div className='flex flex-wrap gap-2'>
+//         {[1, 2, 3].map((i) => (
+//           <a
+//             key={i}
+//             href='#'
+//             className='inline-flex gap-1 items-center px-2 py-1 text-xs rounded-md border bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'>
+//             <span>Source {i}</span>
+//             <ExternalLinkIcon className='w-3 h-3' />
+//           </a>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };
 
-  // // Add a citation component for displaying references
-  // const Citation: FC<{ number: number }> = ({ number }) => {
-  //   return (
-  //     <sup className='text-xs font-medium text-blue-600 cursor-pointer'>
-  //       [{number}]
-  //     </sup>
-  //   );
-  // };
+// // Add a citation component for displaying references
+// const Citation: FC<{ number: number }> = ({ number }) => {
+//   return (
+//     <sup className='text-xs font-medium text-blue-600 cursor-pointer'>
+//       [{number}]
+//     </sup>
+//   );
+// };
 
-  // // Add a feedback dialog component
-  // const FeedbackDialog: FC = () => {
-  //   return (
-  //     <div className='flex fixed inset-0 z-50 justify-center items-center bg-black/50'>
-  //       <div className='p-6 w-full max-w-md bg-white rounded-xl shadow-lg'>
-  //         <h3 className='mb-4 text-lg font-bold'>Share your feedback</h3>
-  //         <p className='mb-4 text-slate-500'>
-  //           How was your experience with this response?
-  //         </p>
-  //         <textarea
-  //           className='w-full border border-slate-200 rounded-lg p-3 mb-4 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500'
-  //           placeholder='Tell us what you liked or how we can improve...'
-  //         />
-  //         <div className='flex gap-2 justify-end'>
-  //           <Button variant='ghost'>Cancel</Button>
-  //           <Button className='text-white bg-blue-600 hover:bg-blue-700'>
-  //             Submit
-  //           </Button>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // };
+// // Add a feedback dialog component
+// const FeedbackDialog: FC = () => {
+//   return (
+//     <div className='flex fixed inset-0 z-50 justify-center items-center bg-black/50'>
+//       <div className='p-6 w-full max-w-md bg-white rounded-xl shadow-lg'>
+//         <h3 className='mb-4 text-lg font-bold'>Share your feedback</h3>
+//         <p className='mb-4 text-slate-500'>
+//           How was your experience with this response?
+//         </p>
+//         <textarea
+//           className='w-full border border-slate-200 rounded-lg p-3 mb-4 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500'
+//           placeholder='Tell us what you liked or how we can improve...'
+//         />
+//         <div className='flex gap-2 justify-end'>
+//           <Button variant='ghost'>Cancel</Button>
+//           <Button className='text-white bg-blue-600 hover:bg-blue-700'>
+//             Submit
+//           </Button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
-  // // Add a typing indicator for the assistant
-  // const TypingIndicator: FC = () => {
-  //   return (
-  //     <div className='flex gap-1 items-center py-1'>
-  //       <span
-  //         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
-  //         style={{ animationDelay: '0ms' }}></span>
-  //       <span
-  //         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
-  //         style={{ animationDelay: '150ms' }}></span>
-  //       <span
-  //         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
-  //         style={{ animationDelay: '300ms' }}></span>
-  //     </div>
-  //   );
-  // };
+// // Add a typing indicator for the assistant
+// const TypingIndicator: FC = () => {
+//   return (
+//     <div className='flex gap-1 items-center py-1'>
+//       <span
+//         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
+//         style={{ animationDelay: '0ms' }}></span>
+//       <span
+//         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
+//         style={{ animationDelay: '150ms' }}></span>
+//       <span
+//         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
+//         style={{ animationDelay: '300ms' }}></span>
+//     </div>
+//   );
+// };
 
-  // // Add a code block component with syntax highlighting
-  // const CodeBlock: FC<{ language: string; code: string }> = ({
-  //   language,
-  //   code,
-  // }) => {
-  //   return (
-  //     <div className='overflow-hidden relative my-4 rounded-lg'>
-  //       <div className='flex justify-between items-center px-4 py-2 text-xs bg-slate-800 text-slate-200'>
-  //         <span>{language}</span>
-  //         <TooltipIconButton
-  //           tooltip='Copy code'
-  //           className='text-slate-200 hover:text-white'>
-  //           <CopyIcon className='w-4 h-4' />
-  //         </TooltipIconButton>
-  //       </div>
-  //       <pre className='overflow-x-auto p-4 text-sm bg-slate-900 text-slate-50'>
-  //         <code>{code}</code>
-  //       </pre>
-  //     </div>
-  //   );
-  // };
+// // Add a code block component with syntax highlighting
+// const CodeBlock: FC<{ language: string; code: string }> = ({
+//   language,
+//   code,
+// }) => {
+//   return (
+//     <div className='overflow-hidden relative my-4 rounded-lg'>
+//       <div className='flex justify-between items-center px-4 py-2 text-xs bg-slate-800 text-slate-200'>
+//         <span>{language}</span>
+//         <TooltipIconButton
+//           tooltip='Copy code'
+//           className='text-slate-200 hover:text-white'>
+//           <CopyIcon className='w-4 h-4' />
+//         </TooltipIconButton>
+//       </div>
+//       <pre className='overflow-x-auto p-4 text-sm bg-slate-900 text-slate-50'>
+//         <code>{code}</code>
+//       </pre>
+//     </div>
+//   );
+// };
+
+// End of old working code
