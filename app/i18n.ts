@@ -15,7 +15,8 @@ i18n
       en: {
         translation: {
           "wastewaterAssistant": "Wastewater Assistant",
-          "askAnything": "Ask anything about water quality, treatment processes, or generate reports",
+          // "askAnything": "Ask anything about water quality, treatment processes, or generate reports",
+          "askAnything": "Welcome, Bishkek City Mayor: Mr. Aibek Dzhunushaliev!\nAsk anything about water quality, treatment processes, or generate reports.",
           "generalAssistanceTitle": "General Assistance",
           "generalAssistance": "How can I help with your wastewater operations today?",
           "waterQualityTitle": "Water Quality",
@@ -65,7 +66,8 @@ i18n
       ru: {
         translation: {
           wastewaterAssistant: "Ассистент по очистке сточных вод",
-          "askAnything": "Спросите что угодно о качестве воды, процессах очистки или создании отчетов",
+          // "askAnything": "Спросите что угодно о качестве воды, процессах очистки или создании отчетов",
+          "askAnything": "Добро пожаловать, мэр города Бишкек Айбек Джунушалиев!\nЗадавайте вопросы о качестве воды, процессах очистки или создании отчетов.",
           "generalAssistanceTitle": "общая помощь",
           "generalAssistance": "Как я могу помочь с вашими операциями по очистке сточных вод сегодня?",
           "waterQualityTitle": "качество воды",
@@ -115,7 +117,8 @@ i18n
       "vi": {
         "translation": {
           "wastewaterAssistant": "Trợ lý xử lý nước thải",
-          "askAnything": "Hãy hỏi bất cứ điều gì về chất lượng nước, quy trình xử lý hoặc tạo báo cáo",
+          // "askAnything": "Hãy hỏi bất cứ điều gì về chất lượng nước, quy trình xử lý hoặc tạo báo cáo",
+          "askAnything": "Chào mừng Ngài Aibek Dzhunushaliev, Thị trưởng Thành phố Bishkek!\nHãy hỏi bất kỳ điều gì về chất lượng nước, quy trình xử lý, hoặc tạo báo cáo.",
           "generalAssistanceTitle": "Trợ giúp chung",
           "generalAssistance": "Hôm nay tôi có thể giúp gì cho hoạt động xử lý nước thải của bạn?",
           "waterQualityTitle": "Chất lượng nước",

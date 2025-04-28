@@ -324,7 +324,7 @@ const ThreadWelcome: FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
               transition={{ duration: 0.5, delay: 0.6, ease: 'easeOut' }}
-              className='mb-10 max-w-md text-lg text-center text-muted-foreground'>
+              className='mb-10 max-w-2xl text-lg text-center text-muted-foreground whitespace-pre-line'>
               {t('askAnything')}
             </motion.p>
           </div>
