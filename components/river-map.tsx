@@ -1,173 +1,204 @@
 'use client'
 
-import { useState, useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
-const RiverMap = () => {
-  const [tooltip, setTooltip] = useState({
-    x: 0,
-    y: 0,
-    coordinates: { lat: 0, lng: 0 },
-    visible: false
-  });
+interface RiverMapProps {
+  width?: number;
+  height?: number;
+}
+
+interface Coordinate {
+  lat: number;
+  lng: number;
+}
+
+const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredCoordinate, setHoveredCoordinate] = useState<Coordinate | null>(null);
+
+  // Tọa độ gốc của con sông (điểm bắt đầu)
+  const riverStartCoordinate = { lat: 21.0285, lng: 105.8542 }; // Hà Nội
+  const riverLength = 8000; // 8000m
   
-  const containerRef = useRef(null);
-
-  // Tọa độ bắt đầu và kết thúc của con sông (mô phỏng)
-  const riverStartCoord = { lat: 21.075343712285203, lng: 105.81956315396978 }; // Hồ Tây, Hà Nội
-  const riverEndCoord = { lat: 21.147343712285203, lng: 105.89156315396978 }; // Điểm cuối cách khoảng 8km
-  
-  // Chiều dài thực của con sông (8000m)
-  const riverLengthMeters = 8000;
-
-  const handleMouseMove = (e) => {
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  // Tạo đường sông với các điểm uốn lượn tự nhiên
+  const generateRiverPath = () => {
+    const points: { x: number; y: number }[] = [];
+    const segments = 50; // Số đoạn để tạo độ cong
     
-    // Tính tỷ lệ vị trí trên canvas
-    const ratioX = x / rect.width;
-    const ratioY = y / rect.height;
+    for (let i = 0; i <= segments; i++) {
+      const progress = i / segments;
+      const x = (width * 0.1) + (width * 0.8 * progress); // Từ 10% đến 90% chiều rộng
+      
+      // Tạo độ cong tự nhiên của sông
+      const amplitude = height * 0.3; // Biên độ uốn lượn
+      const frequency = 3; // Tần số uốn lượn
+      const y = height / 2 + Math.sin(progress * Math.PI * frequency) * amplitude * Math.sin(progress * Math.PI);
+      
+      points.push({ x, y });
+    }
     
-    // Tính tọa độ dựa trên vị trí chuột
-    // Giả sử con sông chảy theo đường chéo từ góc trên trái đến góc dưới phải
-    const lat = riverStartCoord.lat + (riverEndCoord.lat - riverStartCoord.lat) * ratioY;
-    const lng = riverStartCoord.lng + (riverEndCoord.lng - riverStartCoord.lng) * ratioX;
-    
-    // Tính khoảng cách từ điểm bắt đầu (để hiển thị khoảng cách)
-    const distanceRatio = Math.sqrt(ratioX * ratioX + ratioY * ratioY);
-    const distanceMeters = Math.min(distanceRatio * riverLengthMeters, riverLengthMeters);
+    return points;
+  };
 
-    setTooltip({
-      x: e.clientX,
-      y: e.clientY,
-      coordinates: { 
-        lat: parseFloat(lat.toFixed(6)), 
-        lng: parseFloat(lng.toFixed(6)) 
-      },
-      visible: true
+  const riverPoints = generateRiverPath();
+
+  // Chuyển đổi pixel sang tọa độ địa lý
+  const pixelToCoordinate = (x: number, y: number): Coordinate => {
+    // Tính toán tỷ lệ dựa trên độ dài sông 8000m
+    const progressX = x / width;
+    const progressY = (height / 2 - y) / (height / 2); // Chuẩn hóa từ -1 đến 1
+    
+    // Tính tọa độ dựa trên vị trí trên sông
+    const deltaLng = (riverLength / 111320) * progressX; // 1 độ kinh độ ≈ 111320m tại vĩ độ Hà Nội
+    const deltaLat = (riverLength / 111320) * progressY * 0.3; // Biên độ nhỏ hơn cho vĩ độ
+    
+    return {
+      lat: riverStartCoordinate.lat + deltaLat,
+      lng: riverStartCoordinate.lng + deltaLng
+    };
+  };
+
+  // Kiểm tra xem điểm có nằm trên sông không
+  const isPointOnRiver = (x: number, y: number): boolean => {
+    const riverWidth = 20; // Độ rộng sông (pixel)
+    
+    // Tìm điểm gần nhất trên đường sông
+    let minDistance = Infinity;
+    for (const point of riverPoints) {
+      const distance = Math.sqrt(Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2));
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
+    }
+    
+    return minDistance <= riverWidth / 2;
+  };
+
+  const drawRiver = (ctx: CanvasRenderingContext2D) => {
+    // Vẽ background
+    ctx.fillStyle = '#e8f5e8';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Vẽ sông
+    ctx.beginPath();
+    ctx.strokeStyle = '#4a90e2';
+    ctx.lineWidth = 20;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    riverPoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+    
+    ctx.stroke();
+    
+    // Vẽ viền sông
+    ctx.beginPath();
+    ctx.strokeStyle = '#2171b5';
+    ctx.lineWidth = 2;
+    
+    riverPoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+    
+    ctx.stroke();
+    
+    // Vẽ một số đặc điểm địa lý
+    // Cây cối
+    ctx.fillStyle = '#228b22';
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      if (!isPointOnRiver(x, y)) {
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+    
+    // Thêm một số marker dọc theo sông
+    ctx.fillStyle = '#ff6b6b';
+    riverPoints.forEach((point, index) => {
+      if (index % 10 === 0) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     });
   };
 
-  const handleMouseLeave = () => {
-    setTooltip(prev => ({ ...prev, visible: false }));
+  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    setMousePosition({ x, y });
+    
+    if (isPointOnRiver(x, y)) {
+      const coordinate = pixelToCoordinate(x, y);
+      setHoveredCoordinate(coordinate);
+    } else {
+      setHoveredCoordinate(null);
+    }
   };
 
-  // Tạo đường cong mô phỏng con sông
-  const createRiverPath = () => {
-    const width = 800;
-    const height = 400;
-    const riverWidth = 60;
-    
-    // Tạo đường path SVG cho con sông uốn lượn
-    const path = `
-      M 50 ${height/2 - 30}
-      Q 200 ${height/2 - 80} 400 ${height/2}
-      Q 600 ${height/2 + 80} 750 ${height/2 - 20}
-    `;
-    
-    return (
-      <svg width="100%" height="400px" viewBox={`0 0 ${width} ${height}`} className="absolute inset-0">
-        {/* Nền sông (màu xanh đậm) */}
-        <path
-          d={path}
-          stroke="#1e40af"
-          strokeWidth={riverWidth}
-          fill="none"
-          strokeLinecap="round"
-        />
-        {/* Mặt nước sông (màu xanh nhạt hơn) */}
-        <path
-          d={path}
-          stroke="#3b82f6"
-          strokeWidth={riverWidth - 10}
-          fill="none"
-          strokeLinecap="round"
-        />
-        {/* Hiệu ứng ánh sáng trên mặt nước */}
-        <path
-          d={path}
-          stroke="#60a5fa"
-          strokeWidth={15}
-          fill="none"
-          strokeLinecap="round"
-          opacity="0.6"
-        />
-        
-        {/* Thêm một số chi tiết như đá, cây cối */}
-        <circle cx="150" cy="180" r="8" fill="#64748b" />
-        <circle cx="320" cy="220" r="6" fill="#64748b" />
-        <circle cx="550" cy="160" r="10" fill="#64748b" />
-        <circle cx="680" cy="210" r="7" fill="#64748b" />
-        
-        {/* Cây cối bên bờ */}
-        <circle cx="100" cy="120" r="12" fill="#22c55e" />
-        <circle cx="280" cy="280" r="15" fill="#22c55e" />
-        <circle cx="480" cy="100" r="18" fill="#22c55e" />
-        <circle cx="620" cy="300" r="14" fill="#22c55e" />
-        <circle cx="720" cy="140" r="16" fill="#22c55e" />
-      </svg>
-    );
+  const handleMouseLeave = () => {
+    setMousePosition(null);
+    setHoveredCoordinate(null);
   };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    drawRiver(ctx);
+  }, []);
 
   return (
-    <div className="relative w-full">
-      {/* Container chính của bản đồ sông */}
-      <div
-        ref={containerRef}
-        className="relative w-full h-96 bg-gradient-to-b from-green-100 to-green-200 rounded-lg overflow-hidden cursor-crosshair border-2 border-blue-200"
+    <div className="relative">
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="border border-gray-300 rounded-lg cursor-crosshair"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-      >
-        {/* Nền cảnh quan */}
-        <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-blue-50" />
-        
-        {/* Con sông */}
-        {createRiverPath()}
-        
-        {/* Lưới tọa độ mờ */}
-        <div className="absolute inset-0 opacity-10">
-          <svg width="100%" height="100%" className="w-full h-full">
-            <defs>
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#000" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-
-        {/* Thông tin chú thích */}
-        <div className="absolute top-4 left-4 bg-white/90 p-2 rounded-lg shadow-sm">
-          <div className="text-sm font-medium text-gray-700">Con sông mô phỏng</div>
-          <div className="text-xs text-gray-500">Chiều dài: ~8000m</div>
-          <div className="text-xs text-gray-500">Di chuyển chuột để xem tọa độ</div>
-        </div>
-      </div>
-
-      {/* Tooltip hiển thị tọa độ */}
-      {tooltip.visible && (
+      />
+      
+      {hoveredCoordinate && mousePosition && (
         <div
-          className="fixed bg-gray-800 text-white p-2 rounded-lg shadow-lg z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          className="absolute bg-black text-white px-3 py-2 rounded-lg shadow-lg text-sm pointer-events-none z-10"
           style={{
-            left: tooltip.x,
-            top: tooltip.y - 10,
+            left: mousePosition.x + 10,
+            top: mousePosition.y - 10,
           }}
         >
-          <div className="text-sm font-medium">Tọa độ</div>
-          <div className="text-xs">
-            Vĩ độ: {tooltip.coordinates.lat}°
-          </div>
-          <div className="text-xs">
-            Kinh độ: {tooltip.coordinates.lng}°
-          </div>
-          {/* Mũi tên chỉ xuống */}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2">
-            <div className="border-4 border-transparent border-t-gray-800"></div>
-          </div>
+          <div>Vĩ độ: {hoveredCoordinate.lat.toFixed(6)}°</div>
+          <div>Kinh độ: {hoveredCoordinate.lng.toFixed(6)}°</div>
         </div>
       )}
+      
+      <div className="mt-4 text-sm text-gray-600">
+        <p><strong>Thông tin con sông:</strong></p>
+        <p>• Độ dài: {riverLength.toLocaleString()}m</p>
+        <p>• Tọa độ bắt đầu: {riverStartCoordinate.lat}°, {riverStartCoordinate.lng}°</p>
+        <p>• Di chuyển chuột trên sông để xem tọa độ chi tiết</p>
+      </div>
     </div>
   );
 };

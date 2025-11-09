@@ -1,7 +1,7 @@
 "use client"
 
 import { NextPage } from 'next';
-import RiverMap from '@/components/river-map-simple';
+import MapComponent from '@/components/locationmap';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 
@@ -28,7 +28,7 @@ const LocationPage: NextPage = () => {
           </header>
 
           <div className="w-full max-w-4xl p-4 bg-white shadow rounded-lg">
-            <RiverMap />
+            <MapComponent />
           </div>
 
           <footer className="mt-8 text-center text-gray-600">

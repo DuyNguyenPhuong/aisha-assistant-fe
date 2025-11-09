@@ -150,8 +150,13 @@ const data = {
       icon: PieChart,
     },
     {
-      name: 'Travel',
-      url: '#',
+      name: 'Location Map',
+      url: '/location',
+      icon: Map,
+    },
+    {
+      name: 'River Map',
+      url: '/river-map',
       icon: Map,
     },
   ],
