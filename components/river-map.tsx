@@ -61,8 +61,7 @@ const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
 
   // Kiểm tra xem điểm có nằm trên sông không
   const isPointOnRiver = (x: number, y: number): boolean => {
-    const riverWidth = 20; // Độ rộng sông (pixel)
-    
+    const riverWidth = 48; // Độ rộng sông (pixel) - tăng lên để dễ hover
     // Tìm điểm gần nhất trên đường sông
     let minDistance = Infinity;
     for (const point of riverPoints) {
@@ -71,7 +70,6 @@ const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
         minDistance = distance;
       }
     }
-    
     return minDistance <= riverWidth / 2;
   };
 
@@ -79,14 +77,14 @@ const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
     // Vẽ background
     ctx.fillStyle = '#e8f5e8';
     ctx.fillRect(0, 0, width, height);
-    
+
     // Vẽ sông
     ctx.beginPath();
     ctx.strokeStyle = '#4a90e2';
-    ctx.lineWidth = 20;
+    ctx.lineWidth = 48; // tăng độ rộng sông để dễ hover
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
+
     riverPoints.forEach((point, index) => {
       if (index === 0) {
         ctx.moveTo(point.x, point.y);
@@ -94,14 +92,14 @@ const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
         ctx.lineTo(point.x, point.y);
       }
     });
-    
+
     ctx.stroke();
-    
+
     // Vẽ viền sông
     ctx.beginPath();
     ctx.strokeStyle = '#2171b5';
     ctx.lineWidth = 2;
-    
+
     riverPoints.forEach((point, index) => {
       if (index === 0) {
         ctx.moveTo(point.x, point.y);
@@ -109,9 +107,9 @@ const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
         ctx.lineTo(point.x, point.y);
       }
     });
-    
+
     ctx.stroke();
-    
+
     // Vẽ một số đặc điểm địa lý
     // Cây cối
     ctx.fillStyle = '#228b22';
@@ -124,7 +122,7 @@ const RiverMap: React.FC<RiverMapProps> = ({ width = 800, height = 400 }) => {
         ctx.fill();
       }
     }
-    
+
     // Thêm một số marker dọc theo sông
     ctx.fillStyle = '#ff6b6b';
     riverPoints.forEach((point, index) => {
