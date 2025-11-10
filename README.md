@@ -1,18 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏞️ Hệ thống Mô phỏng Chất lượng Nước Sông
 
-## Getting Started
+Ứng dụng mô phỏng chất lượng nước sông Cầu Bây với tích hợp thời tiết thực tế và bản đồ tương tác.
 
-First, run the development server:
+## ✨ Tính năng chính
+
+- **🌊 Mô phỏng chất lượng nước:** Tính toán 5 thông số chất lượng nước (BOD5, NH4+, NO3-)
+- **🌡️ Thời tiết thực tế:** Tự động cập nhật dữ liệu thời tiết mỗi 5 phút từ OpenWeather API
+- **🗺️ Bản đồ tương tác:** Leaflet/OpenStreetMap miễn phí với nhiều lớp bản đồ
+- **📊 Heatmap thời gian thực:** Visualize nồng độ chất ô nhiễm từ dữ liệu mô phỏng
+- **📈 Biểu đồ realtime:** Line chart với 6 điểm quan trắc
+- **🎨 Canvas visualization:** River map với heatmap tương tác
+
+## 🚀 Cài đặt và chạy
 
 ```bash
+# Clone project
+git clone <repository-url>
+cd aisha-assistant-fe
+
+# Cài đặt dependencies
+pnpm install
+
+# Tạo file environment (optional)
+cp .env.example .env.local
+# Chỉnh sửa API keys trong .env.local nếu cần
+
+# Chạy development server
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở [http://localhost:3000](http://localhost:3000) trong browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔧 Cấu hình API Keys (Tùy chọn)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### OpenWeather API (Cho thời tiết realtime)
+1. Đăng ký miễn phí tại [OpenWeatherMap](https://openweathermap.org/api)
+2. Thêm vào `.env.local`:
+```env
+NEXT_PUBLIC_OPENWEATHER_API_KEY=your_api_key_here
+```
+
+## 🎯 Tính năng Heatmap
+
+- **Dữ liệu thực tế:** Heatmap hiển thị nồng độ từ mô phỏng khoa học, không phải dữ liệu mẫu
+- **Tương tác:** Chọn thông số BOD5/NH4/NO3 để thay đổi màu sắc heatmap
+- **Thời gian thực:** Tự động cập nhật theo thời tiết và thông số môi trường
 
 ## Learn More
 

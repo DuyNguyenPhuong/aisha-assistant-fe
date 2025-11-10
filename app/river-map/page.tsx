@@ -4,19 +4,16 @@ import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
 import RiverMap from '@/components/river-map';
 import LineChart from '@/components/water-quality-chart';
-import MapComponent from '@/components/locationmap';
 import LeafletMapComponent from '@/components/leaflet-map';
-import LeafletHeatmapDemo from '@/components/leaflet-heatmap-demo';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useTranslation } from 'react-i18next';
-import { RIVER_POSITIONS, WaterQualityData, calculateConcentration } from '@/lib/water-quality-calculations';
+
+import { RIVER_POSITIONS, RIVER_LENGTH, WaterQualityData, calculateConcentration } from '@/lib/water-quality-calculations';
 import { useWeatherData } from '@/lib/weather-service';
 
 const RiverMapPage: NextPage = () => {
-  const { t } = useTranslation();
   
   // State management
   const [rainfall, setRainfall] = useState(0);
@@ -27,7 +24,7 @@ const RiverMapPage: NextPage = () => {
   const [realtimeMode, setRealtimeMode] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
-  const [mapType, setMapType] = useState<'leaflet' | 'google'>('leaflet');
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   // Weather data hook - always set up, but only auto-refresh when realtimeMode is on
   // 5 minutes = 300000ms
@@ -176,6 +173,65 @@ const RiverMapPage: NextPage = () => {
       setSelectedPositionData(newData);
     }
   }, [rainfall, temperature, selectedPosition, realtimeMode, samplingStep]);
+
+  // Force re-render of heatmap when parameters change
+  const heatmapKey = `${selectedParameter}-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${showHeatmap}`;
+
+  // Generate heatmap data
+  const getHeatmapData = () => {
+    if (!showHeatmap) return [];
+    
+    const currentWeather = getCurrentWeatherValues();
+    const heatmapPoints: Array<{ lat: number; lng: number; intensity: number }> = [];
+    
+    // Tạo nhiều điểm dọc theo sông để hiển thị gradient nồng độ
+    for (let i = 0; i <= 50; i++) {
+      const progress = i / 50;
+      const positionMeters = progress * RIVER_LENGTH;
+      
+      // Tính tọa độ dọc theo sông (từ tây bắc xuống đông nam)
+      const startLat = 21.032323;
+      const startLng = 105.919651;
+      const endLat = 20.998456;
+      const endLng = 105.952567;
+      
+      const lat = startLat + (endLat - startLat) * progress;
+      const lng = startLng + (endLng - startLng) * progress;
+      
+      // Tính nồng độ tại vị trí này
+      const waterQuality = calculateConcentration(positionMeters, currentWeather.rainfall, currentWeather.temperature);
+      
+      // Lấy giá trị theo parameter được chọn
+      let value = 0;
+      let maxValue = 50; // Giá trị max cho normalize
+      
+      if (selectedParameter === 'BOD5') {
+        value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
+        maxValue = 50;
+      } else if (selectedParameter === 'NH4') {
+        value = (waterQuality.NH4_sample0 + waterQuality.NH4_sample1) / 2;
+        maxValue = 25;
+      } else if (selectedParameter === 'NO3') {
+        value = waterQuality.NO3_sample1;
+        maxValue = 30;
+      } else {
+        // Mặc định là BOD5
+        value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
+        maxValue = 50;
+      }
+      
+      // Normalize intensity (0-1)
+      const intensity = Math.min(value / maxValue, 1.0);
+      
+      heatmapPoints.push({
+        lat,
+        lng,
+        intensity
+      });
+    }
+    
+    return heatmapPoints;
+  };
 
   // Export function (placeholder)
   const handleExport = () => {
@@ -556,79 +612,55 @@ const RiverMapPage: NextPage = () => {
 
             {/* Map of Cau Bay River */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Bản đồ sông Cầu Bây</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Bản đồ thực tế của điểm bắt đầu sông Cầu Bây tại tọa độ 21.032323, 105.919651
-              </p>
-              
-              {/* Tabs để chuyển đổi giữa Google Maps và Leaflet */}
-              <div className="mb-4">
-                <div className="flex gap-2 mb-3">
-                  <button 
-                    onClick={() => setMapType('leaflet')}
-                    className={`px-3 py-1 text-xs rounded transition-colors ${
-                      mapType === 'leaflet' 
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🗺️ OpenStreetMap (Miễn phí, khuyên dùng)
-                  </button>
-                  <button 
-                    onClick={() => setMapType('google')}
-                    className={`px-3 py-1 text-xs rounded transition-colors ${
-                      mapType === 'google'
-                        ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🌍 Google Maps (Cần API key)
-                  </button>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Bản đồ sông Cầu Bây</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Điểm bắt đầu sông tại tọa độ 21.032323, 105.919651
+                  </p>
                 </div>
-                
-                {mapType === 'leaflet' && (
-                  <div className="text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200">
-                    ✅ <strong>Khuyên dùng:</strong> Bản đồ miễn phí, không cần API key, có nhiều lớp bản đồ (đường phố, vệ tinh, địa hình)
-                  </div>
-                )}
-                
-                {mapType === 'google' && (
-                  <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
-                    ⚠️ <strong>Lưu ý:</strong> Cần Google Maps API key và billing để tránh watermark "For development purposes only"
-                  </div>
-                )}
+                <button
+                  onClick={() => setShowHeatmap(!showHeatmap)}
+                  className={`px-4 py-2 text-sm rounded transition-colors ${
+                    showHeatmap
+                      ? 'bg-red-100 text-red-700 border border-red-300'
+                      : 'bg-blue-100 text-blue-700 border border-blue-300'
+                  }`}
+                >
+                  {showHeatmap ? '� Tắt Heatmap' : '📊 Bật Heatmap'}
+                </button>
               </div>
+              
+              {showHeatmap && (
+                <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded border border-blue-200 mb-4">
+                  <div className="font-semibold mb-2">📊 Heatmap hiển thị nồng độ chất ô nhiễm thực tế từ mô phỏng:</div>
+                  <div className="space-y-1">
+                    <div>• <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>Nồng độ thấp (an toàn) - {selectedParameter || 'BOD5'} &lt; 30% max</div>
+                    <div>• <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>Nồng độ trung bình - 30-70% max</div>
+                    <div>• <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>Nồng độ cao (nguy hiểm) - &gt; 70% max</div>
+                  </div>
+                  <div className="mt-2 text-gray-600">
+                    <strong>Thông số hiện tại:</strong> {selectedParameter || 'BOD5'} | 
+                    <strong>Mưa:</strong> {getCurrentWeatherValues().rainfall}mm/hr | 
+                    <strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature}°C
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    💡 <em>Chọn thông số heatmap ở panel "Heatmap" bên trên để thay đổi màu sắc hiển thị</em>
+                  </div>
+                </div>
+              )}
 
-              {/* Hiển thị map theo loại được chọn */}
-              <div className="mb-6">
-                {mapType === 'leaflet' ? (
-                  <LeafletMapComponent 
-                    lat={21.032323}
-                    lng={105.919651}
-                    zoom={14}
-                    height="500px"
-                    title="Sông Cầu Bây - Điểm bắt đầu"
-                  />
-                ) : (
-                  <MapComponent 
-                    lat={21.032323}
-                    lng={105.919651}
-                    zoom={14}
-                    height="500px"
-                    show3D={false}
-                    showRiverPoints={true}
-                    title="Sông Cầu Bây - Google Maps"
-                  />
-                )}
-              </div>
+              <LeafletMapComponent 
+                key={heatmapKey}
+                lat={21.032323}
+                lng={105.919651}
+                zoom={14}
+                height="500px"
+                title="Sông Cầu Bây"
+                showHeatmap={showHeatmap}
+                heatmapData={getHeatmapData()}
+              />
             </div>
-
-            {/* Heatmap Demo (chỉ hiển thị với Leaflet) */}
-            {mapType === 'leaflet' && (
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <LeafletHeatmapDemo />
-              </div>
-            )}
 
             {/* Line Chart */}
             {showChart && (
