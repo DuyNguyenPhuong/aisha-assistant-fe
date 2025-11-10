@@ -78,46 +78,33 @@ const MapComponent: React.FC<MapComponentProps> = ({
           {/* Marker chính */}
           <Marker position={center} />
           
-          {/* Hiển thị các điểm sông Cầu Bây nếu được yêu cầu */}
+          {/* Hiển thị điểm bắt đầu sông Cầu Bây nếu được yêu cầu */}
           {showRiverPoints && (
             <>
-              {/* Đường polyline cho sông */}
-              <Polyline
-                path={riverPoints}
-                options={{
-                  geodesic: true,
-                  strokeColor: '#2196F3',
-                  strokeOpacity: 1.0,
-                  strokeWeight: 4,
-                }}
+              {/* Chỉ hiển thị điểm bắt đầu sông */}
+              <Marker
+                position={{ lat: riverPoints[0].lat, lng: riverPoints[0].lng }}
+                title={`Điểm bắt đầu sông - ${riverPoints[0].name}`}
+                onClick={() => setSelectedMarker(0)}
               />
               
-              {/* Markers cho từng điểm */}
-              {riverPoints.map((point, index) => (
-                <Marker
-                  key={index}
-                  position={{ lat: point.lat, lng: point.lng }}
-                  title={`${point.name} (${point.position}m)`}
-                  onClick={() => setSelectedMarker(index)}
-                />
-              ))}
-              
-              {/* InfoWindow cho marker được chọn */}
-              {selectedMarker !== null && (
+              {/* InfoWindow cho điểm bắt đầu */}
+              {selectedMarker === 0 && (
                 <InfoWindow
                   position={{
-                    lat: riverPoints[selectedMarker].lat,
-                    lng: riverPoints[selectedMarker].lng
+                    lat: riverPoints[0].lat,
+                    lng: riverPoints[0].lng
                   }}
                   onCloseClick={() => setSelectedMarker(null)}
                 >
                   <div style={{ padding: '8px' }}>
                     <h4 style={{ margin: '0 0 8px 0', color: '#2196F3' }}>
-                      {riverPoints[selectedMarker].name}
+                      🏞️ Điểm bắt đầu sông Cầu Bây
                     </h4>
                     <p style={{ margin: '0', fontSize: '12px' }}>
-                      <strong>Vị trí:</strong> {riverPoints[selectedMarker].position}m<br/>
-                      <strong>Tọa độ:</strong> {riverPoints[selectedMarker].lat.toFixed(6)}, {riverPoints[selectedMarker].lng.toFixed(6)}
+                      <strong>Vị trí:</strong> {riverPoints[0].name}<br/>
+                      <strong>Tọa độ:</strong> {riverPoints[0].lat}, {riverPoints[0].lng}<br/>
+                      <strong>Độ dài sông:</strong> 8,013m
                     </p>
                   </div>
                 </InfoWindow>

@@ -5,6 +5,8 @@ import { NextPage } from 'next';
 import RiverMap from '@/components/river-map';
 import LineChart from '@/components/water-quality-chart';
 import MapComponent from '@/components/locationmap';
+import LeafletMapComponent from '@/components/leaflet-map';
+import LeafletHeatmapDemo from '@/components/leaflet-heatmap-demo';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -25,6 +27,7 @@ const RiverMapPage: NextPage = () => {
   const [realtimeMode, setRealtimeMode] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
+  const [mapType, setMapType] = useState<'leaflet' | 'google'>('leaflet');
 
   // Weather data hook - always set up, but only auto-refresh when realtimeMode is on
   // 5 minutes = 300000ms
@@ -551,22 +554,81 @@ const RiverMapPage: NextPage = () => {
               </div>
             </div>
 
-            {/* 3D Map of Cau Bay River */}
+            {/* Map of Cau Bay River */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Bản đồ 3D sông Cầu Bây</h2>
+              <h2 className="text-xl font-semibold mb-4">Bản đồ sông Cầu Bây</h2>
               <p className="text-sm text-gray-600 mb-4">
-                Bản đồ vệ tinh 3D thực tế của sông Cầu Bây với 6 điểm quan trắc được đánh dấu
+                Bản đồ thực tế của điểm bắt đầu sông Cầu Bây tại tọa độ 21.032323, 105.919651
               </p>
-              <MapComponent 
-                lat={21.032323}
-                lng={105.919651}
-                zoom={14}
-                height="500px"
-                show3D={true}
-                showRiverPoints={true}
-                title="Sông Cầu Bây - Bản đồ 3D"
-              />
+              
+              {/* Tabs để chuyển đổi giữa Google Maps và Leaflet */}
+              <div className="mb-4">
+                <div className="flex gap-2 mb-3">
+                  <button 
+                    onClick={() => setMapType('leaflet')}
+                    className={`px-3 py-1 text-xs rounded transition-colors ${
+                      mapType === 'leaflet' 
+                        ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    🗺️ OpenStreetMap (Miễn phí, khuyên dùng)
+                  </button>
+                  <button 
+                    onClick={() => setMapType('google')}
+                    className={`px-3 py-1 text-xs rounded transition-colors ${
+                      mapType === 'google'
+                        ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    🌍 Google Maps (Cần API key)
+                  </button>
+                </div>
+                
+                {mapType === 'leaflet' && (
+                  <div className="text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200">
+                    ✅ <strong>Khuyên dùng:</strong> Bản đồ miễn phí, không cần API key, có nhiều lớp bản đồ (đường phố, vệ tinh, địa hình)
+                  </div>
+                )}
+                
+                {mapType === 'google' && (
+                  <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                    ⚠️ <strong>Lưu ý:</strong> Cần Google Maps API key và billing để tránh watermark "For development purposes only"
+                  </div>
+                )}
+              </div>
+
+              {/* Hiển thị map theo loại được chọn */}
+              <div className="mb-6">
+                {mapType === 'leaflet' ? (
+                  <LeafletMapComponent 
+                    lat={21.032323}
+                    lng={105.919651}
+                    zoom={14}
+                    height="500px"
+                    title="Sông Cầu Bây - Điểm bắt đầu"
+                  />
+                ) : (
+                  <MapComponent 
+                    lat={21.032323}
+                    lng={105.919651}
+                    zoom={14}
+                    height="500px"
+                    show3D={false}
+                    showRiverPoints={true}
+                    title="Sông Cầu Bây - Google Maps"
+                  />
+                )}
+              </div>
             </div>
+
+            {/* Heatmap Demo (chỉ hiển thị với Leaflet) */}
+            {mapType === 'leaflet' && (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <LeafletHeatmapDemo />
+              </div>
+            )}
 
             {/* Line Chart */}
             {showChart && (
