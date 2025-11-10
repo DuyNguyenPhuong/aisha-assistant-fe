@@ -435,7 +435,7 @@ const RiverMapPage: NextPage = () => {
             {/* River Map */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               {/* Weather Status Bar - Chi tiết */}
-              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200" style={{background: 'linear-gradient(to right, rgb(239 246 255), rgb(240 253 244)'}}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 text-sm">
                   {/* Hàng 1: Thông tin cơ bản */}
                   <div className="flex items-center gap-2">

@@ -369,4 +369,6 @@ const LineChart: React.FC<LineChartProps> = ({
       </div>
     </div>
   );
-}
+};
+
+export default LineChart;
