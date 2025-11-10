@@ -25,11 +25,24 @@ const RiverMapPage: NextPage = () => {
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
 
-  // Weather data hook - only active when realtime mode is on
-  const { weatherData, isLoading: weatherLoading, error: weatherError } = useWeatherData(
+  // Weather data hook - always set up, but only auto-refresh when realtimeMode is on
+  // 5 minutes = 300000ms
+  const WEATHER_UPDATE_INTERVAL = 300000;
+  const { weatherData, isLoading: weatherLoading, error: weatherError, refetch: refetchWeather } = useWeatherData(
     realtimeMode, // autoRefresh only when realtime is enabled
-    300000 // 5 minutes interval
+    WEATHER_UPDATE_INTERVAL
   );
+
+  // Ensure weather is refetched every 5 minutes in realtime mode
+  useEffect(() => {
+    if (!realtimeMode) return;
+    // Refetch immediately on enable
+    refetchWeather();
+    const timer = setInterval(() => {
+      refetchWeather();
+    }, WEATHER_UPDATE_INTERVAL);
+    return () => clearInterval(timer);
+  }, [realtimeMode, refetchWeather]);
   
   // Chart series control
   const [enabledSeries, setEnabledSeries] = useState({
@@ -58,6 +71,44 @@ const RiverMapPage: NextPage = () => {
       };
     }
     return { rainfall, temperature };
+  };
+
+  // Helper function to convert wind direction to compass direction
+  const getWindDirection = (degrees: number): string => {
+    const directions = ['Bắc', 'Đông Bắc', 'Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc'];
+    const index = Math.round(degrees / 45) % 8;
+    return directions[index];
+  };
+
+  // Helper function to get pressure status
+  const getPressureStatus = (pressure: number): string => {
+    if (pressure < 1000) return '(Thấp)';
+    if (pressure > 1020) return '(Cao)';
+    return '(Bình thường)';
+  };
+
+  // Helper function to get air quality assessment
+  const getAirQualityAssessment = (weatherData: any): { level: string; color: string; emoji: string } => {
+    const { humidity, visibility, windSpeed, cloudiness } = weatherData;
+    let score = 0;
+    
+    // Tốt: visibility cao, gió vừa phải, độ ẩm vừa, ít mây
+    if (visibility >= 10000) score += 2;
+    else if (visibility >= 5000) score += 1;
+    
+    if (windSpeed >= 1 && windSpeed <= 5) score += 2;
+    else if (windSpeed > 5) score += 1;
+    
+    if (humidity >= 40 && humidity <= 70) score += 2;
+    else if (humidity < 80) score += 1;
+    
+    if (cloudiness <= 30) score += 2;
+    else if (cloudiness <= 60) score += 1;
+    
+    if (score >= 7) return { level: 'Rất tốt', color: 'text-green-600', emoji: '🌟' };
+    if (score >= 5) return { level: 'Tốt', color: 'text-blue-600', emoji: '😊' };
+    if (score >= 3) return { level: 'Khá', color: 'text-yellow-600', emoji: '😐' };
+    return { level: 'Kém', color: 'text-red-600', emoji: '😷' };
   };
 
   // Handle manual position input
@@ -114,13 +165,13 @@ const RiverMapPage: NextPage = () => {
     }
   }, [weatherData, realtimeMode, selectedPosition]);
 
-  // Update selected position data when weather parameters change (manual mode)
+  // Update selected position data when weather parameters or samplingStep change (manual mode)
   useEffect(() => {
     if (!realtimeMode && selectedPosition !== null) {
       const newData = calculateConcentration(selectedPosition, rainfall, temperature);
       setSelectedPositionData(newData);
     }
-  }, [rainfall, temperature, selectedPosition, realtimeMode]);
+  }, [rainfall, temperature, selectedPosition, realtimeMode, samplingStep]);
 
   // Export function (placeholder)
   const handleExport = () => {
@@ -150,7 +201,7 @@ const RiverMapPage: NextPage = () => {
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               <h2 className="text-xl font-semibold mb-6">Bảng điều khiển</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* Weather Controls */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Thông số thời tiết</h3>
@@ -305,26 +356,153 @@ const RiverMapPage: NextPage = () => {
                     Export PDF
                   </Button>
                 </div>
+
+                {/* Weather Details Panel */}
+                {realtimeMode && weatherData && (
+                  <div className="space-y-4 bg-blue-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-gray-700">Chi tiết thời tiết</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>📍 Vị trí:</span>
+                        <span className="font-medium">{weatherData.location}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🌅 Bình minh:</span>
+                        <span className="font-medium">{new Date(weatherData.sunrise).toLocaleTimeString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🌇 Hoàng hôn:</span>
+                        <span className="font-medium">{new Date(weatherData.sunset).toLocaleTimeString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🌡️ Cảm giác:</span>
+                        <span className="font-medium">{weatherData.feelsLike.toFixed(1)}°C</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>💧 Độ ẩm:</span>
+                        <span className="font-medium">{weatherData.humidity}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>⚡ Áp suất:</span>
+                        <span className="font-medium">{weatherData.pressure} hPa {getPressureStatus(weatherData.pressure)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🌬️ Gió:</span>
+                        <span className="font-medium">{weatherData.windSpeed.toFixed(1)} m/s</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🧭 Hướng:</span>
+                        <span className="font-medium">{getWindDirection(weatherData.windDirection)} ({weatherData.windDirection}°)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>👁️ Tầm nhìn:</span>
+                        <span className="font-medium">{(weatherData.visibility / 1000).toFixed(1)} km</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>☁️ Mây che:</span>
+                        <span className="font-medium">{weatherData.cloudiness}%</span>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-blue-200">
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={`https://openweathermap.org/img/wn/${weatherData.icon}@2x.png`}
+                            alt={weatherData.description}
+                            className="w-8 h-8"
+                          />
+                          <span className="text-xs capitalize">{weatherData.description}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2">
+                          Cập nhật: {new Date(weatherData.timestamp).toLocaleString()}
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-blue-200">
+                          {(() => {
+                            const quality = getAirQualityAssessment(weatherData);
+                            return (
+                              <div className={`flex items-center gap-2 ${quality.color} font-medium`}>
+                                <span>{quality.emoji}</span>
+                                <span>Chất lượng không khí: {quality.level}</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* River Map */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              {/* Weather Status Bar */}
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg flex justify-between items-center text-sm">
-                <div className="flex gap-4">
-                  <span>🌧️ Mưa: {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
-                  <span>🌡️ Nhiệt độ: {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
+              {/* Weather Status Bar - Chi tiết */}
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 text-sm">
+                  {/* Hàng 1: Thông tin cơ bản */}
+                  <div className="flex items-center gap-2">
+                    <span>🌧️</span>
+                    <span><strong>Mưa:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🌡️</span>
+                    <span><strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
+                  </div>
                   {realtimeMode && weatherData && (
-                    <span className="text-green-600">
-                      🔄 {weatherData.location} - {new Date(weatherData.timestamp).toLocaleTimeString()}
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span>🌡️</span>
+                        <span><strong>Cảm giác:</strong> {weatherData.feelsLike.toFixed(1)}°C</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>💧</span>
+                        <span><strong>Độ ẩm:</strong> {weatherData.humidity}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>🌬️</span>
+                        <span><strong>Gió:</strong> {weatherData.windSpeed.toFixed(1)} m/s</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>🧭</span>
+                        <span><strong>Hướng gió:</strong> {getWindDirection(weatherData.windDirection)} ({weatherData.windDirection}°)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>🌫️</span>
+                        <span><strong>Tầm nhìn:</strong> {(weatherData.visibility / 1000).toFixed(1)} km</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>☁️</span>
+                        <span><strong>Mây che:</strong> {weatherData.cloudiness}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>⚡</span>
+                        <span><strong>Áp suất:</strong> {weatherData.pressure} hPa {getPressureStatus(weatherData.pressure)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`}
+                          alt={weatherData.description}
+                          className="w-6 h-6"
+                        />
+                        <span><strong>Mô tả:</strong> {weatherData.description}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                {/* Thông tin trạng thái */}
+                <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4 text-xs text-gray-600">
+                  {realtimeMode && weatherData && (
+                    <span className="text-green-600 font-medium">
+                      🔄 Realtime - {weatherData.location} - Cập nhật: {new Date(weatherData.timestamp).toLocaleTimeString()}
                     </span>
                   )}
                   {realtimeMode && weatherLoading && (
-                    <span className="text-blue-600">🔄 Đang tải dữ liệu thời tiết...</span>
+                    <span className="text-blue-600 font-medium animate-pulse">🔄 Đang tải dữ liệu thời tiết...</span>
                   )}
                   {weatherError && (
-                    <span className="text-red-600">⚠️ {weatherError}</span>
+                    <span className="text-red-600 font-medium">⚠️ Lỗi: {weatherError}</span>
+                  )}
+                  {!realtimeMode && (
+                    <span className="text-amber-600 font-medium">✏️ Chế độ thủ công - Dữ liệu nhập tay</span>
                   )}
                 </div>
               </div>

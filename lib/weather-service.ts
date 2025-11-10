@@ -6,6 +6,18 @@ export interface WeatherData {
   rainfall: number; // mm/hr
   location: string;
   timestamp: number;
+  // Thông tin chi tiết thêm
+  humidity: number; // %
+  pressure: number; // hPa
+  windSpeed: number; // m/s
+  windDirection: number; // độ
+  visibility: number; // m
+  cloudiness: number; // %
+  feelsLike: number; // °C
+  description: string; // mô tả thời tiết
+  icon: string; // icon code
+  sunrise: number; // timestamp
+  sunset: number; // timestamp
 }
 
 export class WeatherService {
@@ -46,7 +58,18 @@ export class WeatherService {
         temperature: data.main.temp,
         rainfall,
         location: data.name,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        humidity: data.main.humidity,
+        pressure: data.main.pressure,
+        windSpeed: data.wind?.speed || 0,
+        windDirection: data.wind?.deg || 0,
+        visibility: data.visibility || 10000,
+        cloudiness: data.clouds?.all || 0,
+        feelsLike: data.main.feels_like,
+        description: data.weather[0]?.description || 'clear sky',
+        icon: data.weather[0]?.icon || '01d',
+        sunrise: data.sys?.sunrise ? data.sys.sunrise * 1000 : Date.now(),
+        sunset: data.sys?.sunset ? data.sys.sunset * 1000 : Date.now()
       };
     } catch (error) {
       console.error('Failed to fetch weather data:', error);
@@ -56,7 +79,18 @@ export class WeatherService {
         temperature: 25,
         rainfall: 0,
         location: 'Hanoi (fallback)',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        humidity: 70,
+        pressure: 1013,
+        windSpeed: 2,
+        windDirection: 180,
+        visibility: 10000,
+        cloudiness: 50,
+        feelsLike: 26,
+        description: 'clear sky',
+        icon: '01d',
+        sunrise: Date.now() - 6 * 3600 * 1000, // 6 giờ trước
+        sunset: Date.now() + 12 * 3600 * 1000  // 12 giờ sau
       };
     }
   }
@@ -80,7 +114,18 @@ export class WeatherService {
         temperature: item.main.temp,
         rainfall: item.rain ? (item.rain['3h'] || 0) / 3 : 0,
         location: data.city.name,
-        timestamp: item.dt * 1000
+        timestamp: item.dt * 1000,
+        humidity: item.main.humidity,
+        pressure: item.main.pressure,
+        windSpeed: item.wind?.speed || 0,
+        windDirection: item.wind?.deg || 0,
+        visibility: item.visibility || 10000,
+        cloudiness: item.clouds?.all || 0,
+        feelsLike: item.main.feels_like,
+        description: item.weather[0]?.description || 'clear sky',
+        icon: item.weather[0]?.icon || '01d',
+        sunrise: data.city.sunrise ? data.city.sunrise * 1000 : Date.now(),
+        sunset: data.city.sunset ? data.city.sunset * 1000 : Date.now()
       }));
     } catch (error) {
       console.error('Failed to fetch forecast data:', error);

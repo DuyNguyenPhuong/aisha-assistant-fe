@@ -140,38 +140,43 @@ const RiverMap: React.FC<RiverMapProps> = ({
     ctx.stroke();
 
     // Vẽ các vị trí landmark
+    // Đặt marker và label theo tỷ lệ vị trí thực trên đường sông (theo chiều dài path)
     RIVER_POSITIONS.forEach((position, index) => {
-      const pixelX = meterToPixel(position.position, width);
-      const riverPoint = getRiverPointAtX(pixelX);
-      
+      // Tính progress dọc sông (0-1)
+      const progress = position.position / RIVER_LENGTH;
+      // Lấy điểm trên path tương ứng progress
+      const pathIdx = Math.round(progress * (riverPoints.length - 1));
+      const riverPoint = riverPoints[pathIdx];
       if (riverPoint) {
         // Vẽ marker cho landmark
         ctx.fillStyle = '#ff4444';
         ctx.beginPath();
         ctx.arc(riverPoint.x, riverPoint.y, 8, 0, 2 * Math.PI);
         ctx.fill();
-        
         // Vẽ border
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         ctx.stroke();
-        
         // Vẽ tên vị trí với offset để tránh chồng lấp
         ctx.fillStyle = '#333333';
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
-        
         // Điều chỉnh vị trí text để tránh chồng lấp
         let textY = riverPoint.y - 20;
         let textX = riverPoint.x;
-        
         // Đặc biệt điều chỉnh cho các vị trí gần nhau
         if (index === 0) { // Sài Đồng
           textY = riverPoint.y - 25;
           textX = riverPoint.x + 15;
-        } else if (index === 1) { // Đài Tư  
+        } else if (index === 1) { // Đài Tư
           textY = riverPoint.y + 35;
           textX = riverPoint.x - 15;
+        } else if (index === 2) { // An Lạc
+          textY = riverPoint.y - 30;
+          textX = riverPoint.x;
+        } else if (index === 3) { // Trâu Quỳ
+          textY = riverPoint.y + 30;
+          textX = riverPoint.x;
         } else if (index === 4) { // Đa Tốn
           textY = riverPoint.y - 25;
           textX = riverPoint.x - 20;
@@ -179,15 +184,12 @@ const RiverMap: React.FC<RiverMapProps> = ({
           textY = riverPoint.y + 35;
           textX = riverPoint.x + 20;
         }
-        
         // Vẽ background cho text
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.fillRect(textX - 30, textY - 12, 60, 16);
-        
         // Vẽ text
         ctx.fillStyle = '#333333';
         ctx.fillText(position.name, textX, textY);
-        
         // Vẽ đường nối từ marker tới text
         ctx.strokeStyle = '#666666';
         ctx.lineWidth = 1;
