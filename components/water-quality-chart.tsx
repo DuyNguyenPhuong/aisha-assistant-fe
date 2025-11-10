@@ -4,7 +4,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { 
   calculateConcentration, 
   RIVER_LENGTH,
-  WaterQualityData
+  WaterQualityData,
+  RIVER_POSITIONS
 } from '@/lib/water-quality-calculations';
 
 interface LineChartProps {
@@ -25,6 +26,7 @@ interface LineChartProps {
 interface ChartData {
   position: number;
   data: WaterQualityData;
+  name?: string; // Add name for river position
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -75,18 +77,18 @@ const LineChart: React.FC<LineChartProps> = ({
     NO3_sample1: 'NO3- mẫu 1'
   };
 
-  // Generate chart data
+  // Generate chart data - Use 6 river positions instead of sampling by meters
   useEffect(() => {
     const data: ChartData[] = [];
-    
-    for (let pos = 0; pos <= RIVER_LENGTH; pos += samplingStep) {
-      const waterQuality = calculateConcentration(pos, rainfall, temperature);
+    // Use the 6 predefined river positions
+    RIVER_POSITIONS.forEach(position => {
+      const waterQuality = calculateConcentration(position.position, rainfall, temperature);
       data.push({
-        position: pos,
-        data: waterQuality
+        position: position.position,
+        data: waterQuality,
+        name: position.name // Add name for X-axis labels
       });
-    }
-    
+    });
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
 
@@ -135,14 +137,14 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     
-    // Vertical grid lines (every 1000m)
-    for (let pos = 0; pos <= RIVER_LENGTH; pos += 1000) {
-      const x = padding + (pos / RIVER_LENGTH) * chartWidth;
+    // Vertical grid lines for each river position
+    chartData.forEach((point, index) => {
+      const x = padding + (index / (chartData.length - 1)) * chartWidth;
       ctx.beginPath();
       ctx.moveTo(x, padding);
       ctx.lineTo(x, cHeight - padding);
       ctx.stroke();
-    }
+    });
     
     // Horizontal grid lines
     const gridSteps = 5;
@@ -154,14 +156,21 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.stroke();
     }
 
-    // Draw X-axis labels
+    // Draw X-axis labels for river positions
     ctx.fillStyle = '#666';
-    ctx.font = '12px Arial';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'center';
-    for (let pos = 0; pos <= RIVER_LENGTH; pos += 1000) {
-      const x = padding + (pos / RIVER_LENGTH) * chartWidth;
-      ctx.fillText(pos.toString() + 'm', x, cHeight - padding + 20);
-    }
+    chartData.forEach((point, index) => {
+      const x = padding + (index / (chartData.length - 1)) * chartWidth;
+      // Draw position name
+      ctx.fillText(point.name || '', x, cHeight - padding + 15);
+      // Draw position distance
+      ctx.font = '9px Arial';
+      ctx.fillStyle = '#999';
+      ctx.fillText(`${point.position}m`, x, cHeight - padding + 28);
+      ctx.font = '11px Arial';
+      ctx.fillStyle = '#666';
+    });
 
     // Draw Y-axis labels (only values, no units)
     ctx.textAlign = 'right';
@@ -177,9 +186,7 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.fillStyle = '#333';
     ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
-  ctx.fillText('Vị trí dọc sông (m)', cWidth / 2, cHeight - 10);
-    
-    // Draw Y-axis title separately with better positioning
+    ctx.fillText('Các cổng trên sông Cầu Bây', cWidth / 2, cHeight - 5);    // Draw Y-axis title separately with better positioning
     ctx.save();
   ctx.translate(15, cHeight / 2);
     ctx.rotate(-Math.PI / 2);
@@ -193,11 +200,11 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.strokeStyle = seriesColors[seriesName as keyof typeof seriesColors];
       ctx.lineWidth = 2;
       ctx.beginPath();
-      chartData.forEach((point, index) => {
-        const x = padding + (point.position / RIVER_LENGTH) * chartWidth;
+      chartData.forEach((point, i) => {
+        const x = padding + (i / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
         const y = cHeight - padding - (value / yMax) * chartHeight;
-        if (index === 0) {
+        if (i === 0) {
           ctx.moveTo(x, y);
         } else {
           ctx.lineTo(x, y);
@@ -206,12 +213,12 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.stroke();
       // Draw points
       ctx.fillStyle = seriesColors[seriesName as keyof typeof seriesColors];
-      chartData.forEach(point => {
-        const x = padding + (point.position / RIVER_LENGTH) * chartWidth;
+      chartData.forEach((point, index) => {
+        const x = padding + (index / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
         const y = cHeight - padding - (value / yMax) * chartHeight;
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
         ctx.fill();
       });
     });
@@ -282,12 +289,10 @@ const LineChart: React.FC<LineChartProps> = ({
     const padding = 60;
     const chartWidth = canvasSize.width - 2 * padding;
     if (x >= padding && x <= canvasSize.width - padding && y >= padding && y <= canvasSize.height - padding) {
-      const position = ((x - padding) / chartWidth) * RIVER_LENGTH;
-      const closestPoint = chartData.reduce((closest, point) => {
-        const distance = Math.abs(point.position - position);
-        const closestDistance = Math.abs(closest.position - position);
-        return distance < closestDistance ? point : closest;
-      }, chartData[0]);
+      // Find closest river position point by X coordinate
+      const relativeX = (x - padding) / chartWidth;
+      const pointIndex = Math.round(relativeX * (chartData.length - 1));
+      const closestPoint = chartData[pointIndex];
       if (closestPoint) {
         setHoveredPoint({
           x,
@@ -362,10 +367,11 @@ const LineChart: React.FC<LineChartProps> = ({
       {/* Chart info */}
       <div className="mt-4 text-sm text-gray-600">
         <p><strong>Thông số biểu đồ:</strong></p>
-        <p>• Bước lấy mẫu: {samplingStep}m ({Math.ceil(RIVER_LENGTH / samplingStep)} điểm)</p>
+        <p>• Số điểm quan trắc: {chartData.length} cổng trên sông Cầu Bây</p>
         <p>• Lượng mưa: {rainfall} mm/hr</p>
         <p>• Nhiệt độ: {temperature}°C</p>
         <p>• Số series đang hiển thị: {Object.values(enabledSeries).filter(Boolean).length}</p>
+        <p>• Các cổng: {chartData.map(d => d.name).join(', ')}</p>
       </div>
     </div>
   );

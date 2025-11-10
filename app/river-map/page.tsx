@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
 import RiverMap from '@/components/river-map';
 import LineChart from '@/components/water-quality-chart';
+import CauBayRiver3DMap from '@/components/cau-bay-river-3d-map';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -432,6 +433,37 @@ const RiverMapPage: NextPage = () => {
               </div>
             </div>
 
+            {/* Selected Position Data */}
+            {selectedPosition !== null && selectedPositionData && (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  Nồng độ tại vị trí {selectedPosition.toFixed(0)}m
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div className="bg-red-50 p-3 rounded">
+                    <div className="font-medium text-red-800">BOD5 mẫu 0</div>
+                    <div className="text-red-600">{selectedPositionData.BOD5_sample0.toFixed(3)} mg/L</div>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded">
+                    <div className="font-medium text-red-800">BOD5 mẫu 1</div>
+                    <div className="text-red-600">{selectedPositionData.BOD5_sample1.toFixed(3)} mg/L</div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded">
+                    <div className="font-medium text-yellow-800">NH4+ mẫu 0</div>
+                    <div className="text-yellow-600">{selectedPositionData.NH4_sample0.toFixed(3)} mg/L</div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded">
+                    <div className="font-medium text-yellow-800">NH4+ mẫu 1</div>
+                    <div className="text-yellow-600">{selectedPositionData.NH4_sample1.toFixed(3)} mg/L</div>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded">
+                    <div className="font-medium text-blue-800">NO3- mẫu 1</div>
+                    <div className="text-blue-600">{selectedPositionData.NO3_sample1.toFixed(3)} mg/L</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* River Map */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               {/* Weather Status Bar - Chi tiết */}
@@ -519,36 +551,14 @@ const RiverMapPage: NextPage = () => {
               </div>
             </div>
 
-            {/* Selected Position Data */}
-            {selectedPosition !== null && selectedPositionData && (
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <h2 className="text-xl font-semibold mb-4">
-                  Nồng độ tại vị trí {selectedPosition.toFixed(0)}m
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                  <div className="bg-red-50 p-3 rounded">
-                    <div className="font-medium text-red-800">BOD5 mẫu 0</div>
-                    <div className="text-red-600">{selectedPositionData.BOD5_sample0.toFixed(3)} mg/L</div>
-                  </div>
-                  <div className="bg-red-50 p-3 rounded">
-                    <div className="font-medium text-red-800">BOD5 mẫu 1</div>
-                    <div className="text-red-600">{selectedPositionData.BOD5_sample1.toFixed(3)} mg/L</div>
-                  </div>
-                  <div className="bg-yellow-50 p-3 rounded">
-                    <div className="font-medium text-yellow-800">NH4+ mẫu 0</div>
-                    <div className="text-yellow-600">{selectedPositionData.NH4_sample0.toFixed(3)} mg/L</div>
-                  </div>
-                  <div className="bg-yellow-50 p-3 rounded">
-                    <div className="font-medium text-yellow-800">NH4+ mẫu 1</div>
-                    <div className="text-yellow-600">{selectedPositionData.NH4_sample1.toFixed(3)} mg/L</div>
-                  </div>
-                  <div className="bg-blue-50 p-3 rounded">
-                    <div className="font-medium text-blue-800">NO3- mẫu 1</div>
-                    <div className="text-blue-600">{selectedPositionData.NO3_sample1.toFixed(3)} mg/L</div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* 3D Map of Cau Bay River */}
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Bản đồ 3D sông Cầu Bây</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Bản đồ vệ tinh 3D thực tế của sông Cầu Bây với 6 điểm quan trắc được đánh dấu
+              </p>
+              <CauBayRiver3DMap height="500px" />
+            </div>
 
             {/* Line Chart */}
             {showChart && (

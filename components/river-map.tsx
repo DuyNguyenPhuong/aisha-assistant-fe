@@ -41,23 +41,28 @@ const RiverMap: React.FC<RiverMapProps> = ({
   const [hoveredWaterQuality, setHoveredWaterQuality] = useState<WaterQualityData | null>(null);
   const [hoveredPositionMeters, setHoveredPositionMeters] = useState<number | null>(null);
 
-  // Tọa độ gốc của con sông (điểm bắt đầu) 
-  const riverStartCoordinate = { lat: 21.012771, lng: 105.928065 }; // Vị trí giữa sông
+  // Tọa độ gốc của sông Cầu Bây (điểm bắt đầu thực tế)
+  const riverStartCoordinate = { lat: 21.032323, lng: 105.919651 }; // Tọa độ thực của sông Cầu Bây
   const riverLength = 8013; // 8013m
   
-  // Tạo đường sông với các điểm uốn lượn tự nhiên
-  const generateRiverPath = () => {
+  // Tạo đường sông Cầu Bây với hình dáng thực tế (uốn cong nhẹ về phía đông nam)
+  const generateCauBayRiverPath = () => {
     const points: { x: number; y: number }[] = [];
     const segments = 50; // Số đoạn để tạo độ cong
     
     for (let i = 0; i <= segments; i++) {
       const progress = i / segments;
-      const x = (width * 0.1) + (width * 0.8 * progress); // Từ 10% đến 90% chiều rộng
       
-      // Tạo độ cong tự nhiên của sông
-      const amplitude = height * 0.3; // Biên độ uốn lượn
-      const frequency = 3; // Tần số uốn lượn
-      const y = height / 2 + Math.sin(progress * Math.PI * frequency) * amplitude * Math.sin(progress * Math.PI);
+      // Sông Cầu Bây chảy theo hướng tây bắc - đông nam với độ cong tự nhiên
+      const baseX = (width * 0.05) + (width * 0.9 * progress); // Từ 5% đến 95% chiều rộng
+      const baseY = height * 0.3 + (height * 0.4 * progress); // Từ 30% xuống 70% chiều cao
+      
+      // Thêm độ cong đặc trượng của sông Cầu Bây (cong nhẹ về phía nam)
+      const curvature = Math.sin(progress * Math.PI * 2) * height * 0.15;
+      const meander = Math.sin(progress * Math.PI * 4) * height * 0.08; // Uốn khúc nhỏ
+      
+      const x = baseX + curvature * 0.3;
+      const y = baseY + curvature + meander;
       
       points.push({ x, y });
     }
@@ -65,7 +70,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     return points;
   };
 
-  const riverPoints = generateRiverPath();
+  const riverPoints = generateCauBayRiverPath();
 
   // Chuyển đổi pixel sang tọa độ địa lý
   const pixelToCoordinate = (x: number, y: number): Coordinate => {
@@ -402,7 +407,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
         <p>• Độ dài sông: {RIVER_LENGTH.toLocaleString()}m</p>
         <p>• Lượng mưa hiện tại: {rainfall} mm/hr</p>
         <p>• Nhiệt độ hiện tại: {temperature}°C</p>
-        <p>• Tọa độ bắt đầu: {riverStartCoordinate.lat}°, {riverStartCoordinate.lng}°</p>
+        <p>• Tọa độ bắt đầu sông Cầu Bây: {riverStartCoordinate.lat}°, {riverStartCoordinate.lng}°</p>
         <p>• Click trên sông để chọn vị trí, hover để xem nồng độ</p>
         {selectedParameter && (
           <p>• Heatmap hiện tại: <strong>{selectedParameter}</strong></p>
