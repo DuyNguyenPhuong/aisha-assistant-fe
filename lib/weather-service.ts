@@ -24,7 +24,7 @@ export class WeatherService {
       const response = await fetch(
         `${this.baseUrl}/weather?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=metric`
       );
-      
+      console.log(response)
       if (!response.ok) {
         throw new Error(`Weather API error: ${response.status}`);
       }

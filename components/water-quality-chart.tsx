@@ -146,13 +146,14 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.fillText(pos.toString() + 'm', x, height - padding + 20);
     }
 
-    // Draw Y-axis labels
+    // Draw Y-axis labels (only values, no units)
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
+    ctx.font = '11px Arial';
     for (let i = 0; i <= gridSteps; i++) {
       const value = yMax * (1 - i / gridSteps);
       const y = padding + (i / gridSteps) * chartHeight;
-      ctx.fillText(value.toFixed(1) + ' mg/L', padding - 10, y);
+      ctx.fillText(value.toFixed(1), padding - 5, y);
     }
 
     // Draw axis titles
@@ -161,9 +162,11 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.textAlign = 'center';
     ctx.fillText('Vị trí dọc sông (m)', width / 2, height - 10);
     
+    // Draw Y-axis title separately with better positioning
     ctx.save();
-    ctx.translate(20, height / 2);
+    ctx.translate(15, height / 2);
     ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
     ctx.fillText('Nồng độ (mg/L)', 0, 0);
     ctx.restore();
 
@@ -256,7 +259,7 @@ const LineChart: React.FC<LineChartProps> = ({
     if (!ctx) return;
 
     drawChart(ctx);
-  }, [chartData, enabledSeries, width, height]);
+  }, [chartData, enabledSeries, width, height, rainfall, temperature]);
 
   return (
     <div className="relative">

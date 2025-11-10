@@ -53,7 +53,14 @@ const RiverMapPage: NextPage = () => {
 
   // Handle preset position selection
   const handlePresetPosition = (position: number) => {
+    console.log('Preset position clicked:', position);
     setSelectedPosition(position);
+  };
+
+  // Handle heatmap parameter selection  
+  const handleHeatmapSelect = (param: 'BOD5' | 'NH4' | 'NO3') => {
+    console.log('Heatmap parameter clicked:', param);
+    setSelectedParameter(selectedParameter === param ? null : param);
   };
 
   // Toggle series
@@ -103,9 +110,9 @@ const RiverMapPage: NextPage = () => {
 
             {/* Controls Panel */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Bảng điều khiển</h2>
+              <h2 className="text-xl font-semibold mb-6">Bảng điều khiển</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {/* Weather Controls */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Thông số thời tiết</h3>
@@ -139,8 +146,9 @@ const RiverMapPage: NextPage = () => {
                     onClick={() => setRealtimeMode(!realtimeMode)}
                     variant={realtimeMode ? "destructive" : "default"}
                     className="w-full"
+                    type="button"
                   >
-                    {realtimeMode ? 'Tắt Realtime' : 'Bật Realtime'}
+                    {realtimeMode ? '🔴 Tắt Realtime' : '🟢 Bật Realtime'}
                   </Button>
                 </div>
 
@@ -160,23 +168,26 @@ const RiverMapPage: NextPage = () => {
                         min="0"
                         max="8013"
                       />
-                      <Button onClick={handleManualPositionSubmit}>Đi</Button>
+                      <Button onClick={handleManualPositionSubmit} type="button">Đi</Button>
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
                       Vị trí preset
                     </label>
-                    <div className="grid grid-cols-2 gap-1 text-xs">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
                       {RIVER_POSITIONS.map((pos, idx) => (
                         <Button
-                          key={idx}
-                          variant="outline"
+                          key={`preset-${idx}-${pos.position}`}
+                          variant={selectedPosition === pos.position ? "default" : "outline"}
                           size="sm"
                           onClick={() => handlePresetPosition(pos.position)}
-                          className="text-xs px-2 py-1"
+                          className="text-xs px-2 py-2 h-auto"
+                          type="button"
                         >
                           {pos.name}
+                          <br />
+                          <span className="text-[10px] opacity-70">{pos.position}m</span>
                         </Button>
                       ))}
                     </div>
@@ -186,18 +197,24 @@ const RiverMapPage: NextPage = () => {
                 {/* Heatmap Controls */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Heatmap</h3>
-                  <div className="space-y-2">
-                    {['BOD5', 'NH4', 'NO3'].map(param => (
+                  <div className="space-y-3">
+                    {(['BOD5', 'NH4', 'NO3'] as const).map(param => (
                       <Button
-                        key={param}
+                        key={`heatmap-${param}`}
                         variant={selectedParameter === param ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setSelectedParameter(
-                          selectedParameter === param ? null : param as 'BOD5' | 'NH4' | 'NO3'
-                        )}
-                        className="w-full"
+                        onClick={() => handleHeatmapSelect(param)}
+                        className="w-full h-auto py-3"
+                        type="button"
                       >
-                        {param}
+                        <div className="flex flex-col items-center">
+                          <span className="font-medium">{param}</span>
+                          <span className="text-xs opacity-70">
+                            {param === 'BOD5' ? 'Đỏ (0-50 mg/L)' : 
+                             param === 'NH4' ? 'Vàng (0-25 mg/L)' : 
+                             'Xanh (0-30 mg/L)'}
+                          </span>
+                        </div>
                       </Button>
                     ))}
                   </div>
@@ -205,6 +222,7 @@ const RiverMapPage: NextPage = () => {
                     variant="outline"
                     onClick={() => setSelectedParameter(null)}
                     className="w-full"
+                    type="button"
                   >
                     Tắt Heatmap
                   </Button>
@@ -217,8 +235,9 @@ const RiverMapPage: NextPage = () => {
                     onClick={() => setShowChart(!showChart)}
                     variant={showChart ? "default" : "outline"}
                     className="w-full"
+                    type="button"
                   >
-                    {showChart ? 'Ẩn biểu đồ' : 'Hiện biểu đồ'}
+                    {showChart ? '📈 Ẩn biểu đồ' : '📊 Hiện biểu đồ'}
                   </Button>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
@@ -244,14 +263,16 @@ const RiverMapPage: NextPage = () => {
 
             {/* River Map */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <RiverMap
-                width={1000}
-                height={500}
-                rainfall={rainfall}
-                temperature={temperature}
-                selectedParameter={selectedParameter}
-                onPositionSelect={handlePositionSelect}
-              />
+              <div className="overflow-x-auto">
+                <RiverMap
+                  width={1200}
+                  height={600}
+                  rainfall={rainfall}
+                  temperature={temperature}
+                  selectedParameter={selectedParameter}
+                  onPositionSelect={handlePositionSelect}
+                />
+              </div>
             </div>
 
             {/* Selected Position Data */}
@@ -305,8 +326,8 @@ const RiverMapPage: NextPage = () => {
                 </div>
                 
                 <LineChart
-                  width={1000}
-                  height={400}
+                  width={1200}
+                  height={500}
                   rainfall={rainfall}
                   temperature={temperature}
                   enabledSeries={enabledSeries}

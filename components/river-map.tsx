@@ -41,9 +41,9 @@ const RiverMap: React.FC<RiverMapProps> = ({
   const [hoveredWaterQuality, setHoveredWaterQuality] = useState<WaterQualityData | null>(null);
   const [hoveredPositionMeters, setHoveredPositionMeters] = useState<number | null>(null);
 
-  // Tọa độ gốc của con sông (điểm bắt đầu)
-  const riverStartCoordinate = { lat: 21.0285, lng: 105.8542 }; // Hà Nội
-  const riverLength = 8000; // 8000m
+  // Tọa độ gốc của con sông (điểm bắt đầu) 
+  const riverStartCoordinate = { lat: 21.012771, lng: 105.928065 }; // Vị trí giữa sông
+  const riverLength = 8013; // 8013m
   
   // Tạo đường sông với các điểm uốn lượn tự nhiên
   const generateRiverPath = () => {
@@ -69,13 +69,13 @@ const RiverMap: React.FC<RiverMapProps> = ({
 
   // Chuyển đổi pixel sang tọa độ địa lý
   const pixelToCoordinate = (x: number, y: number): Coordinate => {
-    // Tính toán tỷ lệ dựa trên độ dài sông 8000m
+    // Tính toán tỷ lệ dựa trên độ dài sông 8013m
     const progressX = x / width;
     const progressY = (height / 2 - y) / (height / 2); // Chuẩn hóa từ -1 đến 1
     
-    // Tính tọa độ dựa trên vị trí trên sông
-    const deltaLng = (riverLength / 111320) * progressX; // 1 độ kinh độ ≈ 111320m tại vĩ độ Hà Nội
-    const deltaLat = (riverLength / 111320) * progressY * 0.3; // Biên độ nhỏ hơn cho vĩ độ
+    // Tính tọa độ dựa trên vị trí trên sông với điểm giữa làm gốc
+    const deltaLng = (RIVER_LENGTH / 111320) * (progressX - 0.5); // Trừ 0.5 để giữa sông là gốc
+    const deltaLat = (RIVER_LENGTH / 111320) * progressY * 0.3; // Biên độ nhỏ hơn cho vĩ độ
     
     return {
       lat: riverStartCoordinate.lat + deltaLat,
@@ -140,7 +140,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     ctx.stroke();
 
     // Vẽ các vị trí landmark
-    RIVER_POSITIONS.forEach(position => {
+    RIVER_POSITIONS.forEach((position, index) => {
       const pixelX = meterToPixel(position.position, width);
       const riverPoint = getRiverPointAtX(pixelX);
       
@@ -148,7 +148,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
         // Vẽ marker cho landmark
         ctx.fillStyle = '#ff4444';
         ctx.beginPath();
-        ctx.arc(riverPoint.x, riverPoint.y, 6, 0, 2 * Math.PI);
+        ctx.arc(riverPoint.x, riverPoint.y, 8, 0, 2 * Math.PI);
         ctx.fill();
         
         // Vẽ border
@@ -156,11 +156,47 @@ const RiverMap: React.FC<RiverMapProps> = ({
         ctx.lineWidth = 2;
         ctx.stroke();
         
-        // Vẽ tên vị trí
+        // Vẽ tên vị trí với offset để tránh chồng lấp
         ctx.fillStyle = '#333333';
-        ctx.font = '12px Arial';
+        ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(position.name, riverPoint.x, riverPoint.y - 15);
+        
+        // Điều chỉnh vị trí text để tránh chồng lấp
+        let textY = riverPoint.y - 20;
+        let textX = riverPoint.x;
+        
+        // Đặc biệt điều chỉnh cho các vị trí gần nhau
+        if (index === 0) { // Sài Đồng
+          textY = riverPoint.y - 25;
+          textX = riverPoint.x + 15;
+        } else if (index === 1) { // Đài Tư  
+          textY = riverPoint.y + 35;
+          textX = riverPoint.x - 15;
+        } else if (index === 4) { // Đa Tốn
+          textY = riverPoint.y - 25;
+          textX = riverPoint.x - 20;
+        } else if (index === 5) { // Xuân Thụy
+          textY = riverPoint.y + 35;
+          textX = riverPoint.x + 20;
+        }
+        
+        // Vẽ background cho text
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillRect(textX - 30, textY - 12, 60, 16);
+        
+        // Vẽ text
+        ctx.fillStyle = '#333333';
+        ctx.fillText(position.name, textX, textY);
+        
+        // Vẽ đường nối từ marker tới text
+        ctx.strokeStyle = '#666666';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(riverPoint.x, riverPoint.y);
+        ctx.lineTo(textX, textY - 5);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
     });
 
