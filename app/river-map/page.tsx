@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
 import RiverMap from '@/components/river-map';
 import LineChart from '@/components/water-quality-chart';
-import CauBayRiver3DMap from '@/components/cau-bay-river-3d-map';
+import MapComponent from '@/components/locationmap';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -557,7 +557,15 @@ const RiverMapPage: NextPage = () => {
               <p className="text-sm text-gray-600 mb-4">
                 Bản đồ vệ tinh 3D thực tế của sông Cầu Bây với 6 điểm quan trắc được đánh dấu
               </p>
-              <CauBayRiver3DMap height="500px" />
+              <MapComponent 
+                lat={21.032323}
+                lng={105.919651}
+                zoom={14}
+                height="500px"
+                show3D={true}
+                showRiverPoints={true}
+                title="Sông Cầu Bây - Bản đồ 3D"
+              />
             </div>
 
             {/* Line Chart */}
