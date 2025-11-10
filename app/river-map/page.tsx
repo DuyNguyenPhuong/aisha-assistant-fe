@@ -9,7 +9,8 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
-import { RIVER_POSITIONS, WaterQualityData } from '@/lib/water-quality-calculations';
+import { RIVER_POSITIONS, WaterQualityData, calculateConcentration } from '@/lib/water-quality-calculations';
+import { useWeatherData } from '@/lib/weather-service';
 
 const RiverMapPage: NextPage = () => {
   const { t } = useTranslation();
@@ -23,6 +24,12 @@ const RiverMapPage: NextPage = () => {
   const [realtimeMode, setRealtimeMode] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
+
+  // Weather data hook - only active when realtime mode is on
+  const { weatherData, isLoading: weatherLoading, error: weatherError } = useWeatherData(
+    realtimeMode, // autoRefresh only when realtime is enabled
+    300000 // 5 minutes interval
+  );
   
   // Chart series control
   const [enabledSeries, setEnabledSeries] = useState({
@@ -42,12 +49,28 @@ const RiverMapPage: NextPage = () => {
     setSelectedPositionData(data);
   };
 
+  // Get current effective weather values (realtime or manual)
+  const getCurrentWeatherValues = () => {
+    if (realtimeMode && weatherData) {
+      return {
+        rainfall: weatherData.rainfall,
+        temperature: weatherData.temperature
+      };
+    }
+    return { rainfall, temperature };
+  };
+
   // Handle manual position input
   const handleManualPositionSubmit = () => {
     const pos = parseFloat(manualPosition);
     if (!isNaN(pos) && pos >= 0 && pos <= 8013) {
       setSelectedPosition(pos);
       setManualPosition('');
+      
+      // Recalculate data for this position with current weather
+      const currentWeather = getCurrentWeatherValues();
+      const newData = calculateConcentration(pos, currentWeather.rainfall, currentWeather.temperature);
+      setSelectedPositionData(newData);
     }
   };
 
@@ -55,6 +78,11 @@ const RiverMapPage: NextPage = () => {
   const handlePresetPosition = (position: number) => {
     console.log('Preset position clicked:', position);
     setSelectedPosition(position);
+    
+    // Recalculate data for this position with current weather
+    const currentWeather = getCurrentWeatherValues();
+    const newData = calculateConcentration(position, currentWeather.rainfall, currentWeather.temperature);
+    setSelectedPositionData(newData);
   };
 
   // Handle heatmap parameter selection  
@@ -71,18 +99,28 @@ const RiverMapPage: NextPage = () => {
     }));
   };
 
-  // Realtime weather simulation (mocked)
+  // Update local weather values when realtime data changes
   useEffect(() => {
-    if (!realtimeMode) return;
+    if (realtimeMode && weatherData) {
+      console.log('Realtime weather updated:', weatherData);
+      // Don't directly set rainfall/temperature in realtime mode
+      // They will be used via getCurrentWeatherValues()
+      
+      // If we have a selected position, recalculate its data
+      if (selectedPosition !== null) {
+        const newData = calculateConcentration(selectedPosition, weatherData.rainfall, weatherData.temperature);
+        setSelectedPositionData(newData);
+      }
+    }
+  }, [weatherData, realtimeMode, selectedPosition]);
 
-    const interval = setInterval(() => {
-      // Simulate weather changes
-      setRainfall(prev => Math.max(0, prev + (Math.random() - 0.5) * 2));
-      setTemperature(prev => Math.max(15, Math.min(35, prev + (Math.random() - 0.5) * 2)));
-    }, 300000); // 5 minutes = 300000ms
-
-    return () => clearInterval(interval);
-  }, [realtimeMode]);
+  // Update selected position data when weather parameters change (manual mode)
+  useEffect(() => {
+    if (!realtimeMode && selectedPosition !== null) {
+      const newData = calculateConcentration(selectedPosition, rainfall, temperature);
+      setSelectedPositionData(newData);
+    }
+  }, [rainfall, temperature, selectedPosition, realtimeMode]);
 
   // Export function (placeholder)
   const handleExport = () => {
@@ -122,11 +160,12 @@ const RiverMapPage: NextPage = () => {
                     </label>
                     <Input
                       type="number"
-                      value={rainfall}
+                      value={realtimeMode ? getCurrentWeatherValues().rainfall : rainfall}
                       onChange={(e) => setRainfall(parseFloat(e.target.value) || 0)}
                       min="0"
                       step="0.1"
                       disabled={realtimeMode}
+                      className={realtimeMode ? "bg-gray-100" : ""}
                     />
                   </div>
                   <div>
@@ -135,11 +174,12 @@ const RiverMapPage: NextPage = () => {
                     </label>
                     <Input
                       type="number"
-                      value={temperature}
+                      value={realtimeMode ? getCurrentWeatherValues().temperature : temperature}
                       onChange={(e) => setTemperature(parseFloat(e.target.value) || 25)}
                       min="0"
                       max="50"
                       disabled={realtimeMode}
+                      className={realtimeMode ? "bg-gray-100" : ""}
                     />
                   </div>
                   <Button
@@ -150,6 +190,13 @@ const RiverMapPage: NextPage = () => {
                   >
                     {realtimeMode ? '🔴 Tắt Realtime' : '🟢 Bật Realtime'}
                   </Button>
+                  {realtimeMode && (
+                    <div className="text-xs text-gray-500 text-center">
+                      {weatherLoading ? '🔄 Đang tải...' : 
+                       weatherData ? `✅ Cập nhật ${new Date(weatherData.timestamp).toLocaleTimeString()}` :
+                       '⏳ Chờ dữ liệu thời tiết'}
+                    </div>
+                  )}
                 </div>
 
                 {/* Position Controls */}
@@ -263,12 +310,31 @@ const RiverMapPage: NextPage = () => {
 
             {/* River Map */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              {/* Weather Status Bar */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg flex justify-between items-center text-sm">
+                <div className="flex gap-4">
+                  <span>🌧️ Mưa: {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
+                  <span>🌡️ Nhiệt độ: {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
+                  {realtimeMode && weatherData && (
+                    <span className="text-green-600">
+                      🔄 {weatherData.location} - {new Date(weatherData.timestamp).toLocaleTimeString()}
+                    </span>
+                  )}
+                  {realtimeMode && weatherLoading && (
+                    <span className="text-blue-600">🔄 Đang tải dữ liệu thời tiết...</span>
+                  )}
+                  {weatherError && (
+                    <span className="text-red-600">⚠️ {weatherError}</span>
+                  )}
+                </div>
+              </div>
+              
               <div className="overflow-x-auto">
                 <RiverMap
                   width={1200}
                   height={600}
-                  rainfall={rainfall}
-                  temperature={temperature}
+                  rainfall={getCurrentWeatherValues().rainfall}
+                  temperature={getCurrentWeatherValues().temperature}
                   selectedParameter={selectedParameter}
                   onPositionSelect={handlePositionSelect}
                 />
@@ -328,8 +394,8 @@ const RiverMapPage: NextPage = () => {
                 <LineChart
                   width={1200}
                   height={500}
-                  rainfall={rainfall}
-                  temperature={temperature}
+                  rainfall={getCurrentWeatherValues().rainfall}
+                  temperature={getCurrentWeatherValues().temperature}
                   enabledSeries={enabledSeries}
                   samplingStep={samplingStep}
                 />
