@@ -62,11 +62,11 @@ const LineChart: React.FC<LineChartProps> = ({
 
   // Colors for different series
   const seriesColors = {
-    BOD5_sample0: '#ff4444',
-    BOD5_sample1: '#ff8888',
-    NH4_sample0: '#44ff44',
-    NH4_sample1: '#88ff88',
-    NO3_sample1: '#4444ff'
+    BOD5_sample0: '#228B22',  // Xanh lá đậm (Forest Green)
+    BOD5_sample1: '#FF8C00',  // Màu cam (Dark Orange)
+    NH4_sample0: '#663399',   // Màu tím đậm (Rebecca Purple)
+    NH4_sample1: '#1E90FF',   // Xanh dương đậm (Dodger Blue)
+    NO3_sample1: '#90EE90'    // Xanh lá nhạt (Light Green)
   };
 
   const seriesLabels = {
@@ -77,18 +77,48 @@ const LineChart: React.FC<LineChartProps> = ({
     NO3_sample1: 'NO3- mẫu 1'
   };
 
-  // Generate chart data - Use 6 river positions instead of sampling by meters
+  // Generate chart data - Create points based on sampling step
   useEffect(() => {
     const data: ChartData[] = [];
-    // Use the 6 predefined river positions
-    RIVER_POSITIONS.forEach(position => {
-      const waterQuality = calculateConcentration(position.position, rainfall, temperature);
+    
+    // Tạo điểm giữa các cổng dựa trên samplingStep
+    for (let segmentIndex = 0; segmentIndex < RIVER_POSITIONS.length - 1; segmentIndex++) {
+      const currentGate = RIVER_POSITIONS[segmentIndex];
+      const nextGate = RIVER_POSITIONS[segmentIndex + 1];
+      
+      // Thêm cổng hiện tại
+      const currentWaterQuality = calculateConcentration(currentGate.position, rainfall, temperature);
       data.push({
-        position: position.position,
-        data: waterQuality,
-        name: position.name // Add name for X-axis labels
+        position: currentGate.position,
+        data: currentWaterQuality,
+        name: currentGate.name
       });
+      
+      // Thêm các điểm trung gian giữa 2 cổng
+      for (let i = 1; i <= samplingStep; i++) {
+        const progress = i / (samplingStep + 1);
+        const intermediatePosition = currentGate.position + (nextGate.position - currentGate.position) * progress;
+        
+        const waterQuality = calculateConcentration(intermediatePosition, rainfall, temperature);
+        data.push({
+          position: intermediatePosition,
+          data: waterQuality,
+          name: '' // Không hiển thị tên cho điểm trung gian
+        });
+      }
+    }
+    
+    // Thêm cổng cuối cùng (Xuân Thụy)
+    const lastGate = RIVER_POSITIONS[RIVER_POSITIONS.length - 1];
+    const lastWaterQuality = calculateConcentration(lastGate.position, rainfall, temperature);
+    data.push({
+      position: lastGate.position,
+      data: lastWaterQuality,
+      name: lastGate.name
     });
+    
+    // Sort theo position
+    data.sort((a, b) => a.position - b.position);
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
 
@@ -137,13 +167,17 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     
-    // Vertical grid lines for each river position
-    chartData.forEach((point, index) => {
-      const x = padding + (index / (chartData.length - 1)) * chartWidth;
-      ctx.beginPath();
-      ctx.moveTo(x, padding);
-      ctx.lineTo(x, cHeight - padding);
-      ctx.stroke();
+    // Vertical grid lines chỉ cho 6 cổng chính
+    RIVER_POSITIONS.forEach(riverPos => {
+      // Tìm index của position này trong chartData
+      const dataIndex = chartData.findIndex(d => Math.abs(d.position - riverPos.position) < 50);
+      if (dataIndex >= 0) {
+        const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, cHeight - padding);
+        ctx.stroke();
+      }
     });
     
     // Horizontal grid lines
@@ -156,20 +190,24 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.stroke();
     }
 
-    // Draw X-axis labels for river positions
+    // Draw X-axis labels chỉ cho 6 cổng chính
     ctx.fillStyle = '#666';
     ctx.font = '11px Arial';
     ctx.textAlign = 'center';
-    chartData.forEach((point, index) => {
-      const x = padding + (index / (chartData.length - 1)) * chartWidth;
-      // Draw position name
-      ctx.fillText(point.name || '', x, cHeight - padding + 15);
-      // Draw position distance
-      ctx.font = '9px Arial';
-      ctx.fillStyle = '#999';
-      ctx.fillText(`${point.position}m`, x, cHeight - padding + 28);
-      ctx.font = '11px Arial';
-      ctx.fillStyle = '#666';
+    RIVER_POSITIONS.forEach(riverPos => {
+      // Tìm index của position này trong chartData
+      const dataIndex = chartData.findIndex(d => Math.abs(d.position - riverPos.position) < 50);
+      if (dataIndex >= 0) {
+        const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
+        // Draw position name
+        ctx.fillText(riverPos.name, x, cHeight - padding + 15);
+        // Draw position distance
+        ctx.font = '9px Arial';
+        ctx.fillStyle = '#999';
+        ctx.fillText(`${riverPos.position}m`, x, cHeight - padding + 28);
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#666';
+      }
     });
 
     // Draw Y-axis labels (only values, no units)
@@ -224,45 +262,7 @@ const LineChart: React.FC<LineChartProps> = ({
     });
   };
 
-  // Handle mouse move for tooltip
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    setMousePosition({ x, y });
-
-    const padding = 60;
-    const chartWidth = width - 2 * padding;
-    
-    if (x >= padding && x <= width - padding && y >= padding && y <= height - padding) {
-      // Calculate position along river
-      const position = ((x - padding) / chartWidth) * RIVER_LENGTH;
-      
-      // Find closest data point
-      const closestPoint = chartData.reduce((closest, point) => {
-        const distance = Math.abs(point.position - position);
-        const closestDistance = Math.abs(closest.position - position);
-        return distance < closestDistance ? point : closest;
-      }, chartData[0]);
-
-      if (closestPoint) {
-        setHoveredPoint({
-          x,
-          y,
-          data: {
-            position: closestPoint.position,
-            ...closestPoint.data
-          }
-        });
-      }
-    } else {
-      setHoveredPoint(null);
-    }
-  };
 
   const handleMouseLeave = () => {
     setHoveredPoint(null);
@@ -282,20 +282,35 @@ const LineChart: React.FC<LineChartProps> = ({
   const handleResponsiveMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    setMousePosition({ x, y });
+    
+    // Convert từ display coordinates sang canvas coordinates
+    const scaleX = canvasSize.width / rect.width;
+    const scaleY = canvasSize.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    setMousePosition({ x, y }); // Mouse position for tooltip (display coordinates)
+    
     const padding = 60;
     const chartWidth = canvasSize.width - 2 * padding;
-    if (x >= padding && x <= canvasSize.width - padding && y >= padding && y <= canvasSize.height - padding) {
-      // Find closest river position point by X coordinate
-      const relativeX = (x - padding) / chartWidth;
+    const chartHeight = canvasSize.height - 2 * padding;
+    
+    // Check if mouse is within chart area (using canvas coordinates)
+    if (canvasX >= padding && canvasX <= canvasSize.width - padding && 
+        canvasY >= padding && canvasY <= canvasSize.height - padding) {
+      
+      // Find closest data point by X coordinate
+      const relativeX = (canvasX - padding) / chartWidth;
       const pointIndex = Math.round(relativeX * (chartData.length - 1));
       const closestPoint = chartData[pointIndex];
+      
       if (closestPoint) {
         setHoveredPoint({
-          x,
+          x, // Use display coordinates for tooltip positioning
           y,
           data: {
             position: closestPoint.position,

@@ -27,213 +27,277 @@ export const RIVER_LENGTH = 8013; // meters
 
 // Tính hệ số T dựa trên nhiệt độ Y
 export const calculateT = (temperature: number): number => {
-  return 2.5 * Math.pow(10, (temperature - 26) / 10);
+  return Math.pow(2.5, (temperature - 26) / 10);
 };
 
-// Hàm tính toán nồng độ chính
+// Định nghĩa các hàm suy giảm nồng độ (D)
+const D_BOD1 = (time: number): number => {
+  return -1e-5 * Math.pow(time, 2) + 0.0305 * time - 0.4113;
+};
+
+const D_BOD0 = (time: number): number => {
+  return 0.0012 * time - 2e-15;
+};
+
+const D_NH41 = (time: number): number => {
+  return -1e-6 * Math.pow(time, 2) + 0.0021 * time - 0.0121;
+};
+
+const D_NH40 = (time: number): number => {
+  return -2e-7 * Math.pow(time, 2) + 0.0003 * time - 0.0006;
+};
+
+const D_NO31 = (time: number): number => {
+  return 6e-7 * Math.pow(time, 2) - 0.0006 * time - 0.0085;
+};
+
+// Interface cho kết quả tính toán tại từng đoạn
+interface SegmentResult {
+  BOD1: number;
+  BOD0: number; 
+  NH41: number;
+  NH40: number;
+  NO31: number;
+}
+
+// Tính nồng độ tại các vị trí cổng chính
+const calculateSegmentConcentrations = (X: number, Y: number): {
+  seg1: SegmentResult;
+  seg2: SegmentResult;
+  seg3: SegmentResult;
+  seg4: SegmentResult;
+  seg5: SegmentResult;
+} => {
+  const T = calculateT(Y);
+  console.log(X, Y, T);
+  // 5.2.1. Z = 0 (Sài Đồng)
+  const Q1 = 1250 + 13550 * X;
+  const BOD_base1 = (47625 + 9 * 13550 * X) / Q1;
+  const NH4_base1 = (19125 + 0.56 * 13550 * X) / Q1;
+  const NO3_base1 = (313 + 0.14 * 13550 * X) / Q1;
+  
+  const seg1: SegmentResult = {
+    BOD1: BOD_base1,
+    BOD0: BOD_base1,
+    NH41: NH4_base1,
+    NH40: NH4_base1,
+    NO31: NO3_base1
+  };
+  
+  // 5.2.3. Z = 1112 (Đài Tư)
+  const Q2 = 1480 + 3500 * X;
+  const time20 = 533760 / Q1;
+  const Q1_reduced = 1250 + 2000 * X; // Lưu lượng thực tế sau khi bổ sung
+  
+  const BOD1_before_mix = (47625 + 9 * 2000 * X) / Q1_reduced - T * D_BOD1(time20);
+  const BOD0_before_mix = (47625 + 9 * 2000 * X) / Q1_reduced - T * D_BOD0(time20);
+  const NH41_before_mix = (19125 + 0.56 * 2000 * X) / Q1_reduced - T * D_NH41(time20);
+  const NH40_before_mix = (19125 + 0.56 * 2000 * X) / Q1_reduced - T * D_NH40(time20);
+  const NO31_before_mix = (313 + 0.14 * 2000 * X) / Q1_reduced - T * D_NO31(time20);
+  
+  const seg2: SegmentResult = {
+    BOD1: (BOD1_before_mix * Q1_reduced + (8763 + 9 * 1500 * X)) / Q2,
+    BOD0: (BOD0_before_mix * Q1_reduced + (8763 + 9 * 1500 * X)) / Q2,
+    NH41: (NH41_before_mix * Q1_reduced + (3519 + 0.56 * 2000 * X)) / Q2,
+    NH40: (NH40_before_mix * Q1_reduced + (3519 + 0.56 * 2000 * X)) / Q2,
+    NO31: (NO31_before_mix * Q1_reduced + (58 + 0.14 * 1500 * X)) / Q2
+  };
+  
+  // 5.2.5. Z = 3170 (An Lạc)
+  const Q3 = 2522 + 6600 * X;
+  const time30 = 987840 / Q2;
+  
+  const BOD1_3_before_mix = seg2.BOD1 - T * D_BOD1(time30);
+  const BOD0_3_before_mix = seg2.BOD0 - T * D_BOD1(time30); // Sử dụng D_BOD1 theo tài liệu
+  const NH41_3_before_mix = seg2.NH41 - T * D_NH41(time30);
+  const NH40_3_before_mix = seg2.NH40 - T * D_NH40(time30);
+  const NO31_3_before_mix = seg2.NO31 - T * D_NO31(time30);
+  
+  const seg3: SegmentResult = {
+    BOD1: (BOD1_3_before_mix * Q2 + (39688 + 9 * 3100 * X)) / Q3,
+    BOD0: (BOD0_3_before_mix * Q2 + (39688 + 9 * 3100 * X)) / Q3,
+    NH41: (NH41_3_before_mix * Q2 + (15938 + 0.56 * 3100 * X)) / Q3,
+    NH40: (NH40_3_before_mix * Q2 + (15938 + 0.56 * 3100 * X)) / Q3,
+    NO31: (NO31_3_before_mix * Q2 + (260 + 0.14 * 3100 * X)) / Q3
+  };
+  
+  // 5.2.7. Z = 4590 (Trâu Quỳ)
+  const Q4 = 4839 + 8800 * X;
+  const time40 = 1215360 / Q3;
+  
+  const BOD1_4_before_mix = seg3.BOD1 - T * D_BOD1(time40);
+  const BOD0_4_before_mix = seg3.BOD0 - T * D_BOD1(time40); // Sử dụng D_BOD1 theo tài liệu
+  const NH41_4_before_mix = seg3.NH41 - T * D_NH41(time40);
+  const NH40_4_before_mix = seg3.NH40 - T * D_NH40(time40);
+  const NO31_4_before_mix = seg3.NO31 - T * D_NO31(time40);
+  
+  const seg4: SegmentResult = {
+    BOD1: (BOD1_4_before_mix * Q3 + (88278 + 9 * 2200 * X)) / Q4,
+    BOD0: (BOD0_4_before_mix * Q3 + (88278 + 9 * 2200 * X)) / Q4,
+    NH41: (NH41_4_before_mix * Q3 + (35450 + 0.56 * 2200 * X)) / Q4,
+    NH40: (NH40_4_before_mix * Q3 + (35450 + 0.56 * 2200 * X)) / Q4,
+    NO31: (NO31_4_before_mix * Q3 + (579 + 0.14 * 2200 * X)) / Q4
+  };
+  
+  // 5.2.8. Z = 7070 (Đa Tốn)
+  const Q5 = 6074 + 10150 * X;
+  const time50 = 2178240 / Q4;
+  
+  const BOD1_5_before_mix = seg4.BOD1 - T * D_BOD1(time50);
+  const BOD0_5_before_mix = seg4.BOD0 - T * D_BOD1(time50); // Sử dụng D_BOD1 theo tài liệu
+  const NH41_5_before_mix = seg4.NH41 - T * D_NH41(time50);
+  const NH40_5_before_mix = seg4.NH40 - T * D_NH40(time50);
+  const NO31_5_before_mix = seg4.NO31 - T * D_NO31(time50);
+  
+  const seg5: SegmentResult = {
+    BOD1: (BOD1_5_before_mix * Q4 + (47054 + 9 * 1350 * X)) / Q5,
+    BOD0: (BOD0_5_before_mix * Q4 + (47054 + 9 * 1350 * X)) / Q5,
+    NH41: (NH41_5_before_mix * Q4 + (18896 + 0.56 * 1350 * X)) / Q5,
+    NH40: (NH40_5_before_mix * Q4 + (18896 + 0.56 * 1350 * X)) / Q5,
+    NO31: (NO31_5_before_mix * Q4 + (309 + 0.14 * 1350 * X)) / Q5
+  };
+  
+  return { seg1, seg2, seg3, seg4, seg5 };
+};
+
+// Hàm tính toán nồng độ chính - dựa trên công thức toán học thực tế
 export const calculateConcentration = (
   Z: number, // Vị trí dọc sông (0-8013m)
-  X: number, // Lượng mưa (mm/hr)
+  X: number, // Lượng mưa (mm/hr) 
   Y: number  // Nhiệt độ (°C)
 ): WaterQualityData => {
-  const T = calculateT(Y);
+  // Clamp Z within bounds
+  Z = Math.max(0, Math.min(8013, Z));
   
-  // Vị trí Z = 0 (Sài Đồng)
+  const T = calculateT(Y);
+  const segments = calculateSegmentConcentrations(X, Y);
+  
+  // 5.2.1. Z = 0 (Sài Đồng)
   if (Z === 0) {
     return {
-      BOD5_sample0: (1250 + 13550 * X) / (47625 + 9 * 13550 * X),
-      BOD5_sample1: (1250 + 13550 * X) / (47625 + 9 * 13550 * X),
-      NH4_sample0: (1250 + 13550 * X) / (19125 + 0.56 * 13550 * X),
-      NH4_sample1: (1250 + 13550 * X) / (19125 + 0.56 * 13550 * X),
-      NO3_sample1: (1250 + 13550 * X) / (313 + 0.14 * 13550 * X)
+      BOD5_sample0: Math.max(0, segments.seg1.BOD0),
+      BOD5_sample1: Math.max(0, segments.seg1.BOD1),
+      NH4_sample0: Math.max(0, segments.seg1.NH40),
+      NH4_sample1: Math.max(0, segments.seg1.NH41),
+      NO3_sample1: Math.max(0, segments.seg1.NO31)
     };
   }
   
-  // Đoạn 0 < Z < 1112
+  // 5.2.2. 0 < Z < 1112
   if (Z > 0 && Z < 1112) {
     const Q1 = 1250 + 13550 * X;
-    const time2 = (480 * Z) / Q1;
-    
-    // Giá trị ban đầu từ Z=0
-    const initial = calculateConcentration(0, X, Y);
-    
-    // Công thức suy giảm nồng độ với T và time2
-    const decay_factor = Math.exp(-0.23 * T * time2 / 86400); // chuyển đổi thời gian sang ngày
+    const time2 = 480 * Z / Q1;
     
     return {
-      BOD5_sample0: initial.BOD5_sample0 * decay_factor,
-      BOD5_sample1: initial.BOD5_sample1 * decay_factor,
-      NH4_sample0: initial.NH4_sample0 * decay_factor,
-      NH4_sample1: initial.NH4_sample1 * decay_factor,
-      NO3_sample1: initial.NO3_sample1 * decay_factor
+      BOD5_sample0: Math.max(0, segments.seg1.BOD0 - T * D_BOD0(time2)),
+      BOD5_sample1: Math.max(0, segments.seg1.BOD1 - T * D_BOD1(time2)),
+      NH4_sample0: Math.max(0, segments.seg1.NH40 - T * D_NH40(time2)),
+      NH4_sample1: Math.max(0, segments.seg1.NH41 - T * D_NH41(time2)),
+      NO3_sample1: Math.max(0, segments.seg1.NO31 - T * D_NO31(time2))
     };
   }
   
-  // Vị trí Z = 1112 (Đài Tư)
+  // 5.2.3. Z = 1112 (Đài Tư)
   if (Z === 1112) {
-    const Q1 = 1250 + 13550 * X;
-    const Q2 = 1480 + 3500 * X;
-    const time20 = 533760 / Q1;
-    
-    // Lấy kết quả từ đoạn trước (Z < 1112)
-    const upstream = calculateConcentration(1111, X, Y);
-    
-    // Công thức pha trộn tại cống xả
-    // Giả định nồng độ xả mới (có thể điều chỉnh theo data thực tế)
-    const discharge_BOD5_0 = 25; // mg/L
-    const discharge_BOD5_1 = 25; // mg/L
-    const discharge_NH4_0 = 15; // mg/L
-    const discharge_NH4_1 = 15; // mg/L
-    const discharge_NO3_1 = 10; // mg/L
-    
     return {
-      BOD5_sample0: (Q1 * upstream.BOD5_sample0 + (Q2 - Q1) * discharge_BOD5_0) / Q2,
-      BOD5_sample1: (Q1 * upstream.BOD5_sample1 + (Q2 - Q1) * discharge_BOD5_1) / Q2,
-      NH4_sample0: (Q1 * upstream.NH4_sample0 + (Q2 - Q1) * discharge_NH4_0) / Q2,
-      NH4_sample1: (Q1 * upstream.NH4_sample1 + (Q2 - Q1) * discharge_NH4_1) / Q2,
-      NO3_sample1: (Q1 * upstream.NO3_sample1 + (Q2 - Q1) * discharge_NO3_1) / Q2
+      BOD5_sample0: Math.max(0, segments.seg2.BOD0),
+      BOD5_sample1: Math.max(0, segments.seg2.BOD1),
+      NH4_sample0: Math.max(0, segments.seg2.NH40),
+      NH4_sample1: Math.max(0, segments.seg2.NH41),
+      NO3_sample1: Math.max(0, segments.seg2.NO31)
     };
   }
   
-  // Đoạn 1112 < Z < 3170
+  // 5.2.4. 1112 < Z < 3170
   if (Z > 1112 && Z < 3170) {
     const Q2 = 1480 + 3500 * X;
-    const time3 = (480 * (Z - 1112)) / Q2;
-    
-    // Lấy kết quả từ vị trí Đài Tư
-    const position2 = calculateConcentration(1112, X, Y);
-    
-    // Suy giảm nồng độ
-    const decay_factor = Math.exp(-0.23 * T * time3 / 86400);
+    const time3 = 480 * Z / Q2;
     
     return {
-      BOD5_sample0: position2.BOD5_sample0 * decay_factor,
-      BOD5_sample1: position2.BOD5_sample1 * decay_factor,
-      NH4_sample0: position2.NH4_sample0 * decay_factor,
-      NH4_sample1: position2.NH4_sample1 * decay_factor,
-      NO3_sample1: position2.NO3_sample1 * decay_factor
+      BOD5_sample0: Math.max(0, segments.seg2.BOD0 - T * D_BOD0(time3)),
+      BOD5_sample1: Math.max(0, segments.seg2.BOD1 - T * D_BOD1(time3)),
+      NH4_sample0: Math.max(0, segments.seg2.NH40 - T * D_NH40(time3)),
+      NH4_sample1: Math.max(0, segments.seg2.NH41 - T * D_NH41(time3)),
+      NO3_sample1: Math.max(0, segments.seg2.NO31 - T * D_NO31(time3))
     };
   }
   
-  // Vị trí Z = 3170 (An Lạc)
+  // 5.2.5. Z = 3170 (An Lạc)
   if (Z === 3170) {
-    const Q2 = 1480 + 3500 * X;
-    const Q3 = 1710 + 2000 * X;
-    
-    const upstream = calculateConcentration(3169, X, Y);
-    
-    // Pha trộn với nước xả mới
-    const discharge_BOD5_0 = 20;
-    const discharge_BOD5_1 = 20;
-    const discharge_NH4_0 = 12;
-    const discharge_NH4_1 = 12;
-    const discharge_NO3_1 = 8;
-    
     return {
-      BOD5_sample0: (Q2 * upstream.BOD5_sample0 + (Q3 - Q2) * discharge_BOD5_0) / Q3,
-      BOD5_sample1: (Q2 * upstream.BOD5_sample1 + (Q3 - Q2) * discharge_BOD5_1) / Q3,
-      NH4_sample0: (Q2 * upstream.NH4_sample0 + (Q3 - Q2) * discharge_NH4_0) / Q3,
-      NH4_sample1: (Q2 * upstream.NH4_sample1 + (Q3 - Q2) * discharge_NH4_1) / Q3,
-      NO3_sample1: (Q2 * upstream.NO3_sample1 + (Q3 - Q2) * discharge_NO3_1) / Q3
+      BOD5_sample0: Math.max(0, segments.seg3.BOD0),
+      BOD5_sample1: Math.max(0, segments.seg3.BOD1),
+      NH4_sample0: Math.max(0, segments.seg3.NH40),
+      NH4_sample1: Math.max(0, segments.seg3.NH41),
+      NO3_sample1: Math.max(0, segments.seg3.NO31)
     };
   }
   
-  // Đoạn 3170 < Z < 4590
+  // 5.2.6. 3170 < Z < 4590
   if (Z > 3170 && Z < 4590) {
-    const Q3 = 1710 + 2000 * X;
-    const time4 = (480 * (Z - 3170)) / Q3;
-    
-    const position3 = calculateConcentration(3170, X, Y);
-    const decay_factor = Math.exp(-0.23 * T * time4 / 86400);
+    const Q3 = 2522 + 6600 * X;
+    const time4 = 480 * Z / Q3;
     
     return {
-      BOD5_sample0: position3.BOD5_sample0 * decay_factor,
-      BOD5_sample1: position3.BOD5_sample1 * decay_factor,
-      NH4_sample0: position3.NH4_sample0 * decay_factor,
-      NH4_sample1: position3.NH4_sample1 * decay_factor,
-      NO3_sample1: position3.NO3_sample1 * decay_factor
+      BOD5_sample0: Math.max(0, segments.seg3.BOD0 - T * D_BOD0(time4)),
+      BOD5_sample1: Math.max(0, segments.seg3.BOD1 - T * D_BOD1(time4)),
+      NH4_sample0: Math.max(0, segments.seg3.NH40 - T * D_NH40(time4)),
+      NH4_sample1: Math.max(0, segments.seg3.NH41 - T * D_NH41(time4)),
+      NO3_sample1: Math.max(0, segments.seg3.NO31 - T * D_NO31(time4))
     };
   }
   
-  // Vị trí Z = 4590 (Trâu Quỳ)
+  // 5.2.7. Z = 4590 (Trâu Quỳ)
   if (Z === 4590) {
-    const Q3 = 1710 + 2000 * X;
-    const Q4 = 1940 + 1500 * X;
-    
-    const upstream = calculateConcentration(4589, X, Y);
-    
-    const discharge_BOD5_0 = 18;
-    const discharge_BOD5_1 = 18;
-    const discharge_NH4_0 = 10;
-    const discharge_NH4_1 = 10;
-    const discharge_NO3_1 = 7;
-    
     return {
-      BOD5_sample0: (Q3 * upstream.BOD5_sample0 + (Q4 - Q3) * discharge_BOD5_0) / Q4,
-      BOD5_sample1: (Q3 * upstream.BOD5_sample1 + (Q4 - Q3) * discharge_BOD5_1) / Q4,
-      NH4_sample0: (Q3 * upstream.NH4_sample0 + (Q4 - Q3) * discharge_NH4_0) / Q4,
-      NH4_sample1: (Q3 * upstream.NH4_sample1 + (Q4 - Q3) * discharge_NH4_1) / Q4,
-      NO3_sample1: (Q3 * upstream.NO3_sample1 + (Q4 - Q3) * discharge_NO3_1) / Q4
+      BOD5_sample0: Math.max(0, segments.seg4.BOD0),
+      BOD5_sample1: Math.max(0, segments.seg4.BOD1),
+      NH4_sample0: Math.max(0, segments.seg4.NH40),
+      NH4_sample1: Math.max(0, segments.seg4.NH41),
+      NO3_sample1: Math.max(0, segments.seg4.NO31)
     };
   }
   
-  // Đoạn 4590 < Z < 7070
+  // 5.2.8. 4590 < Z < 7070
   if (Z > 4590 && Z < 7070) {
-    const Q4 = 1940 + 1500 * X;
-    const time5 = (480 * (Z - 4590)) / Q4;
-    
-    const position4 = calculateConcentration(4590, X, Y);
-    const decay_factor = Math.exp(-0.23 * T * time5 / 86400);
+    const Q4 = 4839 + 8800 * X;
+    const time5 = 480 * Z / Q4;
     
     return {
-      BOD5_sample0: position4.BOD5_sample0 * decay_factor,
-      BOD5_sample1: position4.BOD5_sample1 * decay_factor,
-      NH4_sample0: position4.NH4_sample0 * decay_factor,
-      NH4_sample1: position4.NH4_sample1 * decay_factor,
-      NO3_sample1: position4.NO3_sample1 * decay_factor
+      BOD5_sample0: Math.max(0, segments.seg4.BOD0 - T * D_BOD0(time5)),
+      BOD5_sample1: Math.max(0, segments.seg4.BOD1 - T * D_BOD1(time5)),
+      NH4_sample0: Math.max(0, segments.seg4.NH40 - T * D_NH40(time5)),
+      NH4_sample1: Math.max(0, segments.seg4.NH41 - T * D_NH41(time5)),
+      NO3_sample1: Math.max(0, segments.seg4.NO31 - T * D_NO31(time5))
     };
   }
   
-  // Vị trí Z = 7070 (Đa Tốn)
+  // 5.2.8. Z = 7070 (Đa Tốn)
   if (Z === 7070) {
-    const Q4 = 1940 + 1500 * X;
-    const Q5 = 2170 + 1000 * X;
-    
-    const upstream = calculateConcentration(7069, X, Y);
-    
-    const discharge_BOD5_0 = 15;
-    const discharge_BOD5_1 = 15;
-    const discharge_NH4_0 = 8;
-    const discharge_NH4_1 = 8;
-    const discharge_NO3_1 = 6;
-    
     return {
-      BOD5_sample0: (Q4 * upstream.BOD5_sample0 + (Q5 - Q4) * discharge_BOD5_0) / Q5,
-      BOD5_sample1: (Q4 * upstream.BOD5_sample1 + (Q5 - Q4) * discharge_BOD5_1) / Q5,
-      NH4_sample0: (Q4 * upstream.NH4_sample0 + (Q5 - Q4) * discharge_NH4_0) / Q5,
-      NH4_sample1: (Q4 * upstream.NH4_sample1 + (Q5 - Q4) * discharge_NH4_1) / Q5,
-      NO3_sample1: (Q4 * upstream.NO3_sample1 + (Q5 - Q4) * discharge_NO3_1) / Q5
+      BOD5_sample0: Math.max(0, segments.seg5.BOD0),
+      BOD5_sample1: Math.max(0, segments.seg5.BOD1),
+      NH4_sample0: Math.max(0, segments.seg5.NH40),
+      NH4_sample1: Math.max(0, segments.seg5.NH41),
+      NO3_sample1: Math.max(0, segments.seg5.NO31)
     };
   }
   
-  // Đoạn 7070 < Z <= 8013 (Xuân Thụy)
+  // 5.2.9. 7070 < Z <= 8013 (Xuân Thụy)
   if (Z > 7070 && Z <= 8013) {
-    const Q5 = 2170 + 1000 * X;
-    const time6 = (480 * (Z - 7070)) / Q5;
-    
-    const position5 = calculateConcentration(7070, X, Y);
-    const decay_factor = Math.exp(-0.23 * T * time6 / 86400);
+    const Q5 = 6074 + 10150 * X;
+    const time6 = 480 * Z / Q5;
     
     return {
-      BOD5_sample0: position5.BOD5_sample0 * decay_factor,
-      BOD5_sample1: position5.BOD5_sample1 * decay_factor,
-      NH4_sample0: position5.NH4_sample0 * decay_factor,
-      NH4_sample1: position5.NH4_sample1 * decay_factor,
-      NO3_sample1: position5.NO3_sample1 * decay_factor
+      BOD5_sample0: Math.max(0, segments.seg5.BOD0 - T * D_BOD0(time6)),
+      BOD5_sample1: Math.max(0, segments.seg5.BOD1 - T * D_BOD1(time6)),
+      NH4_sample0: Math.max(0, segments.seg5.NH40 - T * D_NH40(time6)),
+      NH4_sample1: Math.max(0, segments.seg5.NH41 - T * D_NH41(time6)),
+      NO3_sample1: Math.max(0, segments.seg5.NO31 - T * D_NO31(time6))
     };
   }
-  
-  // Giá trị mặc định nếu Z nằm ngoài phạm vi
+
+  // Fallback (should not reach here)
   return {
     BOD5_sample0: 0,
     BOD5_sample1: 0,

@@ -3,11 +3,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { 
   calculateConcentration, 
-  pixelToMeter, 
-  meterToPixel, 
-  RIVER_POSITIONS, 
-  RIVER_LENGTH,
+  RIVER_LENGTH, 
   WaterQualityData,
+  RIVER_POSITIONS, 
   COLOR_SCALES,
   getColorFromValue
 } from '@/lib/water-quality-calculations';
@@ -15,8 +13,8 @@ import {
 interface RiverMapProps {
   width?: number;
   height?: number;
-  rainfall?: number; // X parameter (mm/hr)
-  temperature?: number; // Y parameter (°C)
+  rainfall: number;
+  temperature: number;
   selectedParameter?: 'BOD5' | 'NH4' | 'NO3' | null;
   onPositionSelect?: (position: number, data: WaterQualityData) => void;
 }
@@ -26,27 +24,29 @@ interface Coordinate {
   lng: number;
 }
 
-const RiverMap: React.FC<RiverMapProps> = ({ 
-  width = 800, 
-  height = 400, 
-  rainfall = 0, 
-  temperature = 25,
+const RiverMap: React.FC<RiverMapProps> = ({
+  width = 800,
+  height = 400,
+  rainfall,
+  temperature,
   selectedParameter = null,
-  onPositionSelect 
+  onPositionSelect
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
-  const [hoveredCoordinate, setHoveredCoordinate] = useState<Coordinate | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+  const [hoveredCoordinate, setHoveredCoordinate] = useState<Coordinate | null>(null);
   const [hoveredWaterQuality, setHoveredWaterQuality] = useState<WaterQualityData | null>(null);
-  const [hoveredPositionMeters, setHoveredPositionMeters] = useState<number | null>(null);
+  const [hoveredPositionMeters, setHoveredPositionMeters] = useState<number>(0);
 
-  // Tọa độ gốc của sông Cầu Bây (điểm bắt đầu thực tế)
-  const riverStartCoordinate = { lat: 21.032323, lng: 105.919651 }; // Tọa độ thực của sông Cầu Bây
-  const riverLength = 8013; // 8013m
-  
-  // Tạo đường sông Cầu Bây chảy từ Tây Bắc xuống Đông Nam
-  const generateCauBayRiverPath = () => {
+  // Tọa độ bắt đầu sông Cầu Bây (Hà Nội)
+  const riverStartCoordinate = {
+    lat: 21.032323,
+    lng: 105.919651
+  };
+
+  // Hàm tạo đường path của sông Cầu Bây thực tế
+  const generateCauBayRiverPath = (): { x: number; y: number }[] => {
     const points: { x: number; y: number }[] = [];
     const segments = 50; // Số đoạn để tạo độ cong
     
@@ -78,16 +78,19 @@ const RiverMap: React.FC<RiverMapProps> = ({
   const pixelToCoordinate = (x: number, y: number): Coordinate => {
     // Tính toán tỷ lệ dựa trên độ dài sông 8013m
     const progressX = x / width;
-    const progressY = (height / 2 - y) / (height / 2); // Chuẩn hóa từ -1 đến 1
+    const progressY = y / height;
     
-    // Tính tọa độ dựa trên vị trí trên sông với điểm giữa làm gốc
-    const deltaLng = (RIVER_LENGTH / 111320) * (progressX - 0.5); // Trừ 0.5 để giữa sông là gốc
-    const deltaLat = (RIVER_LENGTH / 111320) * progressY * 0.3; // Biên độ nhỏ hơn cho vĩ độ
+    // Sông Cầu Bây chảy từ Tây Bắc xuống Đông Nam
+    const startLat = 21.032323;
+    const startLng = 105.919651;
+    const endLat = 20.998456; // Khoảng 4km về phía Nam
+    const endLng = 105.952567; // Khoảng 3km về phía Đông
     
-    return {
-      lat: riverStartCoordinate.lat + deltaLat,
-      lng: riverStartCoordinate.lng + deltaLng
-    };
+    // Interpolate tọa độ
+    const lat = startLat + (endLat - startLat) * progressY;
+    const lng = startLng + (endLng - startLng) * progressX;
+    
+    return { lat, lng };
   };
 
   // Kiểm tra xem điểm có nằm trên sông không
@@ -131,21 +134,6 @@ const RiverMap: React.FC<RiverMapProps> = ({
       ctx.stroke();
     }
 
-    // Vẽ viền sông
-    ctx.beginPath();
-    ctx.strokeStyle = '#2171b5';
-    ctx.lineWidth = 2;
-
-    riverPoints.forEach((point, index) => {
-      if (index === 0) {
-        ctx.moveTo(point.x, point.y);
-      } else {
-        ctx.lineTo(point.x, point.y);
-      }
-    });
-
-    ctx.stroke();
-
     // Vẽ các vị trí landmark
     // Đặt marker và label theo vị trí thực tế trên sông
     RIVER_POSITIONS.forEach((position, index) => {
@@ -188,80 +176,69 @@ const RiverMap: React.FC<RiverMapProps> = ({
         if (index === 0) { // Sài Đồng (đầu sông - TBắc)
           textY = riverPoint.y - 35;
           textX = riverPoint.x - 30;
-        } else if (index === 5) { // Xuân Thụy (cuối sông - ĐNam)
+        } else if (index === RIVER_POSITIONS.length - 1) { // Xuân Thụy (cuối sông - ĐNam)
           textY = riverPoint.y + 45;
           textX = riverPoint.x + 30;
         }
-        // Vẽ background cho text
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillRect(textX - 30, textY - 12, 60, 16);
-        // Vẽ text
-        ctx.fillStyle = '#333333';
+
         ctx.fillText(position.name, textX, textY);
-        // Vẽ đường nối từ marker tới text
-        ctx.strokeStyle = '#666666';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 2]);
-        ctx.beginPath();
-        ctx.moveTo(riverPoint.x, riverPoint.y);
-        ctx.lineTo(textX, textY - 5);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        
+        // Vẽ khoảng cách bên dưới tên
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#666666';
+        ctx.fillText(`${position.position.toLocaleString()}m`, textX, textY + 15);
       }
     });
 
-    // Vẽ vị trí được chọn
+    // Vẽ điểm được chọn (nếu có)
     if (selectedPosition !== null) {
       const progress = selectedPosition / RIVER_LENGTH;
-      const pointIndex = Math.round(progress * (riverPoints.length - 1));
-      const riverPoint = riverPoints[Math.min(pointIndex, riverPoints.length - 1)];
-      
+      const targetIndex = Math.round(progress * (riverPoints.length - 1));
+      const riverPoint = riverPoints[Math.min(targetIndex, riverPoints.length - 1)];
       if (riverPoint) {
-        ctx.fillStyle = '#00ff00';
+        ctx.fillStyle = '#ff6b35';
         ctx.beginPath();
-        ctx.arc(riverPoint.x, riverPoint.y, 10, 0, 2 * Math.PI);
+        ctx.arc(riverPoint.x, riverPoint.y, 12, 0, 2 * Math.PI);
         ctx.fill();
-        
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 3;
         ctx.stroke();
-        
-        // Thêm text hiển thị vị trí
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${selectedPosition.toFixed(0)}m`, riverPoint.x, riverPoint.y - 15);
-      }
-    }
-
-    // Vẽ một số đặc điểm địa lý
-    // Cây cối
-    ctx.fillStyle = '#228b22';
-    for (let i = 0; i < 20; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      if (!isPointOnRiver(x, y)) {
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, 2 * Math.PI);
-        ctx.fill();
       }
     }
   };
 
-  // Hàm vẽ heatmap
+  // Hàm vẽ heatmap continuous dọc theo đường sông thực tế
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
-    const segments = 100; // Số segment cho heatmap
+    if (!selectedParameter) return;
     
-    for (let i = 0; i < segments; i++) {
-      const progress = i / segments;
-      const nextProgress = (i + 1) / segments;
+    const riverPoints = generateCauBayRiverPath();
+    // Tăng số lượng segment để heatmap mượt hơn
+    const heatmapSegments = 100; // Tăng từ 50 lên 100 để có gradient mượt hơn
+    
+    // Vẽ outline sông trước (màu đen nhạt)
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 26;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    riverPoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+    ctx.stroke();
+    
+    // Vẽ heatmap với nhiều segment hơn
+    for (let i = 0; i < heatmapSegments; i++) {
+      const progress = i / heatmapSegments;
+      const nextProgress = (i + 1) / heatmapSegments;
+      const positionMeters = progress * RIVER_LENGTH;
       
-      const startMeter = progress * RIVER_LENGTH;
-      const endMeter = nextProgress * RIVER_LENGTH;
-      
-      // Tính nồng độ tại điểm giữa segment
-      const middleMeter = (startMeter + endMeter) / 2;
-      const waterQuality = calculateConcentration(middleMeter, rainfall, temperature);
+      // Tính nồng độ tại vị trí này
+      const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
       
       // Lấy giá trị nồng độ theo parameter được chọn
       let value = 0;
@@ -273,60 +250,47 @@ const RiverMap: React.FC<RiverMapProps> = ({
         value = waterQuality.NO3_sample1;
       }
       
-      // Lấy màu từ thang màu
-      const colorScale = COLOR_SCALES[selectedParameter!];
-      const color = getColorFromValue(value, colorScale);
+      // Lấy màu từ thang màu với clamping
+      const colorScale = COLOR_SCALES[selectedParameter];
+      const clampedValue = Math.min(Math.max(value, colorScale.min), colorScale.max);
+      const color = getColorFromValue(clampedValue, colorScale);
       
-      // Vẽ segment với màu tương ứng
-      const startX = meterToPixel(startMeter, width);
-      const endX = meterToPixel(endMeter, width);
+      // Tính vị trí trên river path
+      const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
+      const nextRiverIndex = Math.floor(nextProgress * (riverPoints.length - 1));
       
-      const startPoint = getRiverPointAtX(startX);
-      const endPoint = getRiverPointAtX(endX);
+      // Interpolate giữa các điểm trên river path
+      const currentPoint = riverPoints[currentRiverIndex];
+      const nextPoint = riverPoints[Math.min(nextRiverIndex, riverPoints.length - 1)];
       
-      if (startPoint && endPoint) {
+      if (currentPoint && nextPoint) {
         ctx.beginPath();
         ctx.strokeStyle = color;
-        ctx.lineWidth = 48;
+        ctx.lineWidth = 22; // Độ dày sông heatmap
         ctx.lineCap = 'round';
-        ctx.moveTo(startPoint.x, startPoint.y);
-        ctx.lineTo(endPoint.x, endPoint.y);
+        ctx.lineJoin = 'round';
+        ctx.moveTo(currentPoint.x, currentPoint.y);
+        ctx.lineTo(nextPoint.x, nextPoint.y);
         ctx.stroke();
       }
     }
   };
 
-  // Hàm lấy điểm sông tại vị trí X
-  const getRiverPointAtX = (x: number): { x: number; y: number } | null => {
-    // Tìm điểm gần nhất trên đường sông với tọa độ x
-    let closestPoint: { x: number; y: number } | null = null;
-    let minDistance = Infinity;
-    
-    for (const point of riverPoints) {
-      const distance = Math.abs(point.x - x);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPoint = point;
-      }
-    }
-    
-    return closestPoint;
-  };
-
+  // Handle mouse move for tooltip
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
     setMousePosition({ x, y });
-    
+
     if (isPointOnRiver(x, y)) {
-      // Tìm điểm gần nhất trên đường sông
-      let minDistance = Infinity;
+      // Tìm vị trí gần nhất trên sông
       let closestProgress = 0;
+      let minDistance = Infinity;
       
       riverPoints.forEach((point, index) => {
         const distance = Math.sqrt(Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2));
@@ -335,7 +299,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
           closestProgress = index / (riverPoints.length - 1);
         }
       });
-      
+
       const positionMeters = closestProgress * RIVER_LENGTH;
       const coordinate = pixelToCoordinate(x, y);
       const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
@@ -346,22 +310,27 @@ const RiverMap: React.FC<RiverMapProps> = ({
     } else {
       setHoveredCoordinate(null);
       setHoveredWaterQuality(null);
-      setHoveredPositionMeters(null);
     }
   };
 
-  const handleMouseClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseLeave = () => {
+    setMousePosition(null);
+    setHoveredCoordinate(null);
+    setHoveredWaterQuality(null);
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    
+
     if (isPointOnRiver(x, y)) {
-      // Tìm điểm gần nhất trên đường sông
-      let minDistance = Infinity;
+      // Tìm vị trí gần nhất trên sông
       let closestProgress = 0;
+      let minDistance = Infinity;
       
       riverPoints.forEach((point, index) => {
         const distance = Math.sqrt(Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2));
@@ -370,34 +339,25 @@ const RiverMap: React.FC<RiverMapProps> = ({
           closestProgress = index / (riverPoints.length - 1);
         }
       });
-      
+
       const positionMeters = closestProgress * RIVER_LENGTH;
       const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
       
       setSelectedPosition(positionMeters);
-      
       if (onPositionSelect) {
         onPositionSelect(positionMeters, waterQuality);
       }
     }
   };
 
-  const handleMouseLeave = () => {
-    setMousePosition(null);
-    setHoveredCoordinate(null);
-    setHoveredWaterQuality(null);
-    setHoveredPositionMeters(null);
-  };
-
+  // Draw canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
     drawRiver(ctx);
-  }, []);
+  }, [width, height, selectedParameter, selectedPosition, rainfall, temperature]);
 
   return (
     <div className="relative">
@@ -407,11 +367,11 @@ const RiverMap: React.FC<RiverMapProps> = ({
         height={height}
         className="border border-gray-300 rounded-lg cursor-crosshair"
         onMouseMove={handleMouseMove}
-        onMouseClick={handleMouseClick}
         onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
       />
-      
-      {hoveredWaterQuality && mousePosition && hoveredPositionMeters !== null && (
+      {/* Tooltip */}
+      {mousePosition && hoveredWaterQuality && hoveredCoordinate && (
         <div
           className="absolute bg-black text-white px-4 py-3 rounded-lg shadow-lg text-xs pointer-events-none z-10 max-w-xs"
           style={{

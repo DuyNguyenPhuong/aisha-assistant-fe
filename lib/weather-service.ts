@@ -76,8 +76,8 @@ export class WeatherService {
       
       // Return fallback data
       return {
-        temperature: 25,
-        rainfall: 0,
+        temperature: 31,
+        rainfall: 10,
         location: 'Hanoi (fallback)',
         timestamp: Date.now(),
         humidity: 70,
