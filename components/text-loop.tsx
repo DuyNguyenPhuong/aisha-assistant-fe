@@ -1,8 +1,7 @@
-import { TextLoop } from '@/components/ui/text-loop';
-
+import { TextLoop } from "@/components/ui/text-loop";
 export function TextLoopBasic() {
   return (
-    <TextLoop className='font-outfit text-sm'>
+    <TextLoop className="font-outfit text-sm">
       <span>How can I help with your wastewater operations today?</span>
       <span>Check water quality parameters</span>
       <span>Monitor equipment status</span>

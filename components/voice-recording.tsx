@@ -1,52 +1,55 @@
-'use client';
-
-import React, { useEffect, useState, useRef } from 'react';
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { Mic } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+"use client";
+import React, { useEffect, useState, useRef } from "react";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
+import { Mic } from "lucide-react";
+import { Button } from "@/components/ui/button";
 export type VoiceRecorderProps = {
   onTranscriptChange?: (transcript: string) => void;
   onVoiceStart?: () => void;
   onVoiceStop?: () => void;
 };
-
 const languages = [
-  { code: 'en-US', label: 'en', flag: '🇬🇧' },
-  { code: 'ru-RU', label: 'ru', flag: '🇷🇺' },
-  { code: 'vi-VN', label: 'vi', flag: '🇻🇳' },
+  { code: "en-US", label: "en", flag: "🇬🇧" },
+  { code: "ru-RU", label: "ru", flag: "🇷🇺" },
+  { code: "vi-VN", label: "vi", flag: "🇻🇳" },
 ];
-
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   onTranscriptChange,
   onVoiceStart,
   onVoiceStop,
 }) => {
-  const { transcript, listening, browserSupportsSpeechRecognition, resetTranscript } = useSpeechRecognition();
+  const {
+    transcript,
+    listening,
+    browserSupportsSpeechRecognition,
+    resetTranscript,
+  } = useSpeechRecognition();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (onTranscriptChange) {
       onTranscriptChange(transcript);
     }
   }, [transcript, onTranscriptChange]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
     if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDropdown]);
-
   if (!browserSupportsSpeechRecognition) {
     return <span>Browser does not support speech recognition.</span>;
   }
-
   const handleIconClick = () => {
     if (listening) {
       SpeechRecognition.stopListening();
@@ -56,14 +59,12 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       setShowDropdown(true);
     }
   };
-
   const handleLanguageSelect = (language: string) => {
     resetTranscript();
     SpeechRecognition.startListening({ continuous: true, language });
     setShowDropdown(false);
     if (onVoiceStart) onVoiceStart();
   };
-
   return (
     <div className="flex relative items-center">
       <Button
@@ -71,7 +72,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         onClick={handleIconClick}
         variant="ghost"
         size="icon"
-        className={`mr-2 rounded-full transition-transform duration-200 hover:scale-110 ${listening ? 'text-red-500 animate-pulse' : ''}`}
+        className={`mr-2 rounded-full transition-transform duration-200 hover:scale-110 ${listening ? "text-red-500 animate-pulse" : ""}`}
       >
         <Mic className="w-5 h-5" />
       </Button>
@@ -98,5 +99,4 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     </div>
   );
 };
-
 export default VoiceRecorder;
