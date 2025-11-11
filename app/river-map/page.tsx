@@ -194,16 +194,23 @@ const RiverMapPage: NextPage = () => {
   // Force re-render of heatmap when parameters change
   const heatmapKey = `${selectedParameter}-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${showHeatmap}`;
 
-  // Generate heatmap data
+  // Generate heatmap data với thang màu riêng cho từng chất
   const getHeatmapData = () => {
-    if (!showHeatmap) return [];
+    if (!showHeatmap || !selectedParameter) return [];
     
     const currentWeather = getCurrentWeatherValues();
-    const heatmapPoints: Array<{ lat: number; lng: number; intensity: number }> = [];
+    const heatmapPoints: Array<{ 
+      lat: number; 
+      lng: number; 
+      intensity: number;
+      value: number;
+      parameter: string;
+      color?: string;
+    }> = [];
     
     // Tạo nhiều điểm dọc theo sông để hiển thị gradient nồng độ
-    for (let i = 0; i <= 50; i++) {
-      const progress = i / 50;
+    for (let i = 0; i <= 80; i++) { // Tăng số điểm để heatmap mượt hơn
+      const progress = i / 80;
       const positionMeters = progress * RIVER_LENGTH;
       
       // Tính tọa độ dọc theo sông (từ tây bắc xuống đông nam)
@@ -218,32 +225,50 @@ const RiverMapPage: NextPage = () => {
       // Tính nồng độ tại vị trí này
       const waterQuality = calculateConcentration(positionMeters, currentWeather.rainfall, currentWeather.temperature);
       
-      // Lấy giá trị theo parameter được chọn
+      // Lấy giá trị theo parameter được chọn với thang màu phù hợp
       let value = 0;
-      let maxValue = 50; // Giá trị max cho normalize
+      let maxValue = 50;
+      let color = '#ff0000'; // Màu mặc định đỏ
       
       if (selectedParameter === 'BOD5') {
         value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
-        maxValue = 50;
+        maxValue = 50; // BOD5 max 50 mg/L
+        // Thang màu đỏ cho BOD5: từ xanh lá (thấp) → vàng (trung bình) → đỏ (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        if (ratio <= 0.3) {
+          color = `rgb(${Math.floor(ratio * 255 / 0.3)}, 255, 0)`; // Xanh lá → Vàng
+        } else if (ratio <= 0.7) {
+          color = `rgb(255, ${Math.floor(255 - (ratio - 0.3) * 255 / 0.4)}, 0)`; // Vàng → Cam
+        } else {
+          color = `rgb(255, 0, ${Math.floor((1 - ratio) * 255 / 0.3)})`; // Cam → Đỏ
+        }
       } else if (selectedParameter === 'NH4') {
         value = (waterQuality.NH4_sample0 + waterQuality.NH4_sample1) / 2;
-        maxValue = 25;
+        maxValue = 25; // NH4+ max 25 mg/L
+        // Thang màu vàng cho NH4+: từ xanh dương (thấp) → vàng (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        const blue = Math.floor(255 - ratio * 255);
+        const green = Math.floor(200 + ratio * 55);
+        color = `rgb(${Math.floor(ratio * 255)}, ${green}, ${blue})`;
       } else if (selectedParameter === 'NO3') {
         value = waterQuality.NO3_sample1;
-        maxValue = 30;
-      } else {
-        // Mặc định là BOD5
-        value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
-        maxValue = 50;
+        maxValue = 30; // NO3- max 30 mg/L
+        // Thang màu xanh cho NO3-: từ xanh nhạt (thấp) → xanh đậm (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        const intensity = Math.floor(255 - ratio * 200); // 255 → 55
+        color = `rgb(0, ${intensity}, 255)`;
       }
       
-      // Normalize intensity (0-1)
+      // Normalize intensity cho leaflet heatmap (0-1)
       const intensity = Math.min(value / maxValue, 1.0);
       
       heatmapPoints.push({
         lat,
         lng,
-        intensity
+        intensity,
+        value,
+        parameter: selectedParameter,
+        color
       });
     }
     
@@ -773,21 +798,46 @@ const RiverMapPage: NextPage = () => {
                 </button>
               </div>
               
-              {showHeatmap && (
+              {showHeatmap && selectedParameter && (
                 <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded border border-blue-200 mb-4">
-                  <div className="font-semibold mb-2">📊 Heatmap hiển thị nồng độ chất ô nhiễm thực tế từ mô phỏng:</div>
-                  <div className="space-y-1">
-                    <div>• <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>Nồng độ thấp (an toàn) - {selectedParameter || 'BOD5'} &lt; 30% max</div>
-                    <div>• <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>Nồng độ trung bình - 30-70% max</div>
-                    <div>• <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>Nồng độ cao (nguy hiểm) - &gt; 70% max</div>
-                  </div>
-                  <div className="mt-2 text-gray-600">
-                    <strong>Thông số hiện tại:</strong> {selectedParameter || 'BOD5'} | 
-                    <strong>Mưa:</strong> {getCurrentWeatherValues().rainfall}mm/hr | 
-                    <strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature}°C
+                  <div className="font-semibold mb-2">📊 Heatmap hiển thị nồng độ {selectedParameter} từ mô phỏng:</div>
+                  
+                  {/* Thang màu riêng cho từng chất */}
+                  {selectedParameter === 'BOD5' && (
+                    <div className="space-y-1 mb-2">
+                      <div className="font-medium text-red-700">🔴 BOD5 - Thang màu đỏ (0-50 mg/L):</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #00ff00, #ffff00)'}}></span>Thấp (0-15 mg/L): Xanh lá → Vàng</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #ffff00, #ff8000)'}}></span>Trung bình (15-35 mg/L): Vàng → Cam</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #ff8000, #ff0000)'}}></span>Cao (35-50 mg/L): Cam → Đỏ</div>
+                    </div>
+                  )}
+                  
+                  {selectedParameter === 'NH4' && (
+                    <div className="space-y-1 mb-2">
+                      <div className="font-medium text-yellow-700">🟡 NH4+ - Thang màu vàng (0-25 mg/L):</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #0080ff, #80c8ff)'}}></span>Thấp (0-7.5 mg/L): Xanh dương nhạt</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #80c8ff, #ffff80)'}}></span>Trung bình (7.5-17.5 mg/L): Xanh → Vàng</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #ffff80, #ffff00)'}}></span>Cao (17.5-25 mg/L): Vàng đậm</div>
+                    </div>
+                  )}
+                  
+                  {selectedParameter === 'NO3' && (
+                    <div className="space-y-1 mb-2">
+                      <div className="font-medium text-blue-700">🔵 NO3- - Thang màu xanh (0-30 mg/L):</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #e6f3ff, #80d4ff)'}}></span>Thấp (0-9 mg/L): Xanh rất nhạt</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #80d4ff, #0080ff)'}}></span>Trung bình (9-21 mg/L): Xanh trung bình</div>
+                      <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #0080ff, #0040ff)'}}></span>Cao (21-30 mg/L): Xanh đậm</div>
+                    </div>
+                  )}
+                  
+                  <div className="mt-2 text-gray-600 text-xs border-t pt-2">
+                    <strong>Điều kiện hiện tại:</strong> 
+                    <strong>Mưa:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)}mm/hr | 
+                    <strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C |
+                    <strong>Chất:</strong> {selectedParameter}
                   </div>
                   <div className="mt-1 text-xs text-gray-500">
-                    💡 <em>Chọn thông số heatmap ở panel &quot;Heatmap&quot; bên trên để thay đổi màu sắc hiển thị</em>
+                    💡 <em>Mỗi chất có thang màu riêng biệt để dễ phân biệt mức độ ô nhiễm</em>
                   </div>
                 </div>
               )}
@@ -801,6 +851,7 @@ const RiverMapPage: NextPage = () => {
                 title="Sông Cầu Bây"
                 showHeatmap={showHeatmap}
                 heatmapData={getHeatmapData()}
+                selectedParameter={selectedParameter || 'BOD5'}
               />
             </div>
           </div>

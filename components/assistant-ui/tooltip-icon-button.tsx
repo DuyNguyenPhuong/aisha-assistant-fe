@@ -1,7 +1,5 @@
 "use client";
-
 import { ComponentPropsWithoutRef, forwardRef } from "react";
-
 import {
   Tooltip,
   TooltipContent,
@@ -10,12 +8,10 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
 export type TooltipIconButtonProps = ComponentPropsWithoutRef<typeof Button> & {
   tooltip: string;
   side?: "top" | "bottom" | "left" | "right";
 };
-
 export const TooltipIconButton = forwardRef<
   HTMLButtonElement,
   TooltipIconButtonProps
@@ -40,5 +36,4 @@ export const TooltipIconButton = forwardRef<
     </TooltipProvider>
   );
 });
-
 TooltipIconButton.displayName = "TooltipIconButton";

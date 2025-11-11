@@ -1,6 +1,3 @@
-// New code is in tempthread.tsx
-
-// This is old working code
 import {
   ActionBarPrimitive,
   BranchPickerPrimitive,
@@ -27,7 +24,6 @@ import {
   AlertTriangleIcon,
   BrainIcon,
   PlusIcon,
-  // ExternalLinkIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SidebarTrigger } from '../ui/sidebar';
@@ -58,11 +54,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import dynamic from 'next/dynamic';
-
 const VoiceRecorder = dynamic(() => import('@/components/voice-recording'), {
   ssr: false,
 });
-// Add interface for PLC data
 interface PLCData {
   timestamp: string;
   data: Record<string, number>;
@@ -70,12 +64,10 @@ interface PLCData {
   status: Record<string, boolean>;
   all_normal: boolean;
 }
-
 const user = {
   avatar: 'URL_ADDRESSars.githubusercontent.com/u/102832491?v=4',
   name: 'Chao',
 };
-
 export const Thread: FC = () => {
   const messages = useThread((t) => t.messages);
   return (
@@ -102,16 +94,13 @@ export const Thread: FC = () => {
               AssistantMessage: AssistantMessage,
             }}
           />
-
           <ThreadPrimitive.If empty={false}>
             <div className='flex-grow min-h-8' />
           </ThreadPrimitive.If>
-
           <div className='sticky bottom-0 mt-3 flex w-full max-w-[var(--thread-max-width)] flex-col items-center justify-end rounded-t-lg bg-gradient-to-t from-background via-background to-transparent pb-4 pt-6'>
             <ThreadScrollToBottom />
             <Composer />
           </div>
-
           <ThreadPrimitive.Empty>
             <PLCDataDisplay />
           </ThreadPrimitive.Empty>
@@ -120,20 +109,16 @@ export const Thread: FC = () => {
     </ThreadPrimitive.Root>
   );
 };
-
-// New component to fetch and display PLC data
 const PLCDataDisplay: FC = () => {
   const [plcData, setPlcData] = useState<PLCData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
-
   useEffect(() => {
     const fetchPLCData = async () => {
       try {
         setLoading(true);
         const response = await fetch(`${backendUrl}/plc/data`);
-        // const response = await fetch(`${backendUrl}/ftp/latest`)
         if (!response.ok) {
           throw new Error('Failed to fetch PLC data');
         }
@@ -147,14 +132,10 @@ const PLCDataDisplay: FC = () => {
         setLoading(false);
       }
     };
-
     fetchPLCData();
-    // Refresh data every 30 seconds
-    // const interval = setInterval(fetchPLCData, 30000);
     const interval = setInterval(fetchPLCData, 172800000);
     return () => clearInterval(interval);
   }, []);
-
   if (loading && !plcData) {
     return (
       <div className='w-full max-w-[var(--thread-max-width)] p-4 flex justify-center'>
@@ -164,7 +145,6 @@ const PLCDataDisplay: FC = () => {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className='w-full max-w-[var(--thread-max-width)] p-4 flex justify-center'>
@@ -175,8 +155,6 @@ const PLCDataDisplay: FC = () => {
       </div>
     );
   }
-
-  // Map PLC data to display format
   const metrics = [
     {
       title: t('TSSOutput'),
@@ -203,7 +181,6 @@ const PLCDataDisplay: FC = () => {
       delay: 1.4,
     },
   ];
-
   return (
     <div className='flex gap-4 w-full max-w-[var(--thread-max-width)] p-4 overflow-x-auto'>
       {plcData &&
@@ -217,7 +194,6 @@ const PLCDataDisplay: FC = () => {
           const maxValue = Array.isArray(threshold)
             ? `${threshold[0]} - ${threshold[1]}`
             : threshold?.toString() || '0';
-
           return (
             <motion.div
               key={index}
@@ -268,7 +244,6 @@ const PLCDataDisplay: FC = () => {
     </div>
   );
 };
-
 const ThreadScrollToBottom: FC = () => {
   return (
     <ThreadPrimitive.ScrollToBottom asChild>
@@ -281,19 +256,15 @@ const ThreadScrollToBottom: FC = () => {
     </ThreadPrimitive.ScrollToBottom>
   );
 };
-
 const ThreadWelcome: FC = () => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 300);
-
     return () => clearTimeout(timer);
   }, []);
-
   return (
     <ThreadPrimitive.Empty>
       <div className='relative w-full'>
@@ -334,7 +305,6 @@ const ThreadWelcome: FC = () => {
     </ThreadPrimitive.Empty>
   );
 };
-
 const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
   isVisible = true,
 }) => {
@@ -364,7 +334,6 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
           </p>
         </div>
       </ThreadPrimitive.Suggestion>
-
       <ThreadPrimitive.Suggestion
         className='flex overflow-hidden relative items-start p-5 bg-gradient-to-br rounded-xl border transition-all duration-300 ease-in-out group from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 hover:shadow-md hover:-translate-y-1 hover:bg-gradient-to-br hover:from-cyan-50 hover:to-slate-100 dark:hover:from-cyan-900/20 dark:hover:to-slate-800 border-border'
         prompt={t('waterQualityPrompt')}
@@ -382,7 +351,6 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
           <p className='text-sm text-muted-foreground'>{t('waterQuality')}</p>
         </div>
       </ThreadPrimitive.Suggestion>
-
       <ThreadPrimitive.Suggestion
         className='flex overflow-hidden relative items-start p-5 bg-gradient-to-br rounded-xl border transition-all duration-300 ease-in-out group from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 hover:shadow-md hover:-translate-y-1 hover:bg-gradient-to-br hover:from-amber-50 hover:to-slate-100 dark:hover:from-amber-900/20 dark:hover:to-slate-800 border-border'
         prompt={t('reportsPrompt')}
@@ -400,7 +368,6 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
           <p className='text-sm text-muted-foreground'>{t('reports')}</p>
         </div>
       </ThreadPrimitive.Suggestion>
-
       <ThreadPrimitive.Suggestion
         className='flex overflow-hidden relative items-start p-5 bg-gradient-to-br rounded-xl border transition-all duration-300 ease-in-out group from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 hover:shadow-md hover:-translate-y-1 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-slate-100 dark:hover:from-emerald-900/20 dark:hover:to-slate-800 border-border'
         prompt={t('knowledgeBasePrompt')}
@@ -421,7 +388,6 @@ const ThreadWelcomeSuggestions: FC<{ isVisible?: boolean }> = ({
     </motion.div>
   );
 };
-
 const Composer: React.FC = () => {
   const { t } = useTranslation();
   const composerRuntime = useComposerRuntime();
@@ -432,10 +398,8 @@ const Composer: React.FC = () => {
   const isSubmittingRef = useRef(false);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
   const [inputValue, setInputValue] = useState(composerRuntime.getState().text);
   const isRecordingActiveRef = useRef(false)
-
   useEffect(() => {
     const unsubscribe = composerRuntime.subscribe(() => {
       const newText = composerRuntime.getState().text;
@@ -443,12 +407,10 @@ const Composer: React.FC = () => {
     });
     return unsubscribe;
   }, [composerRuntime]);
-
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 500);
     return () => clearTimeout(timer);
   }, []);
-
   const handleRememberSubmit = async () => {
     if (rememberContext.trim()) {
       try {
@@ -469,7 +431,6 @@ const Composer: React.FC = () => {
       }
     }
   };
-
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
@@ -478,41 +439,33 @@ const Composer: React.FC = () => {
     },
     [composerRuntime]
   );
-
   const handleVoiceStart = useCallback(() => {
     isRecordingActiveRef.current = true; 
     setIsVoiceRecording(true);
     composerRuntime.setText('');
     setInputValue('');
   }, [composerRuntime]);
-
   const handleVoiceStop = useCallback(() => {
     isRecordingActiveRef.current = false;
     SpeechRecognition.stopListening();
     setIsVoiceRecording(false);
   }, []);
-
   const handleSubmit = (submitValue: string) => {
     if (isSubmittingRef.current || !submitValue.trim()) return;
-  
     isSubmittingRef.current = true;
     setSubmitting(true);
-  
     const textToSend = submitValue.trim();
     console.log("Submitting:", textToSend);
     composerRuntime.send();
     composerRuntime.setText("");
     setInputValue("");
     resetTranscript();
-  
     setTimeout(() => {
       isSubmittingRef.current = false;
       setSubmitting(false);
     }, 500);
   };
-
   const isSubmitEnabled = inputValue.trim().length > 0 && !submitting && !isVoiceRecording;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -559,7 +512,6 @@ const Composer: React.FC = () => {
           isSubmitEnabled={isSubmitEnabled}
         />
       </ComposerPrimitive.Root>
-
       <Dialog open={isRememberModalOpen} onOpenChange={setIsRememberModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -587,14 +539,11 @@ const Composer: React.FC = () => {
     </motion.div>
   );
 };
-
 export default Composer;
-
 interface ComposerActionProps {
   onSubmit: () => void;
   isSubmitEnabled: boolean;
 }
-
 const ComposerAction: React.FC<ComposerActionProps> = ({ onSubmit, isSubmitEnabled }) => {
   return (
     <>
@@ -624,7 +573,6 @@ const ComposerAction: React.FC<ComposerActionProps> = ({ onSubmit, isSubmitEnabl
     </>
   );
 };
-
 const CircleStopIcon = () => {
   return (
     <svg
@@ -638,7 +586,6 @@ const CircleStopIcon = () => {
     </svg>
   );
 };
-
 const UserMessage: FC = () => {
   return (
     <MessagePrimitive.Root className='flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2'>
@@ -654,14 +601,12 @@ const UserMessage: FC = () => {
         </div>
         <UserActionBar />
       </div>
-
       <div className='flex items-center pl-11'>
         <BranchPicker className='ml-auto' />
       </div>
     </MessagePrimitive.Root>
   );
 };
-
 const UserActionBar: FC = () => {
   return (
     <ActionBarPrimitive.Root
@@ -678,7 +623,6 @@ const UserActionBar: FC = () => {
     </ActionBarPrimitive.Root>
   );
 };
-
 const EditComposer: FC = () => {
   return (
     <ComposerPrimitive.Root className='my-4 flex w-full max-w-[var(--thread-max-width)] flex-col gap-2 rounded-xl border border-border bg-muted p-4'>
@@ -700,7 +644,6 @@ const EditComposer: FC = () => {
     </ComposerPrimitive.Root>
   );
 };
-
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className='flex flex-col w-full max-w-[var(--thread-max-width)] py-4 gap-2'>
@@ -722,7 +665,6 @@ const AssistantMessage: FC = () => {
           </div>
         </div>
       </div>
-
       <div className='flex items-center pl-11'>
         <AssistantActionBar />
         <BranchPicker className='ml-auto' />
@@ -730,7 +672,6 @@ const AssistantMessage: FC = () => {
     </MessagePrimitive.Root>
   );
 };
-
 const AssistantActionBar: FC = () => {
   return (
     <ActionBarPrimitive.Root
@@ -760,7 +701,6 @@ const AssistantActionBar: FC = () => {
     </ActionBarPrimitive.Root>
   );
 };
-
 const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   className,
   ...rest
@@ -789,97 +729,3 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
     </BranchPickerPrimitive.Root>
   );
 };
-
-// // Add source attribution links at the bottom of assistant messages
-// const SourceAttribution: FC = () => {
-//   return (
-//     <div className='pt-3 mt-4 border-t border-slate-100'>
-//       <h4 className='mb-2 text-xs font-medium text-slate-500'>Sources</h4>
-//       <div className='flex flex-wrap gap-2'>
-//         {[1, 2, 3].map((i) => (
-//           <a
-//             key={i}
-//             href='#'
-//             className='inline-flex gap-1 items-center px-2 py-1 text-xs rounded-md border bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'>
-//             <span>Source {i}</span>
-//             <ExternalLinkIcon className='w-3 h-3' />
-//           </a>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-
-// // Add a citation component for displaying references
-// const Citation: FC<{ number: number }> = ({ number }) => {
-//   return (
-//     <sup className='text-xs font-medium text-blue-600 cursor-pointer'>
-//       [{number}]
-//     </sup>
-//   );
-// };
-
-// // Add a feedback dialog component
-// const FeedbackDialog: FC = () => {
-//   return (
-//     <div className='flex fixed inset-0 z-50 justify-center items-center bg-black/50'>
-//       <div className='p-6 w-full max-w-md bg-white rounded-xl shadow-lg'>
-//         <h3 className='mb-4 text-lg font-bold'>Share your feedback</h3>
-//         <p className='mb-4 text-slate-500'>
-//           How was your experience with this response?
-//         </p>
-//         <textarea
-//           className='w-full border border-slate-200 rounded-lg p-3 mb-4 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500'
-//           placeholder='Tell us what you liked or how we can improve...'
-//         />
-//         <div className='flex gap-2 justify-end'>
-//           <Button variant='ghost'>Cancel</Button>
-//           <Button className='text-white bg-blue-600 hover:bg-blue-700'>
-//             Submit
-//           </Button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// // Add a typing indicator for the assistant
-// const TypingIndicator: FC = () => {
-//   return (
-//     <div className='flex gap-1 items-center py-1'>
-//       <span
-//         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
-//         style={{ animationDelay: '0ms' }}></span>
-//       <span
-//         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
-//         style={{ animationDelay: '150ms' }}></span>
-//       <span
-//         className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
-//         style={{ animationDelay: '300ms' }}></span>
-//     </div>
-//   );
-// };
-
-// // Add a code block component with syntax highlighting
-// const CodeBlock: FC<{ language: string; code: string }> = ({
-//   language,
-//   code,
-// }) => {
-//   return (
-//     <div className='overflow-hidden relative my-4 rounded-lg'>
-//       <div className='flex justify-between items-center px-4 py-2 text-xs bg-slate-800 text-slate-200'>
-//         <span>{language}</span>
-//         <TooltipIconButton
-//           tooltip='Copy code'
-//           className='text-slate-200 hover:text-white'>
-//           <CopyIcon className='w-4 h-4' />
-//         </TooltipIconButton>
-//       </div>
-//       <pre className='overflow-x-auto p-4 text-sm bg-slate-900 text-slate-50'>
-//         <code>{code}</code>
-//       </pre>
-//     </div>
-//   );
-// };
-
-// End of old working code

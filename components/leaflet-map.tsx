@@ -10,7 +10,8 @@ interface LeafletMapProps {
   height?: string;
   title?: string;
   showHeatmap?: boolean;
-  heatmapData?: Array<{ lat: number; lng: number; intensity: number }>;
+  heatmapData?: Array<{ lat: number; lng: number; intensity: number; parameter?: string }>;
+  selectedParameter?: string;
 }
 
 declare global {
@@ -27,7 +28,8 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
   height = '500px',
   title = 'Bản đồ sông Cầu Bây',
   showHeatmap = false,
-  heatmapData = []
+  heatmapData = [],
+  selectedParameter = 'BOD5'
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -137,18 +139,65 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
       // Add heatmap if data provided
       if (showHeatmap && heatmapData.length > 0 && window.L.heatLayer) {
         const heatData = heatmapData.map(point => [point.lat, point.lng, point.intensity]);
+        
+        // Định nghĩa gradient màu riêng cho từng chất
+        let gradient = {};
+        
+        switch (selectedParameter) {
+          case 'BOD5':
+            // Thang màu đỏ cho BOD5: Xanh lá → Vàng → Cam → Đỏ
+            gradient = {
+              0.0: '#00ff00',  // Xanh lá (thấp)
+              0.3: '#80ff00',  // Xanh lá nhạt
+              0.5: '#ffff00',  // Vàng (trung bình thấp)
+              0.7: '#ff8000',  // Cam (trung bình cao)
+              0.85: '#ff4000', // Đỏ cam
+              1.0: '#ff0000'   // Đỏ đậm (cao)
+            };
+            break;
+            
+          case 'NH4':
+            // Thang màu vàng cho NH4+: Xanh dương → Xanh nhạt → Vàng
+            gradient = {
+              0.0: '#0080ff',  // Xanh dương đậm (thấp)
+              0.2: '#40a0ff',  // Xanh dương
+              0.4: '#80c8ff',  // Xanh nhạt
+              0.6: '#c0e0ff',  // Xanh rất nhạt
+              0.8: '#ffff80',  // Vàng nhạt
+              1.0: '#ffff00'   // Vàng đậm (cao)
+            };
+            break;
+            
+          case 'NO3':
+            // Thang màu xanh cho NO3-: Xanh nhạt → Xanh đậm
+            gradient = {
+              0.0: '#e6f3ff',  // Xanh rất nhạt (thấp)
+              0.25: '#b3d9ff', // Xanh nhạt
+              0.5: '#80bfff',  // Xanh trung bình
+              0.75: '#4da6ff', // Xanh
+              0.9: '#1a8cff',  // Xanh đậm
+              1.0: '#0066cc'   // Xanh rất đậm (cao)
+            };
+            break;
+            
+          default:
+            // Gradient mặc định (BOD5)
+            gradient = {
+              0.0: '#00ff00',
+              0.3: '#80ff00',
+              0.5: '#ffff00',
+              0.7: '#ff8000',
+              0.85: '#ff4000',
+              1.0: '#ff0000'
+            };
+        }
+        
         window.L.heatLayer(heatData, {
-          radius: 20,
-          blur: 15,
+          radius: 25,        // Tăng bán kính để dễ nhìn
+          blur: 18,          // Tăng blur để mượt hơn
           maxZoom: 17,
-          gradient: {
-            0.0: 'blue',
-            0.2: 'cyan', 
-            0.4: 'lime',
-            0.6: 'yellow',
-            0.8: 'orange',
-            1.0: 'red'
-          }
+          minOpacity: 0.3,   // Độ trong suốt tối thiểu
+          gradient: gradient
         }).addTo(map);
       }
 
@@ -167,7 +216,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
       console.error('Failed to initialize map:', err);
       setError('Không thể khởi tạo bản đồ.');
     }
-  }, [isLoaded, lat, lng, zoom, showHeatmap, heatmapData]);
+  }, [isLoaded, lat, lng, zoom, showHeatmap, heatmapData, selectedParameter]);
 
   if (error) {
     return (

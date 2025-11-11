@@ -1,12 +1,10 @@
-'use client'
-
-import React, { useRef, useEffect, useState } from 'react';
-import { 
-  calculateConcentration, 
+"use client";
+import React, { useRef, useEffect, useState } from "react";
+import {
+  calculateConcentration,
   WaterQualityData,
-  RIVER_POSITIONS
-} from '@/lib/water-quality-calculations';
-
+  RIVER_POSITIONS,
+} from "@/lib/water-quality-calculations";
 interface LineChartProps {
   width?: number;
   height?: number;
@@ -19,158 +17,151 @@ interface LineChartProps {
     NH4_sample1: boolean;
     NO3_sample1: boolean;
   };
-  samplingStep: number; // 1, 2, 5, 10 meters
+  samplingStep: number;
 }
-
 interface ChartData {
   position: number;
   data: WaterQualityData;
-  name?: string; // Add name for river position
+  name?: string;
 }
-
 const LineChart: React.FC<LineChartProps> = ({
   width = 800,
   height = 400,
   rainfall,
   temperature,
   enabledSeries,
-  samplingStep
+  samplingStep,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width, height });
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; data: any } | null>(null);
-  const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
-
-  // Responsive resize
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    x: number;
+    y: number;
+    data: WaterQualityData & { position: number };
+  } | null>(null);
+  const [mousePosition, setMousePosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
         const parentWidth = containerRef.current.offsetWidth;
-        // Use min width for mobile, max for desktop
         const newWidth = Math.max(320, Math.min(parentWidth, 900));
         const newHeight = newWidth * 0.5;
         setCanvasSize({ width: newWidth, height: newHeight });
       }
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Colors for different series
   const seriesColors = {
-    BOD5_sample0: '#228B22',  // Xanh lá đậm (Forest Green)
-    BOD5_sample1: '#FF8C00',  // Màu cam (Dark Orange)
-    NH4_sample0: '#663399',   // Màu tím đậm (Rebecca Purple)
-    NH4_sample1: '#1E90FF',   // Xanh dương đậm (Dodger Blue)
-    NO3_sample1: '#90EE90'    // Xanh lá nhạt (Light Green)
+    BOD5_sample0: "#228B22",
+    BOD5_sample1: "#FF8C00",
+    NH4_sample0: "#663399",
+    NH4_sample1: "#1E90FF",
+    NO3_sample1: "#90EE90",
   };
-
   const seriesLabels = {
-    BOD5_sample0: 'BOD5 mẫu 0',
-    BOD5_sample1: 'BOD5 mẫu 1', 
-    NH4_sample0: 'NH4+ mẫu 0',
-    NH4_sample1: 'NH4+ mẫu 1',
-    NO3_sample1: 'NO3- mẫu 1'
+    BOD5_sample0: "BOD5 mẫu 0",
+    BOD5_sample1: "BOD5 mẫu 1",
+    NH4_sample0: "NH4+ mẫu 0",
+    NH4_sample1: "NH4+ mẫu 1",
+    NO3_sample1: "NO3- mẫu 1",
   };
-
-  // Generate chart data - Create points based on sampling step
   useEffect(() => {
     const data: ChartData[] = [];
-    
-    // Tạo điểm giữa các cổng dựa trên samplingStep
-    for (let segmentIndex = 0; segmentIndex < RIVER_POSITIONS.length - 1; segmentIndex++) {
+    for (
+      let segmentIndex = 0;
+      segmentIndex < RIVER_POSITIONS.length - 1;
+      segmentIndex++
+    ) {
       const currentGate = RIVER_POSITIONS[segmentIndex];
       const nextGate = RIVER_POSITIONS[segmentIndex + 1];
-      
-      // Thêm cổng hiện tại
-      const currentWaterQuality = calculateConcentration(currentGate.position, rainfall, temperature);
+      const currentWaterQuality = calculateConcentration(
+        currentGate.position,
+        rainfall,
+        temperature,
+      );
       data.push({
         position: currentGate.position,
         data: currentWaterQuality,
-        name: currentGate.name
+        name: currentGate.name,
       });
-      
-      // Thêm các điểm trung gian giữa 2 cổng
       for (let i = 1; i <= samplingStep; i++) {
         const progress = i / (samplingStep + 1);
-        const intermediatePosition = currentGate.position + (nextGate.position - currentGate.position) * progress;
-        
-        const waterQuality = calculateConcentration(intermediatePosition, rainfall, temperature);
+        const intermediatePosition =
+          currentGate.position +
+          (nextGate.position - currentGate.position) * progress;
+        const waterQuality = calculateConcentration(
+          intermediatePosition,
+          rainfall,
+          temperature,
+        );
         data.push({
           position: intermediatePosition,
           data: waterQuality,
-          name: '' // Không hiển thị tên cho điểm trung gian
+          name: "",
         });
       }
     }
-    
-    // Thêm cổng cuối cùng (Xuân Thụy)
     const lastGate = RIVER_POSITIONS[RIVER_POSITIONS.length - 1];
-    const lastWaterQuality = calculateConcentration(lastGate.position, rainfall, temperature);
+    const lastWaterQuality = calculateConcentration(
+      lastGate.position,
+      rainfall,
+      temperature,
+    );
     data.push({
       position: lastGate.position,
       data: lastWaterQuality,
-      name: lastGate.name
+      name: lastGate.name,
     });
-    
-    // Sort theo position
     data.sort((a, b) => a.position - b.position);
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
-
-  // Calculate Y-axis scale
   const getYScale = () => {
     let maxValue = 0;
-    chartData.forEach(point => {
-      if (enabledSeries.BOD5_sample0) maxValue = Math.max(maxValue, point.data.BOD5_sample0);
-      if (enabledSeries.BOD5_sample1) maxValue = Math.max(maxValue, point.data.BOD5_sample1);
-      if (enabledSeries.NH4_sample0) maxValue = Math.max(maxValue, point.data.NH4_sample0);
-      if (enabledSeries.NH4_sample1) maxValue = Math.max(maxValue, point.data.NH4_sample1);
-      if (enabledSeries.NO3_sample1) maxValue = Math.max(maxValue, point.data.NO3_sample1);
+    chartData.forEach((point) => {
+      if (enabledSeries.BOD5_sample0)
+        maxValue = Math.max(maxValue, point.data.BOD5_sample0);
+      if (enabledSeries.BOD5_sample1)
+        maxValue = Math.max(maxValue, point.data.BOD5_sample1);
+      if (enabledSeries.NH4_sample0)
+        maxValue = Math.max(maxValue, point.data.NH4_sample0);
+      if (enabledSeries.NH4_sample1)
+        maxValue = Math.max(maxValue, point.data.NH4_sample1);
+      if (enabledSeries.NO3_sample1)
+        maxValue = Math.max(maxValue, point.data.NO3_sample1);
     });
-    return Math.max(maxValue * 1.1, 1); // Add 10% padding, minimum 1
+    return Math.max(maxValue * 1.1, 1);
   };
-
-  // Draw chart
   const drawChart = (ctx: CanvasRenderingContext2D) => {
     const { width: cWidth, height: cHeight } = canvasSize;
     const padding = 60;
     const chartWidth = cWidth - 2 * padding;
     const chartHeight = cHeight - 2 * padding;
     const yMax = getYScale();
-
-    // Clear canvas
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, cWidth, cHeight);
-
-    // Draw axes
-    ctx.strokeStyle = '#333';
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, cWidth, cHeight);
+    ctx.strokeStyle = "#333";
     ctx.lineWidth = 2;
-    
-    // X-axis
     ctx.beginPath();
-  ctx.moveTo(padding, cHeight - padding);
-  ctx.lineTo(cWidth - padding, cHeight - padding);
+    ctx.moveTo(padding, cHeight - padding);
+    ctx.lineTo(cWidth - padding, cHeight - padding);
     ctx.stroke();
-    
-    // Y-axis
     ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(padding, cHeight - padding);
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, cHeight - padding);
     ctx.stroke();
-
-    // Draw grid lines
-    ctx.strokeStyle = '#eee';
+    ctx.strokeStyle = "#eee";
     ctx.lineWidth = 1;
-    
-    // Vertical grid lines chỉ cho 6 cổng chính
-    RIVER_POSITIONS.forEach(riverPos => {
-      // Tìm index của position này trong chartData
-      const dataIndex = chartData.findIndex(d => Math.abs(d.position - riverPos.position) < 50);
+    RIVER_POSITIONS.forEach((riverPos) => {
+      const dataIndex = chartData.findIndex(
+        (d) => Math.abs(d.position - riverPos.position) < 50,
+      );
       if (dataIndex >= 0) {
         const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
         ctx.beginPath();
@@ -179,8 +170,6 @@ const LineChart: React.FC<LineChartProps> = ({
         ctx.stroke();
       }
     });
-    
-    // Horizontal grid lines
     const gridSteps = 5;
     for (let i = 0; i <= gridSteps; i++) {
       const y = padding + (i / gridSteps) * chartHeight;
@@ -189,50 +178,41 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.lineTo(cWidth - padding, y);
       ctx.stroke();
     }
-
-    // Draw X-axis labels chỉ cho 6 cổng chính
-    ctx.fillStyle = '#666';
-    ctx.font = '11px Arial';
-    ctx.textAlign = 'center';
-    RIVER_POSITIONS.forEach(riverPos => {
-      // Tìm index của position này trong chartData
-      const dataIndex = chartData.findIndex(d => Math.abs(d.position - riverPos.position) < 50);
+    ctx.fillStyle = "#666";
+    ctx.font = "11px Arial";
+    ctx.textAlign = "center";
+    RIVER_POSITIONS.forEach((riverPos) => {
+      const dataIndex = chartData.findIndex(
+        (d) => Math.abs(d.position - riverPos.position) < 50,
+      );
       if (dataIndex >= 0) {
         const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
-        // Draw position name
         ctx.fillText(riverPos.name, x, cHeight - padding + 15);
-        // Draw position distance
-        ctx.font = '9px Arial';
-        ctx.fillStyle = '#999';
+        ctx.font = "9px Arial";
+        ctx.fillStyle = "#999";
         ctx.fillText(`${riverPos.position}m`, x, cHeight - padding + 28);
-        ctx.font = '11px Arial';
-        ctx.fillStyle = '#666';
+        ctx.font = "11px Arial";
+        ctx.fillStyle = "#666";
       }
     });
-
-    // Draw Y-axis labels (only values, no units)
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.font = '11px Arial';
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.font = "11px Arial";
     for (let i = 0; i <= gridSteps; i++) {
       const value = yMax * (1 - i / gridSteps);
       const y = padding + (i / gridSteps) * chartHeight;
       ctx.fillText(value.toFixed(1), padding - 5, y);
     }
-
-    // Draw axis titles
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Các cổng trên sông Cầu Bây', cWidth / 2, cHeight - 5);    // Draw Y-axis title separately with better positioning
+    ctx.fillStyle = "#333";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Các cổng trên sông Cầu Bây", cWidth / 2, cHeight - 5);
     ctx.save();
-  ctx.translate(15, cHeight / 2);
+    ctx.translate(15, cHeight / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.textAlign = 'center';
-    ctx.fillText('Nồng độ (mg/L)', 0, 0);
+    ctx.textAlign = "center";
+    ctx.fillText("Nồng độ (mg/L)", 0, 0);
     ctx.restore();
-
-    // Draw data lines
     Object.entries(enabledSeries).forEach(([seriesName, enabled]) => {
       if (!enabled || chartData.length === 0) return;
       ctx.strokeStyle = seriesColors[seriesName as keyof typeof seriesColors];
@@ -249,7 +229,6 @@ const LineChart: React.FC<LineChartProps> = ({
         }
       });
       ctx.stroke();
-      // Draw points
       ctx.fillStyle = seriesColors[seriesName as keyof typeof seriesColors];
       chartData.forEach((point, index) => {
         const x = padding + (index / (chartData.length - 1)) * chartWidth;
@@ -261,94 +240,96 @@ const LineChart: React.FC<LineChartProps> = ({
       });
     });
   };
-
-
-
   const handleMouseLeave = () => {
     setHoveredPoint(null);
     setMousePosition(null);
   };
-
-  // Responsive chart draw
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     drawChart(ctx);
-  }, [chartData, enabledSeries, canvasSize.width, canvasSize.height, rainfall, temperature, drawChart]);
-
-  // Responsive mouse logic
-  const handleResponsiveMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  }, [
+    chartData,
+    enabledSeries,
+    canvasSize.width,
+    canvasSize.height,
+    rainfall,
+    temperature,
+    drawChart,
+  ]);
+  const handleResponsiveMouseMove = (
+    event: React.MouseEvent<HTMLCanvasElement>,
+  ) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    
-    // Convert từ display coordinates sang canvas coordinates
     const scaleX = canvasSize.width / rect.width;
     const scaleY = canvasSize.height / rect.height;
     const canvasX = x * scaleX;
     const canvasY = y * scaleY;
-    
-    setMousePosition({ x, y }); // Mouse position for tooltip (display coordinates)
-    
+    setMousePosition({ x, y });
     const padding = 60;
     const chartWidth = canvasSize.width - 2 * padding;
-    
-    // Check if mouse is within chart area (using canvas coordinates)
-    if (canvasX >= padding && canvasX <= canvasSize.width - padding && 
-        canvasY >= padding && canvasY <= canvasSize.height - padding) {
-      
-      // Find closest data point by X coordinate
+    if (
+      canvasX >= padding &&
+      canvasX <= canvasSize.width - padding &&
+      canvasY >= padding &&
+      canvasY <= canvasSize.height - padding
+    ) {
       const relativeX = (canvasX - padding) / chartWidth;
       const pointIndex = Math.round(relativeX * (chartData.length - 1));
       const closestPoint = chartData[pointIndex];
-      
       if (closestPoint) {
         setHoveredPoint({
-          x, // Use display coordinates for tooltip positioning
+          x,
           y,
           data: {
             position: closestPoint.position,
-            ...closestPoint.data
-          }
+            ...closestPoint.data,
+          },
         });
       }
     } else {
       setHoveredPoint(null);
     }
   };
-
   return (
     <div ref={containerRef} className="w-full max-w-full overflow-x-auto">
-      <div className="relative" style={{ width: '100%' }}>
+      <div className="relative" style={{ width: "100%" }}>
         <canvas
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
           className="border border-gray-300 rounded-lg cursor-crosshair w-full h-auto block"
-          style={{ maxWidth: '100%' }}
+          style={{ maxWidth: "100%" }}
           onMouseMove={handleResponsiveMouseMove}
           onMouseLeave={handleMouseLeave}
         />
-        {/* Legend */}
+        {}
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
-          {Object.entries(enabledSeries).map(([seriesName, enabled]) => (
-            enabled && (
-              <div key={seriesName} className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded"
-                  style={{ backgroundColor: seriesColors[seriesName as keyof typeof seriesColors] }}
-                />
-                <span>{seriesLabels[seriesName as keyof typeof seriesLabels]}</span>
-              </div>
-            )
-          ))}
+          {Object.entries(enabledSeries).map(
+            ([seriesName, enabled]) =>
+              enabled && (
+                <div key={seriesName} className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{
+                      backgroundColor:
+                        seriesColors[seriesName as keyof typeof seriesColors],
+                    }}
+                  />
+                  <span>
+                    {seriesLabels[seriesName as keyof typeof seriesLabels]}
+                  </span>
+                </div>
+              ),
+          )}
         </div>
-        {/* Tooltip */}
+        {}
         {hoveredPoint && mousePosition && (
           <div
             className="absolute bg-black text-white px-4 py-3 rounded-lg shadow-lg text-xs pointer-events-none z-10 max-w-xs"
@@ -357,38 +338,54 @@ const LineChart: React.FC<LineChartProps> = ({
               top: mousePosition.y - 10,
             }}
           >
-            <div className="font-bold mb-2">Vị trí: {hoveredPoint.data.position.toFixed(0)}m</div>
+            <div className="font-bold mb-2">
+              Vị trí: {hoveredPoint.data.position.toFixed(0)}m
+            </div>
             <div className="space-y-1">
               {enabledSeries.BOD5_sample0 && (
-                <div>BOD5 (mẫu 0): {hoveredPoint.data.BOD5_sample0.toFixed(3)} mg/L</div>
+                <div>
+                  BOD5 (mẫu 0): {hoveredPoint.data.BOD5_sample0.toFixed(3)} mg/L
+                </div>
               )}
               {enabledSeries.BOD5_sample1 && (
-                <div>BOD5 (mẫu 1): {hoveredPoint.data.BOD5_sample1.toFixed(3)} mg/L</div>
+                <div>
+                  BOD5 (mẫu 1): {hoveredPoint.data.BOD5_sample1.toFixed(3)} mg/L
+                </div>
               )}
               {enabledSeries.NH4_sample0 && (
-                <div>NH4+ (mẫu 0): {hoveredPoint.data.NH4_sample0.toFixed(3)} mg/L</div>
+                <div>
+                  NH4+ (mẫu 0): {hoveredPoint.data.NH4_sample0.toFixed(3)} mg/L
+                </div>
               )}
               {enabledSeries.NH4_sample1 && (
-                <div>NH4+ (mẫu 1): {hoveredPoint.data.NH4_sample1.toFixed(3)} mg/L</div>
+                <div>
+                  NH4+ (mẫu 1): {hoveredPoint.data.NH4_sample1.toFixed(3)} mg/L
+                </div>
               )}
               {enabledSeries.NO3_sample1 && (
-                <div>NO3- (mẫu 1): {hoveredPoint.data.NO3_sample1.toFixed(3)} mg/L</div>
+                <div>
+                  NO3- (mẫu 1): {hoveredPoint.data.NO3_sample1.toFixed(3)} mg/L
+                </div>
               )}
             </div>
           </div>
         )}
       </div>
-      {/* Chart info */}
+      {}
       <div className="mt-4 text-sm text-gray-600">
-        <p><strong>Thông số biểu đồ:</strong></p>
+        <p>
+          <strong>Thông số biểu đồ:</strong>
+        </p>
         <p>• Số điểm quan trắc: {chartData.length} cổng trên sông Cầu Bây</p>
         <p>• Lượng mưa: {rainfall} mm/hr</p>
         <p>• Nhiệt độ: {temperature}°C</p>
-        <p>• Số series đang hiển thị: {Object.values(enabledSeries).filter(Boolean).length}</p>
-        <p>• Các cổng: {chartData.map(d => d.name).join(', ')}</p>
+        <p>
+          • Số series đang hiển thị:{" "}
+          {Object.values(enabledSeries).filter(Boolean).length}
+        </p>
+        <p>• Các cổng: {chartData.map((d) => d.name).join(", ")}</p>
       </div>
     </div>
   );
 };
-
 export default LineChart;

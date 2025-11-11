@@ -5,7 +5,16 @@ const nextConfig: NextConfig = {
     locales: ["en", "ru", "vi"],
     defaultLocale: "en",
   },
-
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'openweathermap.org',
+        port: '',
+        pathname: '/img/wn/**',
+      },
+    ],
+  },
   // 👇 Add these lines
   eslint: {
     ignoreDuringBuilds: true,
