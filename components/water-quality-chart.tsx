@@ -3,8 +3,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { 
   calculateConcentration, 
-  RIVER_LENGTH,
-  WaterQualityData
+  WaterQualityData,
+  RIVER_POSITIONS
 } from '@/lib/water-quality-calculations';
 
 interface LineChartProps {
@@ -25,6 +25,7 @@ interface LineChartProps {
 interface ChartData {
   position: number;
   data: WaterQualityData;
+  name?: string; // Add name for river position
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -39,6 +40,7 @@ const LineChart: React.FC<LineChartProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width, height });
   const [chartData, setChartData] = useState<ChartData[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; data: any } | null>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -60,11 +62,11 @@ const LineChart: React.FC<LineChartProps> = ({
 
   // Colors for different series
   const seriesColors = {
-    BOD5_sample0: '#ff4444',
-    BOD5_sample1: '#ff8888',
-    NH4_sample0: '#44ff44',
-    NH4_sample1: '#88ff88',
-    NO3_sample1: '#4444ff'
+    BOD5_sample0: '#228B22',  // Xanh lá đậm (Forest Green)
+    BOD5_sample1: '#FF8C00',  // Màu cam (Dark Orange)
+    NH4_sample0: '#663399',   // Màu tím đậm (Rebecca Purple)
+    NH4_sample1: '#1E90FF',   // Xanh dương đậm (Dodger Blue)
+    NO3_sample1: '#90EE90'    // Xanh lá nhạt (Light Green)
   };
 
   const seriesLabels = {
@@ -75,18 +77,48 @@ const LineChart: React.FC<LineChartProps> = ({
     NO3_sample1: 'NO3- mẫu 1'
   };
 
-  // Generate chart data
+  // Generate chart data - Create points based on sampling step
   useEffect(() => {
     const data: ChartData[] = [];
     
-    for (let pos = 0; pos <= RIVER_LENGTH; pos += samplingStep) {
-      const waterQuality = calculateConcentration(pos, rainfall, temperature);
+    // Tạo điểm giữa các cổng dựa trên samplingStep
+    for (let segmentIndex = 0; segmentIndex < RIVER_POSITIONS.length - 1; segmentIndex++) {
+      const currentGate = RIVER_POSITIONS[segmentIndex];
+      const nextGate = RIVER_POSITIONS[segmentIndex + 1];
+      
+      // Thêm cổng hiện tại
+      const currentWaterQuality = calculateConcentration(currentGate.position, rainfall, temperature);
       data.push({
-        position: pos,
-        data: waterQuality
+        position: currentGate.position,
+        data: currentWaterQuality,
+        name: currentGate.name
       });
+      
+      // Thêm các điểm trung gian giữa 2 cổng
+      for (let i = 1; i <= samplingStep; i++) {
+        const progress = i / (samplingStep + 1);
+        const intermediatePosition = currentGate.position + (nextGate.position - currentGate.position) * progress;
+        
+        const waterQuality = calculateConcentration(intermediatePosition, rainfall, temperature);
+        data.push({
+          position: intermediatePosition,
+          data: waterQuality,
+          name: '' // Không hiển thị tên cho điểm trung gian
+        });
+      }
     }
     
+    // Thêm cổng cuối cùng (Xuân Thụy)
+    const lastGate = RIVER_POSITIONS[RIVER_POSITIONS.length - 1];
+    const lastWaterQuality = calculateConcentration(lastGate.position, rainfall, temperature);
+    data.push({
+      position: lastGate.position,
+      data: lastWaterQuality,
+      name: lastGate.name
+    });
+    
+    // Sort theo position
+    data.sort((a, b) => a.position - b.position);
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
 
@@ -135,14 +167,18 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     
-    // Vertical grid lines (every 1000m)
-    for (let pos = 0; pos <= RIVER_LENGTH; pos += 1000) {
-      const x = padding + (pos / RIVER_LENGTH) * chartWidth;
-      ctx.beginPath();
-      ctx.moveTo(x, padding);
-      ctx.lineTo(x, cHeight - padding);
-      ctx.stroke();
-    }
+    // Vertical grid lines chỉ cho 6 cổng chính
+    RIVER_POSITIONS.forEach(riverPos => {
+      // Tìm index của position này trong chartData
+      const dataIndex = chartData.findIndex(d => Math.abs(d.position - riverPos.position) < 50);
+      if (dataIndex >= 0) {
+        const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, cHeight - padding);
+        ctx.stroke();
+      }
+    });
     
     // Horizontal grid lines
     const gridSteps = 5;
@@ -154,14 +190,25 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.stroke();
     }
 
-    // Draw X-axis labels
+    // Draw X-axis labels chỉ cho 6 cổng chính
     ctx.fillStyle = '#666';
-    ctx.font = '12px Arial';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'center';
-    for (let pos = 0; pos <= RIVER_LENGTH; pos += 1000) {
-      const x = padding + (pos / RIVER_LENGTH) * chartWidth;
-      ctx.fillText(pos.toString() + 'm', x, cHeight - padding + 20);
-    }
+    RIVER_POSITIONS.forEach(riverPos => {
+      // Tìm index của position này trong chartData
+      const dataIndex = chartData.findIndex(d => Math.abs(d.position - riverPos.position) < 50);
+      if (dataIndex >= 0) {
+        const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
+        // Draw position name
+        ctx.fillText(riverPos.name, x, cHeight - padding + 15);
+        // Draw position distance
+        ctx.font = '9px Arial';
+        ctx.fillStyle = '#999';
+        ctx.fillText(`${riverPos.position}m`, x, cHeight - padding + 28);
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#666';
+      }
+    });
 
     // Draw Y-axis labels (only values, no units)
     ctx.textAlign = 'right';
@@ -177,9 +224,7 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.fillStyle = '#333';
     ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
-  ctx.fillText('Vị trí dọc sông (m)', cWidth / 2, cHeight - 10);
-    
-    // Draw Y-axis title separately with better positioning
+    ctx.fillText('Các cổng trên sông Cầu Bây', cWidth / 2, cHeight - 5);    // Draw Y-axis title separately with better positioning
     ctx.save();
   ctx.translate(15, cHeight / 2);
     ctx.rotate(-Math.PI / 2);
@@ -193,11 +238,11 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.strokeStyle = seriesColors[seriesName as keyof typeof seriesColors];
       ctx.lineWidth = 2;
       ctx.beginPath();
-      chartData.forEach((point, index) => {
-        const x = padding + (point.position / RIVER_LENGTH) * chartWidth;
+      chartData.forEach((point, i) => {
+        const x = padding + (i / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
         const y = cHeight - padding - (value / yMax) * chartHeight;
-        if (index === 0) {
+        if (i === 0) {
           ctx.moveTo(x, y);
         } else {
           ctx.lineTo(x, y);
@@ -206,56 +251,18 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.stroke();
       // Draw points
       ctx.fillStyle = seriesColors[seriesName as keyof typeof seriesColors];
-      chartData.forEach(point => {
-        const x = padding + (point.position / RIVER_LENGTH) * chartWidth;
+      chartData.forEach((point, index) => {
+        const x = padding + (index / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
         const y = cHeight - padding - (value / yMax) * chartHeight;
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
         ctx.fill();
       });
     });
   };
 
-  // Handle mouse move for tooltip
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    setMousePosition({ x, y });
-
-    const padding = 60;
-    const chartWidth = width - 2 * padding;
-    
-    if (x >= padding && x <= width - padding && y >= padding && y <= height - padding) {
-      // Calculate position along river
-      const position = ((x - padding) / chartWidth) * RIVER_LENGTH;
-      
-      // Find closest data point
-      const closestPoint = chartData.reduce((closest, point) => {
-        const distance = Math.abs(point.position - position);
-        const closestDistance = Math.abs(closest.position - position);
-        return distance < closestDistance ? point : closest;
-      }, chartData[0]);
-
-      if (closestPoint) {
-        setHoveredPoint({
-          x,
-          y,
-          data: {
-            position: closestPoint.position,
-            ...closestPoint.data
-          }
-        });
-      }
-    } else {
-      setHoveredPoint(null);
-    }
-  };
 
   const handleMouseLeave = () => {
     setHoveredPoint(null);
@@ -269,28 +276,40 @@ const LineChart: React.FC<LineChartProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     drawChart(ctx);
-  }, [chartData, enabledSeries, canvasSize.width, canvasSize.height, rainfall, temperature]);
+  }, [chartData, enabledSeries, canvasSize.width, canvasSize.height, rainfall, temperature, drawChart]);
 
   // Responsive mouse logic
   const handleResponsiveMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    setMousePosition({ x, y });
+    
+    // Convert từ display coordinates sang canvas coordinates
+    const scaleX = canvasSize.width / rect.width;
+    const scaleY = canvasSize.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    setMousePosition({ x, y }); // Mouse position for tooltip (display coordinates)
+    
     const padding = 60;
     const chartWidth = canvasSize.width - 2 * padding;
-    if (x >= padding && x <= canvasSize.width - padding && y >= padding && y <= canvasSize.height - padding) {
-      const position = ((x - padding) / chartWidth) * RIVER_LENGTH;
-      const closestPoint = chartData.reduce((closest, point) => {
-        const distance = Math.abs(point.position - position);
-        const closestDistance = Math.abs(closest.position - position);
-        return distance < closestDistance ? point : closest;
-      }, chartData[0]);
+    
+    // Check if mouse is within chart area (using canvas coordinates)
+    if (canvasX >= padding && canvasX <= canvasSize.width - padding && 
+        canvasY >= padding && canvasY <= canvasSize.height - padding) {
+      
+      // Find closest data point by X coordinate
+      const relativeX = (canvasX - padding) / chartWidth;
+      const pointIndex = Math.round(relativeX * (chartData.length - 1));
+      const closestPoint = chartData[pointIndex];
+      
       if (closestPoint) {
         setHoveredPoint({
-          x,
+          x, // Use display coordinates for tooltip positioning
           y,
           data: {
             position: closestPoint.position,
@@ -362,10 +381,11 @@ const LineChart: React.FC<LineChartProps> = ({
       {/* Chart info */}
       <div className="mt-4 text-sm text-gray-600">
         <p><strong>Thông số biểu đồ:</strong></p>
-        <p>• Bước lấy mẫu: {samplingStep}m ({Math.ceil(RIVER_LENGTH / samplingStep)} điểm)</p>
+        <p>• Số điểm quan trắc: {chartData.length} cổng trên sông Cầu Bây</p>
         <p>• Lượng mưa: {rainfall} mm/hr</p>
         <p>• Nhiệt độ: {temperature}°C</p>
         <p>• Số series đang hiển thị: {Object.values(enabledSeries).filter(Boolean).length}</p>
+        <p>• Các cổng: {chartData.map(d => d.name).join(', ')}</p>
       </div>
     </div>
   );

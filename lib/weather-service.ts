@@ -76,8 +76,8 @@ export class WeatherService {
       
       // Return fallback data
       return {
-        temperature: 25,
-        rainfall: 0,
+        temperature: 31,
+        rainfall: 10,
         location: 'Hanoi (fallback)',
         timestamp: Date.now(),
         humidity: 70,
@@ -110,6 +110,7 @@ export class WeatherService {
       
       const data = await response.json();
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.list.slice(0, hours / 3).map((item: any) => ({
         temperature: item.main.temp,
         rainfall: item.rain ? (item.rain['3h'] || 0) / 3 : 0,
