@@ -1,6 +1,6 @@
 'use client'
 
-import { GoogleMap, LoadScript, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { useState } from 'react';
 
 const containerStyle = {

@@ -3,7 +3,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { 
   calculateConcentration, 
-  RIVER_LENGTH,
   WaterQualityData,
   RIVER_POSITIONS
 } from '@/lib/water-quality-calculations';
@@ -41,6 +40,7 @@ const LineChart: React.FC<LineChartProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width, height });
   const [chartData, setChartData] = useState<ChartData[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; data: any } | null>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -276,7 +276,7 @@ const LineChart: React.FC<LineChartProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     drawChart(ctx);
-  }, [chartData, enabledSeries, canvasSize.width, canvasSize.height, rainfall, temperature]);
+  }, [chartData, enabledSeries, canvasSize.width, canvasSize.height, rainfall, temperature, drawChart]);
 
   // Responsive mouse logic
   const handleResponsiveMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -297,7 +297,6 @@ const LineChart: React.FC<LineChartProps> = ({
     
     const padding = 60;
     const chartWidth = canvasSize.width - 2 * padding;
-    const chartHeight = canvasSize.height - 2 * padding;
     
     // Check if mouse is within chart area (using canvas coordinates)
     if (canvasX >= padding && canvasX <= canvasSize.width - padding && 

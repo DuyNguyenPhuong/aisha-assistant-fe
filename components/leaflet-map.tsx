@@ -15,6 +15,7 @@ interface LeafletMapProps {
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     L: any;
   }
 }
@@ -29,6 +30,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
   heatmapData = []
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +137,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
       // Add heatmap if data provided
       if (showHeatmap && heatmapData.length > 0 && window.L.heatLayer) {
         const heatData = heatmapData.map(point => [point.lat, point.lng, point.intensity]);
-        const heatmapLayer = window.L.heatLayer(heatData, {
+        window.L.heatLayer(heatData, {
           radius: 20,
           blur: 15,
           maxZoom: 17,

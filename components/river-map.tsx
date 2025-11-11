@@ -357,7 +357,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     drawRiver(ctx);
-  }, [width, height, selectedParameter, selectedPosition, rainfall, temperature]);
+  }, [width, height, selectedParameter, selectedPosition, rainfall, temperature, drawRiver]);
 
   return (
     <div className="relative">

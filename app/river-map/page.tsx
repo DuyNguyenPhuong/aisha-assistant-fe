@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
+import Image from 'next/image';
 import RiverMap from '@/components/river-map';
 import LineChart from '@/components/water-quality-chart';
 import LeafletMapComponent from '@/components/leaflet-map';
@@ -89,7 +90,12 @@ const RiverMapPage: NextPage = () => {
   };
 
   // Helper function to get air quality assessment
-  const getAirQualityAssessment = (weatherData: any): { level: string; color: string; emoji: string } => {
+  const getAirQualityAssessment = (weatherData: {
+    humidity: number;
+    visibility: number;
+    windSpeed: number;
+    cloudiness: number;
+  }): { level: string; color: string; emoji: string } => {
     const { humidity, visibility, windSpeed, cloudiness } = weatherData;
     let score = 0;
     
@@ -245,17 +251,17 @@ const RiverMapPage: NextPage = () => {
   };
 
   // Export functions
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const currentWeather = getCurrentWeatherValues();
-    const { generateExportData, exportToPDF } = require('@/lib/export-utils');
+    const { generateExportData, exportToPDF } = await import('@/lib/export-utils');
     
     const exportData = generateExportData(currentWeather.rainfall, currentWeather.temperature);
     exportToPDF(exportData, currentWeather.rainfall, currentWeather.temperature);
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const currentWeather = getCurrentWeatherValues();
-    const { generateExportData, downloadCSV } = require('@/lib/export-utils');
+    const { generateExportData, downloadCSV } = await import('@/lib/export-utils');
     
     const exportData = generateExportData(currentWeather.rainfall, currentWeather.temperature);
     downloadCSV(exportData, currentWeather.rainfall, currentWeather.temperature);
@@ -533,9 +539,11 @@ const RiverMapPage: NextPage = () => {
                       </div>
                       <div className="mt-3 pt-2 border-t border-blue-200">
                         <div className="flex items-center gap-2">
-                          <img 
+                          <Image 
                             src={`https://openweathermap.org/img/wn/${weatherData.icon}@2x.png`}
                             alt={weatherData.description}
+                            width={32}
+                            height={32}
                             className="w-8 h-8"
                           />
                           <span className="text-xs capitalize">{weatherData.description}</span>
@@ -699,9 +707,11 @@ const RiverMapPage: NextPage = () => {
                         <span><strong>Áp suất:</strong> {weatherData.pressure} hPa {getPressureStatus(weatherData.pressure)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <img 
+                        <Image 
                           src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`}
                           alt={weatherData.description}
+                          width={24}
+                          height={24}
                           className="w-6 h-6"
                         />
                         <span><strong>Mô tả:</strong> {weatherData.description}</span>
@@ -777,7 +787,7 @@ const RiverMapPage: NextPage = () => {
                     <strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature}°C
                   </div>
                   <div className="mt-1 text-xs text-gray-500">
-                    💡 <em>Chọn thông số heatmap ở panel "Heatmap" bên trên để thay đổi màu sắc hiển thị</em>
+                    💡 <em>Chọn thông số heatmap ở panel &quot;Heatmap&quot; bên trên để thay đổi màu sắc hiển thị</em>
                   </div>
                 </div>
               )}

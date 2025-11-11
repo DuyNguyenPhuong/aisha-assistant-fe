@@ -1,6 +1,6 @@
 // Utility functions for exporting river water quality data
 
-import { WaterQualityData, calculateConcentration, RIVER_POSITIONS, RIVER_LENGTH } from './water-quality-calculations';
+import { calculateConcentration, RIVER_LENGTH } from './water-quality-calculations';
 
 export interface ExportDataPoint {
   tt: number; // Thứ tự
