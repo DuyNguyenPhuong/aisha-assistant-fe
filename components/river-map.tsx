@@ -20,7 +20,7 @@ interface RiverMapProps {
   height?: number;
   rainfall: number;
   temperature: number;
-  selectedParameter?: "BOD5" | "NH4" | "NO3" | null;
+  selectedParameter?: "BOD5" | "BOD0" | "NH40" | "NH41" | "NO3" | null;
   onPositionSelect?: (position: number, data: WaterQualityData) => void;
 }
 interface Coordinate {
@@ -643,12 +643,19 @@ const RiverMap: React.FC<RiverMapProps> = ({
       let value = 0;
       if (selectedParameter === "BOD5") {
         value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
-      } else if (selectedParameter === "NH4") {
-        value = (waterQuality.NH4_sample0 + waterQuality.NH4_sample1) / 2;
+      } else if (selectedParameter === "BOD0") {
+        value = waterQuality.BOD5_sample0;
+      } else if (selectedParameter === "NH40") {
+        value = waterQuality.NH4_sample0;
+      } else if (selectedParameter === "NH41") {
+        value = waterQuality.NH4_sample1;
       } else if (selectedParameter === "NO3") {
         value = waterQuality.NO3_sample1;
       }
-      const colorScale = COLOR_SCALES[selectedParameter];
+      const getColorScaleKey = (param: string) => {
+        return param;
+      };
+      const colorScale = COLOR_SCALES[getColorScaleKey(selectedParameter)];
       const clampedValue = Math.min(
         Math.max(value, colorScale.min),
         colorScale.max,
@@ -748,6 +755,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     drawRiver(ctx);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     width,
     height,
@@ -755,7 +763,6 @@ const RiverMap: React.FC<RiverMapProps> = ({
     selectedPosition,
     rainfall,
     temperature,
-    drawRiver,
   ]);
   return (
     <div className="relative">

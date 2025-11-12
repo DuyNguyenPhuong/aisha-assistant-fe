@@ -17,9 +17,9 @@ import { useWeatherData } from '@/lib/weather-service';
 const RiverMapPage: NextPage = () => {
   
   // State management
-  const [rainfall, setRainfall] = useState(10);
+  const [rainfall, setRainfall] = useState(1);
   const [temperature, setTemperature] = useState(31);
-  const [selectedParameter, setSelectedParameter] = useState<'BOD5' | 'NH4' | 'NO3' | null>(null);
+  const [selectedParameter, setSelectedParameter] = useState<'BOD5' | 'BOD0' | 'NH40' | 'NH41' | 'NO3' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [selectedPositionData, setSelectedPositionData] = useState<WaterQualityData | null>(null);
   const [realtimeMode, setRealtimeMode] = useState(false);
@@ -144,7 +144,7 @@ const RiverMapPage: NextPage = () => {
   };
 
   // Handle heatmap parameter selection  
-  const handleHeatmapSelect = (param: 'BOD5' | 'NH4' | 'NO3') => {
+  const handleHeatmapSelect = (param: 'BOD5' | 'BOD0' | 'NH40' | 'NH41' | 'NO3') => {
     console.log('Heatmap parameter clicked:', param);
     setSelectedParameter(selectedParameter === param ? null : param);
   };
@@ -242,10 +242,30 @@ const RiverMapPage: NextPage = () => {
         } else {
           color = `rgb(255, 0, ${Math.floor((1 - ratio) * 255 / 0.3)})`; // Cam → Đỏ
         }
-      } else if (selectedParameter === 'NH4') {
-        value = (waterQuality.NH4_sample0 + waterQuality.NH4_sample1) / 2;
-        maxValue = 25; // NH4+ max 25 mg/L
-        // Thang màu vàng cho NH4+: từ xanh dương (thấp) → vàng (cao)
+      } else if (selectedParameter === 'BOD0') {
+        value = waterQuality.BOD5_sample0;
+        maxValue = 50; // BOD0 max 50 mg/L  
+        // Thang màu đỏ cho BOD0: tương tự BOD5
+        const ratio = Math.min(value / maxValue, 1.0);
+        if (ratio <= 0.3) {
+          color = `rgb(${Math.floor(ratio * 255 / 0.3)}, 255, 0)`; // Xanh → Vàng
+        } else if (ratio <= 0.7) {
+          color = `rgb(255, ${Math.floor(255 - (ratio - 0.3) * 255 / 0.4)}, 0)`; // Vàng → Cam
+        } else {
+          color = `rgb(255, 0, ${Math.floor((1 - ratio) * 255 / 0.3)})`; // Cam → Đỏ
+        }
+      } else if (selectedParameter === 'NH40') {
+        value = waterQuality.NH4_sample0;
+        maxValue = 25; // NH40 max 25 mg/L
+        // Thang màu vàng cho NH40: từ xanh dương (thấp) → vàng (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        const blue = Math.floor(255 - ratio * 255);
+        const green = Math.floor(200 + ratio * 55);
+        color = `rgb(${Math.floor(ratio * 255)}, ${green}, ${blue})`;
+      } else if (selectedParameter === 'NH41') {
+        value = waterQuality.NH4_sample1;
+        maxValue = 25; // NH41 max 25 mg/L
+        // Thang màu vàng cho NH41: từ xanh dương (thấp) → vàng (cao)
         const ratio = Math.min(value / maxValue, 1.0);
         const blue = Math.floor(255 - ratio * 255);
         const green = Math.floor(200 + ratio * 55);
@@ -418,7 +438,7 @@ const RiverMapPage: NextPage = () => {
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Heatmap</h3>
                   <div className="space-y-3">
-                    {(['BOD5', 'NH4', 'NO3'] as const).map(param => (
+                    {(['BOD5', 'BOD0', 'NH40', 'NH41', 'NO3'] as const).map(param => (
                       <Button
                         key={`heatmap-${param}`}
                         variant={selectedParameter === param ? "default" : "outline"}
@@ -431,7 +451,9 @@ const RiverMapPage: NextPage = () => {
                           <span className="font-medium">{param}</span>
                           <span className="text-xs opacity-70">
                             {param === 'BOD5' ? 'Đỏ (0-50 mg/L)' : 
-                             param === 'NH4' ? 'Vàng (0-25 mg/L)' : 
+                             param === 'BOD0' ? 'Đỏ (0-50 mg/L)' :
+                             param === 'NH40' ? 'Vàng (0-25 mg/L)' : 
+                             param === 'NH41' ? 'Vàng (0-25 mg/L)' : 
                              'Xanh (0-30 mg/L)'}
                           </span>
                         </div>
@@ -812,9 +834,9 @@ const RiverMapPage: NextPage = () => {
                     </div>
                   )}
                   
-                  {selectedParameter === 'NH4' && (
+                  {(selectedParameter === 'NH40' || selectedParameter === 'NH41') && (
                     <div className="space-y-1 mb-2">
-                      <div className="font-medium text-yellow-700">🟡 NH4+ - Thang màu vàng (0-25 mg/L):</div>
+                      <div className="font-medium text-yellow-700">🟡 {selectedParameter} - Thang màu vàng (0-25 mg/L):</div>
                       <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #0080ff, #80c8ff)'}}></span>Thấp (0-7.5 mg/L): Xanh dương nhạt</div>
                       <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #80c8ff, #ffff80)'}}></span>Trung bình (7.5-17.5 mg/L): Xanh → Vàng</div>
                       <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #ffff80, #ffff00)'}}></span>Cao (17.5-25 mg/L): Vàng đậm</div>
