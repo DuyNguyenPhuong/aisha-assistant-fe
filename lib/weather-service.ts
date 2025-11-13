@@ -96,7 +96,7 @@ export class WeatherService {
   }
 
   /**
-   * Get weather forecast (for future enhancement)
+   * Get weather forecast ()
    */
   async getForecast(
     lat = 21.0285,
