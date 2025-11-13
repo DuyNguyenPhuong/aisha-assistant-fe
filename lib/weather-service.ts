@@ -95,9 +95,6 @@ export class WeatherService {
     }
   }
 
-  /**
-   * Get weather forecast (for future enhancement)
-   */
   async getForecast(
     lat = 21.0285,
     lon = 105.8542,
