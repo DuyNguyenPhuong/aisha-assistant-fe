@@ -1,6 +1,8 @@
 import {
   calculateConcentration,
   RIVER_LENGTH,
+  CRITICAL_POSITIONS,
+  RIVER_POSITIONS,
 } from "./water-quality-calculations";
 export interface ExportDataPoint {
   tt: number;
@@ -18,12 +20,54 @@ export const generateExportData = (
 ): ExportDataPoint[] => {
   const exportData: ExportDataPoint[] = [];
   let tt = 1;
-  const saiDongPoints = [0, 100, 300, 500, 700, 900, 1100];
-  saiDongPoints.forEach((z) => {
+
+  // Tạo một map để lấy tên cho các vị trí
+  const positionNames = new Map<number, string>();
+  RIVER_POSITIONS.forEach((rp, index) => {
+    positionNames.set(rp.position, `${index + 1}. ${rp.name} Tại cống`);
+  });
+
+  // Thêm các tên cho điểm trước và sau cống
+  positionNames.set(1110, "2. Đài Tư Trước cống 2m");
+  positionNames.set(1114, "2. Đài Tư Sau cống 2m");
+  positionNames.set(3168, "3. An Lạc Trước cống 2m");
+  positionNames.set(3172, "3. An Lạc Sau cống 2m");
+  positionNames.set(4588, "4. Trâu Quỳ Trước cống 2m");
+  positionNames.set(4592, "4. Trâu Quỳ Sau cống 2m");
+  positionNames.set(7068, "5. Đa Tốn Trước cống 2m");
+  positionNames.set(7072, "5. Đa Tốn Sau cống 2m");
+
+  // Thêm điểm 0 (Sài Đồng)
+  positionNames.set(0, "1. Sài Đồng Tại cống");
+
+  // Sử dụng CRITICAL_POSITIONS làm cơ sở, sau đó thêm các điểm trung gian
+  const allPositions = new Set<number>();
+  
+  // Thêm tất cả các điểm quan trọng
+  CRITICAL_POSITIONS.forEach(pos => allPositions.add(pos));
+
+  // Thêm một số điểm trung gian giữa các cống để có đủ dữ liệu
+  const additionalPoints = [
+    100, 300, 500, 700, 900, // giữa Sài Đồng và Đài Tư
+    1317, 1517, 1717, 1917, 2117, 2317, 2517, 2717, 2917, 3117, // giữa Đài Tư và An Lạc  
+    3375, 3575, 3775, 3975, 4175, 4375, // giữa An Lạc và Trâu Quỳ
+    4795, 4995, 5195, 5395, 5595, 5795, 5995, 6195, 6395, 6595, 6795, 6995, // giữa Trâu Quỳ và Đa Tốn
+    7275, 7475, 7675, 7875, // giữa Đa Tốn và Xuân Thụy
+  ];
+  
+  additionalPoints.forEach(pos => allPositions.add(pos));
+
+  // Chuyển Set thành Array và sort
+  const sortedPositions = Array.from(allPositions).sort((a, b) => a - b);
+
+  // Generate data cho mỗi position
+  sortedPositions.forEach((z) => {
     const data = calculateConcentration(z, rainfall, temperature);
+    const viTri = positionNames.get(z) || `Z=${z}m`;
+    
     exportData.push({
       tt: tt++,
-      viTri: z === 0 ? "1. Sài Đồng Tại cống" : z.toString(),
+      viTri,
       z: z,
       bod5_sample1: data.BOD5_sample1,
       bod5_sample0: data.BOD5_sample0,
@@ -32,122 +76,7 @@ export const generateExportData = (
       no3_sample1: data.NO3_sample1,
     });
   });
-  const daiTuPoints = [
-    { z: 1107, label: "2. Đài Tư Trước cống" },
-    { z: 1112, label: "Tại cống" },
-    { z: 1117, label: "Sau cống" },
-    { z: 1317, label: "1.317" },
-    { z: 1517, label: "1.517" },
-    { z: 1717, label: "1.717" },
-    { z: 1917, label: "1.917" },
-    { z: 2117, label: "2.117" },
-    { z: 2317, label: "2.317" },
-    { z: 2517, label: "2.517" },
-    { z: 2717, label: "2.717" },
-    { z: 2917, label: "2.917" },
-    { z: 3117, label: "3.117" },
-  ];
-  daiTuPoints.forEach((point) => {
-    const data = calculateConcentration(point.z, rainfall, temperature);
-    exportData.push({
-      tt: tt++,
-      viTri: point.label,
-      z: point.z,
-      bod5_sample1: data.BOD5_sample1,
-      bod5_sample0: data.BOD5_sample0,
-      nh4_sample1: data.NH4_sample1,
-      nh4_sample0: data.NH4_sample0,
-      no3_sample1: data.NO3_sample1,
-    });
-  });
-  const anLacPoints = [
-    { z: 3165, label: "3. An Lạc Trước cống" },
-    { z: 3170, label: "Tại cống" },
-    { z: 3175, label: "Sau cống" },
-    { z: 3375, label: "3.375" },
-    { z: 3575, label: "3.575" },
-    { z: 3775, label: "3.775" },
-    { z: 3975, label: "3.975" },
-    { z: 4175, label: "4.175" },
-    { z: 4375, label: "4.375" },
-    { z: 4575, label: "4.575" },
-  ];
-  anLacPoints.forEach((point) => {
-    const data = calculateConcentration(point.z, rainfall, temperature);
-    exportData.push({
-      tt: tt++,
-      viTri: point.label,
-      z: point.z,
-      bod5_sample1: data.BOD5_sample1,
-      bod5_sample0: data.BOD5_sample0,
-      nh4_sample1: data.NH4_sample1,
-      nh4_sample0: data.NH4_sample0,
-      no3_sample1: data.NO3_sample1,
-    });
-  });
-  const trauQuyPoints = [
-    { z: 4585, label: "4. Trâu Quỳ Trước cống" },
-    { z: 4590, label: "Tại cống" },
-    { z: 4595, label: "Sau cống" },
-    { z: 4795, label: "4.795" },
-    { z: 4995, label: "4.995" },
-    { z: 5195, label: "5.195" },
-    { z: 5395, label: "5.395" },
-    { z: 5595, label: "5.595" },
-    { z: 5795, label: "5.795" },
-    { z: 5995, label: "5.995" },
-    { z: 6195, label: "6.195" },
-    { z: 6395, label: "6.395" },
-    { z: 6595, label: "6.595" },
-    { z: 6795, label: "6.795" },
-    { z: 6995, label: "6.995" },
-  ];
-  trauQuyPoints.forEach((point) => {
-    const data = calculateConcentration(point.z, rainfall, temperature);
-    exportData.push({
-      tt: tt++,
-      viTri: point.label,
-      z: point.z,
-      bod5_sample1: data.BOD5_sample1,
-      bod5_sample0: data.BOD5_sample0,
-      nh4_sample1: data.NH4_sample1,
-      nh4_sample0: data.NH4_sample0,
-      no3_sample1: data.NO3_sample1,
-    });
-  });
-  const daTonPoints = [
-    { z: 7065, label: "5. Đa Tốn Trước cống" },
-    { z: 7070, label: "Tại cống" },
-    { z: 7075, label: "Sau cống" },
-    { z: 7275, label: "7.275" },
-    { z: 7475, label: "7.475" },
-    { z: 7675, label: "7.675" },
-    { z: 7875, label: "7.875" },
-  ];
-  daTonPoints.forEach((point) => {
-    const data = calculateConcentration(point.z, rainfall, temperature);
-    exportData.push({
-      tt: tt++,
-      viTri: point.label,
-      z: point.z,
-      bod5_sample1: data.BOD5_sample1,
-      bod5_sample0: data.BOD5_sample0,
-      nh4_sample1: data.NH4_sample1,
-      nh4_sample0: data.NH4_sample0,
-      no3_sample1: data.NO3_sample1,
-    });
-  });
-  const xuanThuyData = calculateConcentration(8013, rainfall, temperature);
-  exportData.push({
-    tt: tt++,
-    viTri: "6. Xuân Thụy Tại cống",
-    z: 8013,
-    bod5_sample1: xuanThuyData.BOD5_sample1,
-    bod5_sample0: xuanThuyData.BOD5_sample0,
-    nh4_sample1: xuanThuyData.NH4_sample1,
-    nh4_sample0: xuanThuyData.NH4_sample0,
-    no3_sample1: xuanThuyData.NO3_sample1,
-  });
+
   return exportData;
 };
 export const exportToCSV = (

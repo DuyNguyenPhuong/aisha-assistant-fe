@@ -20,6 +20,24 @@ export const RIVER_POSITIONS: RiverPosition[] = [
   { name: "Xuân Thụy", position: 8013 },
 ];
 
+// Danh sách các điểm quan trọng luôn cần hiển thị (bao gồm trước và sau cống)
+export const CRITICAL_POSITIONS: number[] = [
+  0,     // Sài Đồng
+  1110,  // Trước Đài Tư 2m
+  1112,  // Đài Tư (giữa cống)
+  1114,  // Sau Đài Tư 2m
+  3168,  // Trước An Lạc 2m  
+  3170,  // An Lạc (giữa cống)
+  3172,  // Sau An Lạc 2m
+  4588,  // Trước Trâu Quỳ 2m
+  4590,  // Trâu Quỳ (giữa cống)
+  4592,  // Sau Trâu Quỳ 2m
+  7068,  // Trước Đa Tốn 2m
+  7070,  // Đa Tốn (giữa cống)
+  7072,  // Sau Đa Tốn 2m
+  8013,  // Xuân Thụy
+];
+
 export const RIVER_LENGTH = 8013;
 
 // Hệ số nhiệt độ: T = 2.5^((Y - 26)/10)
@@ -57,17 +75,22 @@ const truncateToTwoDecimals = (value: number): number => {
   return Math.floor(value * 100) / 100;
 };
 
-// Quy tắc ràng buộc: Zi+1 > Zi ⇒ Zi+1 = Zi; Zi+1 < Zi ⇒ Zi+1 = Zi
+// Quy tắc ràng buộc thuật toán:
+// 1. BOD5 mẫu 1,0 & NH4 mẫu 1,0: Nếu Zi+1 > Zi thì Zi+1 = Zi (chỉ giảm hoặc giữ nguyên)
+// 2. NO3: Nếu Zi+1 < Zi thì Zi+1 = Zi (chỉ tăng hoặc giữ nguyên)
 const applyAlgorithmConstraints = (
   newValue: number,
   previousValue: number,
-  isDecreasing: boolean
+  constraintType: 'decreasing' | 'increasing' | 'none'
 ): number => {
-  if (isDecreasing) {
-    // BOD1 mẫu 1: chỉ giảm hoặc giữ nguyên
+  if (constraintType === 'decreasing') {
+    // BOD5 và NH4: chỉ giảm hoặc giữ nguyên
     return newValue > previousValue ? previousValue : newValue;
+  } else if (constraintType === 'increasing') {
+    // NO3: chỉ tăng hoặc giữ nguyên
+    return newValue < previousValue ? previousValue : newValue;
   } else {
-    // Các chất khác: không áp dụng constraints - cho phép tự nhiên degradation
+    // Không áp dụng constraints
     return newValue;
   }
 };
@@ -115,11 +138,11 @@ export const calculateConcentration = (
     let NO31_Z = NO3_initial - T * D_NO31(time2);
 
     // Áp dụng constraints
-    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD_initial, true);
-    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD_initial, false);
-    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH4_initial, false);
-    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH4_initial, false);
-    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO3_initial, false);
+    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD_initial, 'decreasing');
+    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD_initial, 'decreasing');
+    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH4_initial, 'decreasing');
+    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH4_initial, 'decreasing');
+    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO3_initial, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z)),
@@ -145,11 +168,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z1110)),
@@ -197,11 +220,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     // Giá trị tại cống (Z = 1112)
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
@@ -246,11 +269,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
     const BOD0_Z1112 = (8736 + 34380 * X) / q2;
@@ -271,11 +294,11 @@ export const calculateConcentration = (
     let NH40_Z = NH40_2 - T * D_NH40(time3);
     let NO31_Z = NO31_2 - T * D_NO31(time3);
 
-    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_2, true);
-    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_2, false);
-    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_2, false);
-    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_2, false);
-    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_2, false);
+    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_2, 'decreasing');
+    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_2, 'decreasing');
+    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_2, 'decreasing');
+    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_2, 'decreasing');
+    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_2, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z)),
@@ -306,11 +329,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
     const BOD0_Z1112 = (8736 + 34380 * X) / q2;
@@ -331,11 +354,11 @@ export const calculateConcentration = (
     let NH40_Z3168 = NH40_2 - T * D_NH40(time30);
     let NO31_Z3168 = NO31_2 - T * D_NO31(time30);
 
-    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, true);
-    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, false);
-    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, false);
-    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, false);
-    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, false);
+    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, 'decreasing');
+    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, 'decreasing');
+    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, 'decreasing');
+    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, 'decreasing');
+    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z3168)),
@@ -388,11 +411,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
     const BOD0_Z1112 = (8736 + 34380 * X) / q2;
@@ -412,11 +435,11 @@ export const calculateConcentration = (
     let NH40_Z3168 = NH40_2 - T * D_NH40(time30);
     let NO31_Z3168 = NO31_2 - T * D_NO31(time30);
 
-    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, true);
-    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, false);
-    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, false);
-    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, false);
-    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, false);
+    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, 'decreasing');
+    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, 'decreasing');
+    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, 'decreasing');
+    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, 'decreasing');
+    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, 'increasing');
 
     // Giá trị tại cống Z3170
     const BOD1_Z3170 = (39688 + 164970 * X) / q3;
@@ -466,11 +489,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
     const BOD0_Z1112 = (8736 + 34380 * X) / q2;
@@ -490,11 +513,11 @@ export const calculateConcentration = (
     let NH40_Z3168 = NH40_2 - T * D_NH40(time30);
     let NO31_Z3168 = NO31_2 - T * D_NO31(time30);
 
-    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, true);
-    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, false);
-    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, false);
-    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, false);
-    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, false);
+    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, 'decreasing');
+    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, 'decreasing');
+    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, 'decreasing');
+    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, 'decreasing');
+    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, 'increasing');
 
     const BOD1_Z3170 = (39688 + 164970 * X) / q3;
     const BOD0_Z3170 = (39688 + 164970 * X) / q3;
@@ -515,11 +538,11 @@ export const calculateConcentration = (
     let NH40_Z = NH40_3 - T * D_NH40(time4);
     let NO31_Z = NO31_3 - T * D_NO31(time4);
 
-    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_3, true);
-    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_3, false);
-    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_3, false);
-    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_3, false);
-    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_3, false);
+    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_3, 'decreasing');
+    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_3, 'decreasing');
+    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_3, 'decreasing');
+    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_3, 'decreasing');
+    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_3, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z)),
@@ -584,11 +607,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
     const BOD0_Z1112 = (8736 + 34380 * X) / q2;
@@ -608,11 +631,11 @@ export const calculateConcentration = (
     let NH40_Z3168 = NH40_2 - T * D_NH40(time30);
     let NO31_Z3168 = NO31_2 - T * D_NO31(time30);
 
-    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, true);
-    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, false);
-    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, false);
-    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, false);
-    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, false);
+    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, 'decreasing');
+    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, 'decreasing');
+    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, 'decreasing');
+    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, 'decreasing');
+    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, 'increasing');
 
     const BOD1_Z3170 = (39688 + 164970 * X) / q3;
     const BOD0_Z3170 = (39688 + 164970 * X) / q3;
@@ -632,11 +655,11 @@ export const calculateConcentration = (
     let NH40_Z4588 = NH40_3 - T * D_NH40(time4_4588);
     let NO31_Z4588 = NO31_3 - T * D_NO31(time4_4588);
 
-    BOD1_Z4588 = applyAlgorithmConstraints(BOD1_Z4588, BOD1_3, true);
-    BOD0_Z4588 = applyAlgorithmConstraints(BOD0_Z4588, BOD0_3, false);
-    NH41_Z4588 = applyAlgorithmConstraints(NH41_Z4588, NH41_3, false);
-    NH40_Z4588 = applyAlgorithmConstraints(NH40_Z4588, NH40_3, false);
-    NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, false);
+    BOD1_Z4588 = applyAlgorithmConstraints(BOD1_Z4588, BOD1_3, 'decreasing');
+    BOD0_Z4588 = applyAlgorithmConstraints(BOD0_Z4588, BOD0_3, 'decreasing');
+    NH41_Z4588 = applyAlgorithmConstraints(NH41_Z4588, NH41_3, 'decreasing');
+    NH40_Z4588 = applyAlgorithmConstraints(NH40_Z4588, NH40_3, 'decreasing');
+    NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, 'increasing');
 
     // Giá trị tại cống Z4590
     const BOD1_Z4590 = (52650 + 219330 * X) / q4;
@@ -691,11 +714,11 @@ export const calculateConcentration = (
     let NH40_Z1110 = NH4_initial - T * D_NH40(time20);
     let NO31_Z1110 = NO3_initial - T * D_NO31(time20);
 
-    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, true);
-    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, false);
-    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, false);
-    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, false);
-    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, false);
+    BOD1_Z1110 = applyAlgorithmConstraints(BOD1_Z1110, BOD_initial, 'decreasing');
+    BOD0_Z1110 = applyAlgorithmConstraints(BOD0_Z1110, BOD_initial, 'decreasing');
+    NH41_Z1110 = applyAlgorithmConstraints(NH41_Z1110, NH4_initial, 'decreasing');
+    NH40_Z1110 = applyAlgorithmConstraints(NH40_Z1110, NH4_initial, 'decreasing');
+    NO31_Z1110 = applyAlgorithmConstraints(NO31_Z1110, NO3_initial, 'increasing');
 
     // Z = 1112 (cống)
     const BOD1_Z1112 = (8736 + 34380 * X) / q2;
@@ -718,11 +741,11 @@ export const calculateConcentration = (
     let NH40_Z3168 = NH40_2 - T * D_NH40(time30);
     let NO31_Z3168 = NO31_2 - T * D_NO31(time30);
 
-    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, true);
-    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, false);
-    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, false);
-    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, false);
-    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, false);
+    BOD1_Z3168 = applyAlgorithmConstraints(BOD1_Z3168, BOD1_2, 'decreasing');
+    BOD0_Z3168 = applyAlgorithmConstraints(BOD0_Z3168, BOD0_2, 'decreasing');
+    NH41_Z3168 = applyAlgorithmConstraints(NH41_Z3168, NH41_2, 'decreasing');
+    NH40_Z3168 = applyAlgorithmConstraints(NH40_Z3168, NH40_2, 'decreasing');
+    NO31_Z3168 = applyAlgorithmConstraints(NO31_Z3168, NO31_2, 'increasing');
 
     // Z = 3170 (cống An Lạc)
     const BOD1_Z3170 = (39688 + 164970 * X) / q3;
@@ -745,11 +768,11 @@ export const calculateConcentration = (
     let NH40_Z4588 = NH40_3 - T * D_NH40(time4_4588);
     let NO31_Z4588 = NO31_3 - T * D_NO31(time4_4588);
 
-    BOD1_Z4588 = applyAlgorithmConstraints(BOD1_Z4588, BOD1_3, true);
-    BOD0_Z4588 = applyAlgorithmConstraints(BOD0_Z4588, BOD0_3, false);
-    NH41_Z4588 = applyAlgorithmConstraints(NH41_Z4588, NH41_3, false);
-    NH40_Z4588 = applyAlgorithmConstraints(NH40_Z4588, NH40_3, false);
-    NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, false);
+    BOD1_Z4588 = applyAlgorithmConstraints(BOD1_Z4588, BOD1_3, 'decreasing');
+    BOD0_Z4588 = applyAlgorithmConstraints(BOD0_Z4588, BOD0_3, 'decreasing');
+    NH41_Z4588 = applyAlgorithmConstraints(NH41_Z4588, NH41_3, 'decreasing');
+    NH40_Z4588 = applyAlgorithmConstraints(NH40_Z4588, NH40_3, 'decreasing');
+    NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, 'increasing');
 
     // Z = 4590 (cống Trâu Quỳ)
     const BOD1_Z4590 = (52650 + 219330 * X) / q4;
@@ -772,11 +795,11 @@ export const calculateConcentration = (
     let NH40_Z = NH40_4 - T * D_NH40(time5);
     let NO31_Z = NO31_4 - T * D_NO31(time5);
 
-    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_4, true);
-    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_4, false);
-    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_4, false);
-    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_4, false);
-    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_4, false);
+    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_4, 'decreasing');
+    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_4, 'decreasing');
+    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_4, 'decreasing');
+    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_4, 'decreasing');
+    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_4, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z)),
@@ -868,11 +891,11 @@ export const calculateConcentration = (
     let NH40_Z = NH40_5 - T * D_NH40(time6);
     let NO31_Z = NO31_5 - T * D_NO31(time6);
 
-    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_5, true);
-    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_5, false);
-    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_5, false);
-    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_5, false);
-    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_5, false);
+    BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD1_5, 'decreasing');
+    BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD0_5, 'decreasing');
+    NH41_Z = applyAlgorithmConstraints(NH41_Z, NH41_5, 'decreasing');
+    NH40_Z = applyAlgorithmConstraints(NH40_Z, NH40_5, 'decreasing');
+    NO31_Z = applyAlgorithmConstraints(NO31_Z, NO31_5, 'increasing');
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z)),

@@ -4,6 +4,7 @@ import {
   calculateConcentration,
   WaterQualityData,
   RIVER_POSITIONS,
+  CRITICAL_POSITIONS,
 } from "@/lib/water-quality-calculations";
 interface LineChartProps {
   width?: number;
@@ -74,6 +75,12 @@ const LineChart: React.FC<LineChartProps> = ({
   };
   useEffect(() => {
     const data: ChartData[] = [];
+    const positionsToInclude = new Set<number>();
+
+    // Luôn bao gồm các điểm quan trọng
+    CRITICAL_POSITIONS.forEach(pos => positionsToInclude.add(pos));
+
+    // Thêm các điểm trung gian dựa trên samplingStep
     for (
       let segmentIndex = 0;
       segmentIndex < RIVER_POSITIONS.length - 1;
@@ -81,45 +88,43 @@ const LineChart: React.FC<LineChartProps> = ({
     ) {
       const currentGate = RIVER_POSITIONS[segmentIndex];
       const nextGate = RIVER_POSITIONS[segmentIndex + 1];
-      const currentWaterQuality = calculateConcentration(
-        currentGate.position,
-        rainfall,
-        temperature,
-      );
-      data.push({
-        position: currentGate.position,
-        data: currentWaterQuality,
-        name: currentGate.name,
-      });
+      
+      // Thêm điểm đầu và điểm cuối
+      positionsToInclude.add(currentGate.position);
+      positionsToInclude.add(nextGate.position);
+
+      // Thêm các điểm trung gian
       for (let i = 1; i <= samplingStep; i++) {
         const progress = i / (samplingStep + 1);
         const intermediatePosition =
           currentGate.position +
           (nextGate.position - currentGate.position) * progress;
-        const waterQuality = calculateConcentration(
-          intermediatePosition,
-          rainfall,
-          temperature,
-        );
-        data.push({
-          position: intermediatePosition,
-          data: waterQuality,
-          name: "",
-        });
+        positionsToInclude.add(Math.round(intermediatePosition));
       }
     }
-    const lastGate = RIVER_POSITIONS[RIVER_POSITIONS.length - 1];
-    const lastWaterQuality = calculateConcentration(
-      lastGate.position,
-      rainfall,
-      temperature,
-    );
-    data.push({
-      position: lastGate.position,
-      data: lastWaterQuality,
-      name: lastGate.name,
+
+    // Chuyển Set thành Array và sort
+    const sortedPositions = Array.from(positionsToInclude).sort((a, b) => a - b);
+
+    // Tạo data cho mỗi position
+    sortedPositions.forEach(position => {
+      const waterQuality = calculateConcentration(
+        position,
+        rainfall,
+        temperature,
+      );
+
+      // Tìm tên cho position này
+      const namedPosition = RIVER_POSITIONS.find(rp => rp.position === position);
+      const name = namedPosition ? namedPosition.name : "";
+
+      data.push({
+        position,
+        data: waterQuality,
+        name,
+      });
     });
-    data.sort((a, b) => a.position - b.position);
+
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
   const getYScale = () => {
@@ -158,16 +163,32 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.stroke();
     ctx.strokeStyle = "#eee";
     ctx.lineWidth = 1;
+    
     RIVER_POSITIONS.forEach((riverPos) => {
-      const dataIndex = chartData.findIndex(
-        (d) => Math.abs(d.position - riverPos.position) < 50,
-      );
-      if (dataIndex >= 0) {
-        const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
+      // Tìm điểm có position chính xác bằng riverPos.position
+      const exactIndex = chartData.findIndex(d => d.position === riverPos.position);
+      
+      if (exactIndex >= 0) {
+        // Tìm thấy exact match, tính X dựa trên index thực tế
+        const x = padding + (exactIndex / (chartData.length - 1)) * chartWidth;
         ctx.beginPath();
         ctx.moveTo(x, padding);
         ctx.lineTo(x, cHeight - padding);
         ctx.stroke();
+      } else {
+        // Backup: nếu không tìm thấy exact match, tính dựa trên tỷ lệ vị trí
+        // từ position đầu tiên đến cuối cùng trong chartData
+        if (chartData.length > 0) {
+          const firstPos = chartData[0].position;
+          const lastPos = chartData[chartData.length - 1].position;
+          const positionRatio = (riverPos.position - firstPos) / (lastPos - firstPos);
+          const x = padding + positionRatio * chartWidth;
+          
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, cHeight - padding);
+          ctx.stroke();
+        }
       }
     });
     const gridSteps = 5;
