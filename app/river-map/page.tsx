@@ -19,7 +19,7 @@ const RiverMapPage: NextPage = () => {
   // State management
   const [rainfall, setRainfall] = useState(1);
   const [temperature, setTemperature] = useState(31);
-  const [selectedParameter, setSelectedParameter] = useState<'BOD5' | 'BOD0' | 'NH40' | 'NH41' | 'NO3' | null>(null);
+  const [selectedParameter, setSelectedParameter] = useState<'BOD5' | 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [selectedPositionData, setSelectedPositionData] = useState<WaterQualityData | null>(null);
   const [realtimeMode, setRealtimeMode] = useState(false);
@@ -144,9 +144,42 @@ const RiverMapPage: NextPage = () => {
   };
 
   // Handle heatmap parameter selection  
-  const handleHeatmapSelect = (param: 'BOD5' | 'BOD0' | 'NH40' | 'NH41' | 'NO3') => {
+  const handleHeatmapSelect = (param: 'BOD5' | 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
     console.log('Heatmap parameter clicked:', param);
     setSelectedParameter(selectedParameter === param ? null : param);
+  };
+
+  // Function to get color scheme for each parameter
+  const getParameterColorInfo = (param: 'BOD5' | 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
+    switch (param) {
+      case 'BOD5':
+      case 'BOD0':
+      case 'BOD1':
+        return {
+          bgClass: selectedParameter === param ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100',
+          gradientStyle: { background: 'linear-gradient(to right, #00ff00 0%, #ffff00 30%, #ff8000 70%, #ff0000 100%)' },
+          description: 'Thang đỏ (0-50 mg/L)'
+        };
+      case 'NH40':
+      case 'NH41':
+        return {
+          bgClass: selectedParameter === param ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100',
+          gradientStyle: { background: 'linear-gradient(to right, #0080ff 0%, #80c8ff 40%, #ffff80 80%, #ffff00 100%)' },
+          description: 'Thang vàng (0-25 mg/L)'
+        };
+      case 'NO3':
+        return {
+          bgClass: selectedParameter === param ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100',
+          gradientStyle: { background: 'linear-gradient(to right, #e6f3ff 0%, #80bfff 50%, #0066cc 100%)' },
+          description: 'Thang xanh (0-30 mg/L)'
+        };
+      default:
+        return {
+          bgClass: 'bg-gray-50 text-gray-700 border-gray-300',
+          gradientStyle: { background: '#f0f0f0' },
+          description: ''
+        };
+    }
   };
 
   // Toggle series
@@ -246,6 +279,18 @@ const RiverMapPage: NextPage = () => {
         value = waterQuality.BOD5_sample0;
         maxValue = 50; // BOD0 max 50 mg/L  
         // Thang màu đỏ cho BOD0: tương tự BOD5
+        const ratio = Math.min(value / maxValue, 1.0);
+        if (ratio <= 0.3) {
+          color = `rgb(${Math.floor(ratio * 255 / 0.3)}, 255, 0)`; // Xanh → Vàng
+        } else if (ratio <= 0.7) {
+          color = `rgb(255, ${Math.floor(255 - (ratio - 0.3) * 255 / 0.4)}, 0)`; // Vàng → Cam
+        } else {
+          color = `rgb(255, 0, ${Math.floor((1 - ratio) * 255 / 0.3)})`; // Cam → Đỏ
+        }
+      } else if (selectedParameter === 'BOD1') {
+        value = waterQuality.BOD5_sample1;
+        maxValue = 50; // BOD1 max 50 mg/L  
+        // Thang màu đỏ cho BOD1: tương tự BOD5 và BOD0
         const ratio = Math.min(value / maxValue, 1.0);
         if (ratio <= 0.3) {
           color = `rgb(${Math.floor(ratio * 255 / 0.3)}, 255, 0)`; // Xanh → Vàng
@@ -437,28 +482,90 @@ const RiverMapPage: NextPage = () => {
                 {/* Heatmap Controls */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Heatmap</h3>
-                  <div className="space-y-3">
-                    {(['BOD5', 'BOD0', 'NH40', 'NH41', 'NO3'] as const).map(param => (
-                      <Button
-                        key={`heatmap-${param}`}
-                        variant={selectedParameter === param ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleHeatmapSelect(param)}
-                        className="w-full h-auto py-3"
-                        type="button"
-                      >
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium">{param}</span>
-                          <span className="text-xs opacity-70">
-                            {param === 'BOD5' ? 'Đỏ (0-50 mg/L)' : 
-                             param === 'BOD0' ? 'Đỏ (0-50 mg/L)' :
-                             param === 'NH40' ? 'Vàng (0-25 mg/L)' : 
-                             param === 'NH41' ? 'Vàng (0-25 mg/L)' : 
-                             'Xanh (0-30 mg/L)'}
-                          </span>
-                        </div>
-                      </Button>
-                    ))}
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHeatmapSelect('BOD5')}
+                      className={`w-full h-auto py-3 border-2 transition-all ${getParameterColorInfo('BOD5').bgClass}`}
+                      type="button"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">BOD5 (Trung bình)</span>
+                        <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('BOD5').gradientStyle}></div>
+                        <span className="text-xs opacity-70">{getParameterColorInfo('BOD5').description}</span>
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHeatmapSelect('BOD0')}
+                      className={`w-full h-auto py-3 border-2 transition-all ${getParameterColorInfo('BOD0').bgClass}`}
+                      type="button"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">BOD5 mẫu 0</span>
+                        <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('BOD0').gradientStyle}></div>
+                        <span className="text-xs opacity-70">{getParameterColorInfo('BOD0').description}</span>
+                      </div>
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHeatmapSelect('BOD1')}
+                      className={`w-full h-auto py-3 border-2 transition-all ${getParameterColorInfo('BOD1').bgClass}`}
+                      type="button"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">BOD5 mẫu 1</span>
+                        <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('BOD1').gradientStyle}></div>
+                        <span className="text-xs opacity-70">{getParameterColorInfo('BOD1').description}</span>
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHeatmapSelect('NH40')}
+                      className={`w-full h-auto py-3 border-2 transition-all ${getParameterColorInfo('NH40').bgClass}`}
+                      type="button"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">NH4+ mẫu 0</span>
+                        <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('NH40').gradientStyle}></div>
+                        <span className="text-xs opacity-70">{getParameterColorInfo('NH40').description}</span>
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHeatmapSelect('NH41')}
+                      className={`w-full h-auto py-3 border-2 transition-all ${getParameterColorInfo('NH41').bgClass}`}
+                      type="button"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">NH4+ mẫu 1</span>
+                        <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('NH41').gradientStyle}></div>
+                        <span className="text-xs opacity-70">{getParameterColorInfo('NH41').description}</span>
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHeatmapSelect('NO3')}
+                      className={`w-full h-auto py-3 border-2 transition-all ${getParameterColorInfo('NO3').bgClass}`}
+                      type="button"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">NO3- mẫu 1</span>
+                        <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('NO3').gradientStyle}></div>
+                        <span className="text-xs opacity-70">{getParameterColorInfo('NO3').description}</span>
+                      </div>
+                    </Button>
                   </div>
                   <Button
                     variant="outline"
@@ -812,11 +919,11 @@ const RiverMapPage: NextPage = () => {
                   onClick={() => setShowHeatmap(!showHeatmap)}
                   className={`px-4 py-2 text-sm rounded transition-colors ${
                     showHeatmap
-                      ? 'bg-red-100 text-red-700 border border-red-300'
-                      : 'bg-blue-100 text-blue-700 border border-blue-300'
+                      ? 'bg-gradient-to-r from-red-100 via-yellow-100 to-blue-100 text-gray-800 border border-gray-400'
+                      : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                   }`}
                 >
-                  {showHeatmap ? '� Tắt Heatmap' : '📊 Bật Heatmap'}
+                  {showHeatmap ? '🎨 Tắt Heatmap' : '📊 Bật Heatmap'}
                 </button>
               </div>
               
@@ -825,12 +932,17 @@ const RiverMapPage: NextPage = () => {
                   <div className="font-semibold mb-2">📊 Heatmap hiển thị nồng độ {selectedParameter} từ mô phỏng:</div>
                   
                   {/* Thang màu riêng cho từng chất */}
-                  {selectedParameter === 'BOD5' && (
+                  {(selectedParameter === 'BOD5' || selectedParameter === 'BOD0' || selectedParameter === 'BOD1') && (
                     <div className="space-y-1 mb-2">
-                      <div className="font-medium text-red-700">🔴 BOD5 - Thang màu đỏ (0-50 mg/L):</div>
+                      <div className="font-medium text-red-700">🔴 {selectedParameter} - Thang màu đỏ (0-50 mg/L):</div>
                       <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #00ff00, #ffff00)'}}></span>Thấp (0-15 mg/L): Xanh lá → Vàng</div>
                       <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #ffff00, #ff8000)'}}></span>Trung bình (15-35 mg/L): Vàng → Cam</div>
                       <div>• <span className="inline-block w-4 h-3 mr-2" style={{background: 'linear-gradient(to right, #ff8000, #ff0000)'}}></span>Cao (35-50 mg/L): Cam → Đỏ</div>
+                      <div className="text-xs mt-1 text-gray-600">
+                        {selectedParameter === 'BOD5' && '* BOD5: Giá trị trung bình của mẫu 0 và mẫu 1'}
+                        {selectedParameter === 'BOD0' && '* BOD5 mẫu 0: Giá trị đo được từ mẫu thứ nhất'}
+                        {selectedParameter === 'BOD1' && '* BOD5 mẫu 1: Giá trị đo được từ mẫu thứ hai'}
+                      </div>
                     </div>
                   )}
                   

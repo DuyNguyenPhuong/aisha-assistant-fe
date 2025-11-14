@@ -145,7 +145,9 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         
         switch (selectedParameter) {
           case 'BOD5':
-            // Thang màu đỏ cho BOD5: Xanh lá → Vàng → Cam → Đỏ
+          case 'BOD0':
+          case 'BOD1':
+            // Thang màu đỏ cho BOD5/BOD0/BOD1: Xanh lá → Vàng → Cam → Đỏ
             gradient = {
               0.0: '#00ff00',  // Xanh lá (thấp)
               0.3: '#80ff00',  // Xanh lá nhạt
@@ -157,6 +159,8 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
             break;
             
           case 'NH4':
+          case 'NH40':
+          case 'NH41':
             // Thang màu vàng cho NH4+: Xanh dương → Xanh nhạt → Vàng
             gradient = {
               0.0: '#0080ff',  // Xanh dương đậm (thấp)
@@ -181,7 +185,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
             break;
             
           default:
-            // Gradient mặc định (BOD5)
+            // Gradient mặc định (BOD5/BOD0/BOD1)
             gradient = {
               0.0: '#00ff00',
               0.3: '#80ff00',

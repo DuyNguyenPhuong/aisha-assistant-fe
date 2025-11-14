@@ -20,7 +20,7 @@ interface RiverMapProps {
   height?: number;
   rainfall: number;
   temperature: number;
-  selectedParameter?: "BOD5" | "BOD0" | "NH40" | "NH41" | "NO3" | null;
+  selectedParameter?: "BOD5" | "BOD0" | "BOD1" | "NH40" | "NH41" | "NO3" | null;
   onPositionSelect?: (position: number, data: WaterQualityData) => void;
 }
 interface Coordinate {
@@ -608,6 +608,8 @@ const RiverMap: React.FC<RiverMapProps> = ({
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
     if (!selectedParameter) return;
     const heatmapSegments = 100;
+    
+    // Vẽ nền sông trước
     ctx.beginPath();
     ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
     ctx.lineWidth = 28;
@@ -641,26 +643,77 @@ const RiverMap: React.FC<RiverMapProps> = ({
         temperature,
       );
       let value = 0;
+      let maxValue = 50;
+      let color = '#ff0000';
+      
       if (selectedParameter === "BOD5") {
         value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
+        maxValue = 50;
+        // Thang màu đỏ cho BOD5: từ xanh lá (thấp) → vàng (trung bình) → đỏ (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        if (ratio <= 0.3) {
+          const r = Math.floor(ratio * 255 / 0.3);
+          color = `rgb(${r}, 255, 0)`;
+        } else if (ratio <= 0.7) {
+          const g = Math.floor(255 - (ratio - 0.3) * 255 / 0.4);
+          color = `rgb(255, ${g}, 0)`;
+        } else {
+          const b = Math.floor((1 - ratio) * 255 / 0.3);
+          color = `rgb(255, 0, ${b})`;
+        }
       } else if (selectedParameter === "BOD0") {
         value = waterQuality.BOD5_sample0;
+        maxValue = 50;
+        const ratio = Math.min(value / maxValue, 1.0);
+        if (ratio <= 0.3) {
+          const r = Math.floor(ratio * 255 / 0.3);
+          color = `rgb(${r}, 255, 0)`;
+        } else if (ratio <= 0.7) {
+          const g = Math.floor(255 - (ratio - 0.3) * 255 / 0.4);
+          color = `rgb(255, ${g}, 0)`;
+        } else {
+          const b = Math.floor((1 - ratio) * 255 / 0.3);
+          color = `rgb(255, 0, ${b})`;
+        }
+      } else if (selectedParameter === "BOD1") {
+        value = waterQuality.BOD5_sample1;
+        maxValue = 50;
+        const ratio = Math.min(value / maxValue, 1.0);
+        if (ratio <= 0.3) {
+          const r = Math.floor(ratio * 255 / 0.3);
+          color = `rgb(${r}, 255, 0)`;
+        } else if (ratio <= 0.7) {
+          const g = Math.floor(255 - (ratio - 0.3) * 255 / 0.4);
+          color = `rgb(255, ${g}, 0)`;
+        } else {
+          const b = Math.floor((1 - ratio) * 255 / 0.3);
+          color = `rgb(255, 0, ${b})`;
+        }
       } else if (selectedParameter === "NH40") {
         value = waterQuality.NH4_sample0;
+        maxValue = 25;
+        // Thang màu vàng cho NH40: từ xanh dương (thấp) → vàng (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        const r = Math.floor(ratio * 255);
+        const g = Math.floor(200 + ratio * 55);
+        const b = Math.floor(255 - ratio * 255);
+        color = `rgb(${r}, ${g}, ${b})`;
       } else if (selectedParameter === "NH41") {
         value = waterQuality.NH4_sample1;
+        maxValue = 25;
+        const ratio = Math.min(value / maxValue, 1.0);
+        const r = Math.floor(ratio * 255);
+        const g = Math.floor(200 + ratio * 55);
+        const b = Math.floor(255 - ratio * 255);
+        color = `rgb(${r}, ${g}, ${b})`;
       } else if (selectedParameter === "NO3") {
         value = waterQuality.NO3_sample1;
+        maxValue = 30;
+        // Thang màu xanh cho NO3-: từ xanh nhạt (thấp) → xanh đậm (cao)
+        const ratio = Math.min(value / maxValue, 1.0);
+        const g = Math.floor(255 - ratio * 200);
+        color = `rgb(0, ${g}, 255)`;
       }
-      const getColorScaleKey = (param: string) => {
-        return param;
-      };
-      const colorScale = COLOR_SCALES[getColorScaleKey(selectedParameter)];
-      const clampedValue = Math.min(
-        Math.max(value, colorScale.min),
-        colorScale.max,
-      );
-      const color = getColorFromValue(clampedValue, colorScale);
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
       const nextRiverIndex = Math.floor(
         nextProgress * (riverPoints.length - 1),
@@ -669,6 +722,11 @@ const RiverMap: React.FC<RiverMapProps> = ({
       const nextPoint =
         riverPoints[Math.min(nextRiverIndex, riverPoints.length - 1)];
       if (currentPoint && nextPoint) {
+        // Debug log để kiểm tra màu sắc
+        if (i % 20 === 0) {
+          console.log(`🎨 Heatmap Debug - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Color: ${color}`);
+        }
+        
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 22;
@@ -832,9 +890,45 @@ const RiverMap: React.FC<RiverMapProps> = ({
           lượng nước
         </p>
         {selectedParameter && (
-          <p>
-            • Heatmap hiện tại: <strong>{selectedParameter}</strong>
-          </p>
+          <div>
+            <p>
+              • Heatmap hiện tại: <strong>{selectedParameter}</strong>
+            </p>
+            <div className="mt-2">
+              <p className="text-xs font-semibold mb-1">Thang màu {selectedParameter}:</p>
+              <div className="flex items-center gap-1">
+                {selectedParameter.startsWith('BOD') ? (
+                  <>
+                    <div className="w-4 h-4 bg-green-400 border border-gray-300"></div>
+                    <span className="text-xs">Thấp</span>
+                    <div className="w-4 h-4 bg-yellow-400 border border-gray-300"></div>
+                    <span className="text-xs">TB</span>
+                    <div className="w-4 h-4 bg-orange-400 border border-gray-300"></div>
+                    <div className="w-4 h-4 bg-red-500 border border-gray-300"></div>
+                    <span className="text-xs">Cao</span>
+                  </>
+                ) : selectedParameter.startsWith('NH4') ? (
+                  <>
+                    <div className="w-4 h-4 bg-blue-400 border border-gray-300"></div>
+                    <span className="text-xs">Thấp</span>
+                    <div className="w-4 h-4 bg-cyan-300 border border-gray-300"></div>
+                    <div className="w-4 h-4 bg-yellow-300 border border-gray-300"></div>
+                    <div className="w-4 h-4 bg-yellow-500 border border-gray-300"></div>
+                    <span className="text-xs">Cao</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-4 h-4 bg-blue-100 border border-gray-300"></div>
+                    <span className="text-xs">Thấp</span>
+                    <div className="w-4 h-4 bg-blue-300 border border-gray-300"></div>
+                    <div className="w-4 h-4 bg-blue-500 border border-gray-300"></div>
+                    <div className="w-4 h-4 bg-blue-700 border border-gray-300"></div>
+                    <span className="text-xs">Cao</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         )}
         {selectedPosition !== null && (
           <p>
