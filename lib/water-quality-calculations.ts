@@ -561,13 +561,13 @@ export const calculateConcentration = (
 
   // Trường hợp 12: Z = 4590 (tại giữa cống Trâu Quỳ)
   if (Z === 4590) {
-    const q4 = 1383 + 24330 * X;
+    const q4 = 2317 + 11020 * X;
     
-    const BOD1_Z4590 = (52650 + 219330 * X) / q4;
-    const BOD0_Z4590 = (52650 + 219330 * X) / q4;
-    const NH41_Z4590 = (21168 + 13632 * X) / q4;
-    const NH40_Z4590 = (21168 + 13632 * X) / q4;
-    const NO31_Z4590 = (346 + 3410 * X) / q4;
+    const BOD1_Z4590 = (88278 + 99180 * X) / q4;
+    const BOD0_Z4590 = (88278 + 99180 * X) / q4;
+    const NH41_Z4590 = (35450 + 6171 * X) / q4;
+    const NH40_Z4590 = (35450 + 6171 * X) / q4;
+    const NO31_Z4590 = (579 + 1543 * X) / q4;
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z4590)),
@@ -581,8 +581,8 @@ export const calculateConcentration = (
   // Trường hợp 13: Z = 4592 (sau cống Trâu Quỳ 2m)
   if (Z === 4592) {
     const Q3 = 2522 + 35700 * X;
-    const q4 = 1383 + 24330 * X;
-    const Q4 = Q3 + q4; // 3905 + 60030 * X
+    const q4 = 2317 + 11020 * X;
+    const Q4 = Q3 + q4; // 4839 + 46720 * X
     
     // Tính giá trị BOD1.Z4588, BOD0.Z4588, ... tại Z = 4588
     const time4_4588 = (480 * 4588) / Q3;
@@ -662,11 +662,11 @@ export const calculateConcentration = (
     NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, 'increasing');
 
     // Giá trị tại cống Z4590
-    const BOD1_Z4590 = (52650 + 219330 * X) / q4;
-    const BOD0_Z4590 = (52650 + 219330 * X) / q4;
-    const NH41_Z4590 = (21168 + 13632 * X) / q4;
-    const NH40_Z4590 = (21168 + 13632 * X) / q4;
-    const NO31_Z4590 = (346 + 3410 * X) / q4;
+    const BOD1_Z4590 = (88278 + 99180 * X) / q4;
+    const BOD0_Z4590 = (88278 + 99180 * X) / q4;
+    const NH41_Z4590 = (35450 + 6171 * X) / q4;
+    const NH40_Z4590 = (35450 + 6171 * X) / q4;
+    const NO31_Z4590 = (579 + 1543 * X) / q4;
 
     // Trung bình có trọng số
     const BOD1_4 = (BOD1_Z4588 * Q3 + BOD1_Z4590 * q4) / Q4;
@@ -686,13 +686,13 @@ export const calculateConcentration = (
 
   // Trường hợp 14: 4592 < Z < 7068 (từ sau Trâu Quỳ đến trước Đa Tốn 2m)
   if (Z > 4592 && Z < 7068) {
-    const Q4 = 3905 + 60030 * X;
+    const Q4 = 4839 + 46720 * X;
     const time5 = (480 * Z) / Q4;
     
     // Tính giá trị BOD1.4, BOD0.4, NH41.4, NH40.4, NO31.4 từ Z = 4592
     // Sử dụng toàn bộ chain calculation từ đầu
     const Q3 = 2522 + 35700 * X;
-    const q4 = 1383 + 24330 * X;
+    const q4 = 2317 + 11020 * X;
     const Q2 = 1480 + 17370 * X;
     const q3 = 1042 + 18330 * X;
     const Q1 = 1250 + 13550 * X;
@@ -775,11 +775,11 @@ export const calculateConcentration = (
     NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, 'increasing');
 
     // Z = 4590 (cống Trâu Quỳ)
-    const BOD1_Z4590 = (52650 + 219330 * X) / q4;
-    const BOD0_Z4590 = (52650 + 219330 * X) / q4;
-    const NH41_Z4590 = (21168 + 13632 * X) / q4;
-    const NH40_Z4590 = (21168 + 13632 * X) / q4;
-    const NO31_Z4590 = (346 + 3410 * X) / q4;
+    const BOD1_Z4590 = (88278 + 99180 * X) / q4;
+    const BOD0_Z4590 = (88278 + 99180 * X) / q4;
+    const NH41_Z4590 = (35450 + 6171 * X) / q4;
+    const NH40_Z4590 = (35450 + 6171 * X) / q4;
+    const NO31_Z4590 = (579 + 1543 * X) / q4;
 
     // Z = 4592 (mixing)
     const BOD1_4 = (BOD1_Z4588 * Q3 + BOD1_Z4590 * q4) / Q4;
@@ -817,13 +817,13 @@ export const calculateConcentration = (
 
   // Trường hợp 16: Z = 7070 (tại giữa cống Đa Tốn)
   if (Z === 7070) {
-    const q5 = 120 + 2100 * X;
+    const q5 = 1235 + 6890 * X;
     
-    const BOD1_Z7070 = (4560 + 18900 * X) / q5;
-    const BOD0_Z7070 = (4560 + 18900 * X) / q5;
-    const NH41_Z7070 = (1833 + 1179 * X) / q5;
-    const NH40_Z7070 = (1833 + 1179 * X) / q5;
-    const NO31_Z7070 = (30 + 295 * X) / q5;
+    const BOD1_Z7070 = (47054 + 62010 * X) / q5;
+    const BOD0_Z7070 = (47054 + 62010 * X) / q5;
+    const NH41_Z7070 = (18896 + 3858 * X) / q5;
+    const NH40_Z7070 = (18896 + 3858 * X) / q5;
+    const NO31_Z7070 = (309 + 965 * X) / q5;
 
     return {
       BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z7070)),
@@ -836,9 +836,9 @@ export const calculateConcentration = (
 
   // Trường hợp 17: Z = 7072 (sau cống Đa Tốn 2m)
   if (Z === 7072) {
-    const Q4 = 3905 + 60030 * X;
-    const q5 = 120 + 2100 * X;
-    const Q5 = Q4 + q5; // 4025 + 62130 * X
+    const Q4 = 4839 + 46720 * X;
+    const q5 = 1235 + 6890 * X;
+    const Q5 = Q4 + q5; // 6074 + 53610 * X
     
     // Tính giá trị tại Z = 7068 bằng cách gọi calculateConcentration(7067, X, Y)
     const valuesAt7067 = calculateConcentration(7067, X, Y);
@@ -849,11 +849,11 @@ export const calculateConcentration = (
     const NO31_Z7068 = valuesAt7067.NO3_sample1;
 
     // Z = 7070 (cống Đa Tốn)
-    const BOD1_Z7070 = (4560 + 18900 * X) / q5;
-    const BOD0_Z7070 = (4560 + 18900 * X) / q5;
-    const NH41_Z7070 = (1833 + 1179 * X) / q5;
-    const NH40_Z7070 = (1833 + 1179 * X) / q5;
-    const NO31_Z7070 = (30 + 295 * X) / q5;
+    const BOD1_Z7070 = (47054 + 62010 * X) / q5;
+    const BOD0_Z7070 = (47054 + 62010 * X) / q5;
+    const NH41_Z7070 = (18896 + 3858 * X) / q5;
+    const NH40_Z7070 = (18896 + 3858 * X) / q5;
+    const NO31_Z7070 = (309 + 965 * X) / q5;
 
     // Trung bình có trọng số
     const BOD1_5 = (BOD1_Z7068 * Q4 + BOD1_Z7070 * q5) / Q5;
@@ -873,7 +873,7 @@ export const calculateConcentration = (
 
   // Trường hợp 18: 7072 < Z ≤ 8013 (từ sau Đa Tốn đến cuối sông/Xuân Thụy)
   if (Z > 7072 && Z <= 8013) {
-    const Q5 = 4025 + 62130 * X;
+    const Q5 = 6074 + 53610 * X;
     const time6 = (480 * Z) / Q5;
     
     // Tính giá trị BOD1.5, BOD0.5, NH41.5, NH40.5, NO31.5 từ Z = 7072
