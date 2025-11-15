@@ -605,9 +605,52 @@ const RiverMap: React.FC<RiverMapProps> = ({
       }
     }
   };
+  // Calculate dynamic min/max values for the selected parameter
+  const calculateParameterRange = (parameter: 'BOD5' | 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    
+    // Sample positions along the river to find actual min/max
+    for (let i = 0; i <= 100; i++) {
+      const progress = i / 100;
+      const positionMeters = progress * RIVER_LENGTH;
+      const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
+      
+      let value = 0;
+      switch (parameter) {
+        case 'BOD5':
+          value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
+          break;
+        case 'BOD0':
+          value = waterQuality.BOD5_sample0;
+          break;
+        case 'BOD1':
+          value = waterQuality.BOD5_sample1;
+          break;
+        case 'NH40':
+          value = waterQuality.NH4_sample0;
+          break;
+        case 'NH41':
+          value = waterQuality.NH4_sample1;
+          break;
+        case 'NO3':
+          value = waterQuality.NO3_sample1;
+          break;
+      }
+      
+      minValue = Math.min(minValue, value);
+      maxValue = Math.max(maxValue, value);
+    }
+    
+    return { min: minValue, max: maxValue };
+  };
+
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
     if (!selectedParameter) return;
     const heatmapSegments = 100;
+    
+    // Calculate dynamic range for the selected parameter
+    const parameterRange = calculateParameterRange(selectedParameter);
     
     // Vẽ nền sông trước
     ctx.beginPath();
@@ -642,78 +685,39 @@ const RiverMap: React.FC<RiverMapProps> = ({
         rainfall,
         temperature,
       );
+      // Get value based on selected parameter
       let value = 0;
-      let maxValue = 50;
-      let color = '#ff0000';
-      
-      if (selectedParameter === "BOD5") {
-        value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
-        maxValue = 50;
-        // Thang màu đỏ cho BOD5: từ xanh lá (thấp) → vàng (trung bình) → đỏ (cao)
-        const ratio = Math.min(value / maxValue, 1.0);
-        if (ratio <= 0.3) {
-          const r = Math.floor(ratio * 255 / 0.3);
-          color = `rgb(${r}, 255, 0)`;
-        } else if (ratio <= 0.7) {
-          const g = Math.floor(255 - (ratio - 0.3) * 255 / 0.4);
-          color = `rgb(255, ${g}, 0)`;
-        } else {
-          const b = Math.floor((1 - ratio) * 255 / 0.3);
-          color = `rgb(255, 0, ${b})`;
-        }
-      } else if (selectedParameter === "BOD0") {
-        value = waterQuality.BOD5_sample0;
-        maxValue = 50;
-        const ratio = Math.min(value / maxValue, 1.0);
-        if (ratio <= 0.3) {
-          const r = Math.floor(ratio * 255 / 0.3);
-          color = `rgb(${r}, 255, 0)`;
-        } else if (ratio <= 0.7) {
-          const g = Math.floor(255 - (ratio - 0.3) * 255 / 0.4);
-          color = `rgb(255, ${g}, 0)`;
-        } else {
-          const b = Math.floor((1 - ratio) * 255 / 0.3);
-          color = `rgb(255, 0, ${b})`;
-        }
-      } else if (selectedParameter === "BOD1") {
-        value = waterQuality.BOD5_sample1;
-        maxValue = 50;
-        const ratio = Math.min(value / maxValue, 1.0);
-        if (ratio <= 0.3) {
-          const r = Math.floor(ratio * 255 / 0.3);
-          color = `rgb(${r}, 255, 0)`;
-        } else if (ratio <= 0.7) {
-          const g = Math.floor(255 - (ratio - 0.3) * 255 / 0.4);
-          color = `rgb(255, ${g}, 0)`;
-        } else {
-          const b = Math.floor((1 - ratio) * 255 / 0.3);
-          color = `rgb(255, 0, ${b})`;
-        }
-      } else if (selectedParameter === "NH40") {
-        value = waterQuality.NH4_sample0;
-        maxValue = 25;
-        // Thang màu vàng cho NH40: từ xanh dương (thấp) → vàng (cao)
-        const ratio = Math.min(value / maxValue, 1.0);
-        const r = Math.floor(ratio * 255);
-        const g = Math.floor(200 + ratio * 55);
-        const b = Math.floor(255 - ratio * 255);
-        color = `rgb(${r}, ${g}, ${b})`;
-      } else if (selectedParameter === "NH41") {
-        value = waterQuality.NH4_sample1;
-        maxValue = 25;
-        const ratio = Math.min(value / maxValue, 1.0);
-        const r = Math.floor(ratio * 255);
-        const g = Math.floor(200 + ratio * 55);
-        const b = Math.floor(255 - ratio * 255);
-        color = `rgb(${r}, ${g}, ${b})`;
-      } else if (selectedParameter === "NO3") {
-        value = waterQuality.NO3_sample1;
-        maxValue = 30;
-        // Thang màu xanh cho NO3-: từ xanh nhạt (thấp) → xanh đậm (cao)
-        const ratio = Math.min(value / maxValue, 1.0);
-        const g = Math.floor(255 - ratio * 200);
-        color = `rgb(0, ${g}, 255)`;
+      switch (selectedParameter) {
+        case "BOD5":
+          value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
+          break;
+        case "BOD0":
+          value = waterQuality.BOD5_sample0;
+          break;
+        case "BOD1":
+          value = waterQuality.BOD5_sample1;
+          break;
+        case "NH40":
+          value = waterQuality.NH4_sample0;
+          break;
+        case "NH41":
+          value = waterQuality.NH4_sample1;
+          break;
+        case "NO3":
+          value = waterQuality.NO3_sample1;
+          break;
       }
+      
+      // Calculate dynamic color based on actual min/max range
+      const range = parameterRange.max - parameterRange.min;
+      const ratio = range > 0 ? (value - parameterRange.min) / range : 0;
+      
+      // White (min) to Red (max) gradient
+      const intensity = Math.max(0, Math.min(1, ratio));
+      const redValue = Math.floor(255 * intensity);
+      const greenValue = Math.floor(255 * (1 - intensity));
+      const blueValue = Math.floor(255 * (1 - intensity));
+      const color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
       const nextRiverIndex = Math.floor(
         nextProgress * (riverPoints.length - 1),
