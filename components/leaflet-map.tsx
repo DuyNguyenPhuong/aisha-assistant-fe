@@ -140,61 +140,16 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
       if (showHeatmap && heatmapData.length > 0 && window.L.heatLayer) {
         const heatData = heatmapData.map(point => [point.lat, point.lng, point.intensity]);
         
-        // Định nghĩa gradient màu riêng cho từng chất
-        let gradient = {};
-        
-        switch (selectedParameter) {
-          case 'BOD5':
-          case 'BOD0':
-          case 'BOD1':
-            // Thang màu đỏ cho BOD5/BOD0/BOD1: Xanh lá → Vàng → Cam → Đỏ
-            gradient = {
-              0.0: '#00ff00',  // Xanh lá (thấp)
-              0.3: '#80ff00',  // Xanh lá nhạt
-              0.5: '#ffff00',  // Vàng (trung bình thấp)
-              0.7: '#ff8000',  // Cam (trung bình cao)
-              0.85: '#ff4000', // Đỏ cam
-              1.0: '#ff0000'   // Đỏ đậm (cao)
-            };
-            break;
-            
-          case 'NH4':
-          case 'NH40':
-          case 'NH41':
-            // Thang màu vàng cho NH4+: Xanh dương → Xanh nhạt → Vàng
-            gradient = {
-              0.0: '#0080ff',  // Xanh dương đậm (thấp)
-              0.2: '#40a0ff',  // Xanh dương
-              0.4: '#80c8ff',  // Xanh nhạt
-              0.6: '#c0e0ff',  // Xanh rất nhạt
-              0.8: '#ffff80',  // Vàng nhạt
-              1.0: '#ffff00'   // Vàng đậm (cao)
-            };
-            break;
-            
-          case 'NO3':
-            // Thang màu xanh cho NO3-: Xanh nhạt → Xanh đậm
-            gradient = {
-              0.0: '#e6f3ff',  // Xanh rất nhạt (thấp)
-              0.25: '#b3d9ff', // Xanh nhạt
-              0.5: '#80bfff',  // Xanh trung bình
-              0.75: '#4da6ff', // Xanh
-              0.9: '#1a8cff',  // Xanh đậm
-              1.0: '#0066cc'   // Xanh rất đậm (cao)
-            };
-            break;
-            
-          default:
-            // Gradient mặc định (BOD5/BOD0/BOD1)
-            gradient = {
-              0.0: '#00ff00',
-              0.3: '#80ff00',
-              0.5: '#ffff00',
-              0.7: '#ff8000',
-              0.85: '#ff4000',
-              1.0: '#ff0000'
-            };
-        }
+        // Thang màu động thống nhất: Trắng (min) → Đỏ (max) cho tất cả parameter
+        const gradient = {
+          0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
+          0.1: '#ffe6e6',  // Hồng rất nhạt
+          0.25: '#ffcccc', // Hồng nhạt
+          0.5: '#ff9999',  // Hồng
+          0.75: '#ff6666', // Đỏ nhạt
+          0.9: '#ff3333',  // Đỏ
+          1.0: '#ff0000'   // Đỏ đậm (giá trị cao nhất)
+        };
         
         window.L.heatLayer(heatData, {
           radius: 25,        // Tăng bán kính để dễ nhìn
