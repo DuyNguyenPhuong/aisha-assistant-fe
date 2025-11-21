@@ -157,9 +157,30 @@ const RiverMapPage: NextPage = () => {
       ? `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`
       : 'Đang tính toán...';
     
+    // Màu sắc đặc trưng cho từng chất
+    let bgClass, gradientStyle;
+    
+    if (param === 'BOD5' || param === 'BOD0' || param === 'BOD1') {
+      // BOD: Trắng → Đỏ
+      bgClass = selectedParameter === param ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100';
+      gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ffcccc 50%, #ff0000 100%)' };
+    } else if (param === 'NH40' || param === 'NH41') {
+      // NH4: Trắng → Vàng
+      bgClass = selectedParameter === param ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100';
+      gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ffffcc 50%, #ffff00 100%)' };
+    } else if (param === 'NO3') {
+      // NO3: Trắng → Xanh lam
+      bgClass = selectedParameter === param ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100';
+      gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ccddff 50%, #0066ff 100%)' };
+    } else {
+      // Mặc định: đỏ
+      bgClass = selectedParameter === param ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100';
+      gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ffcccc 50%, #ff0000 100%)' };
+    }
+    
     return {
-      bgClass: selectedParameter === param ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100',
-      gradientStyle: { background: 'linear-gradient(to right, #ffffff 0%, #ffcccc 50%, #ff0000 100%)' },
+      bgClass,
+      gradientStyle,
       description: description
     };
   };
@@ -311,12 +332,34 @@ const RiverMapPage: NextPage = () => {
       const range = parameterRange.max - parameterRange.min;
       const ratio = range > 0 ? (value - parameterRange.min) / range : 0;
       
-      // Thang màu động: trắng (min) → đỏ (max) cho tất cả parameter
+      // Thang màu động với màu đặc trưng cho từng chất
       const intensity = Math.max(0, Math.min(1, ratio));
-      const redValue = Math.floor(255 * intensity);
-      const greenValue = Math.floor(255 * (1 - intensity));
-      const blueValue = Math.floor(255 * (1 - intensity));
-      color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      
+      if (selectedParameter === 'BOD5' || selectedParameter === 'BOD0' || selectedParameter === 'BOD1') {
+        // BOD: Trắng → Đỏ
+        const redValue = Math.floor(255 * intensity);
+        const greenValue = Math.floor(255 * (1 - intensity));
+        const blueValue = Math.floor(255 * (1 - intensity));
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      } else if (selectedParameter === 'NH40' || selectedParameter === 'NH41') {
+        // NH4: Trắng → Vàng
+        const redValue = Math.floor(255 * intensity);
+        const greenValue = Math.floor(255 * intensity);
+        const blueValue = Math.floor(255 * (1 - intensity));
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      } else if (selectedParameter === 'NO3') {
+        // NO3: Trắng → Xanh lam
+        const redValue = Math.floor(255 * (1 - intensity));
+        const greenValue = Math.floor(255 * (1 - intensity));
+        const blueValue = 255; // Luôn có thành phần xanh
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      } else {
+        // Mặc định: đỏ
+        const redValue = Math.floor(255 * intensity);
+        const greenValue = Math.floor(255 * (1 - intensity));
+        const blueValue = Math.floor(255 * (1 - intensity));
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      }
       
       // Normalize intensity cho leaflet heatmap (0-1)
       const normalizedIntensity = intensity;
@@ -920,23 +963,61 @@ const RiverMapPage: NextPage = () => {
                   {showHeatmap ? '🎨 Tắt Heatmap' : '📊 Bật Heatmap'}
                 </button>
               </div>
-              
-              {showHeatmap && selectedParameter && (() => {
+{showHeatmap && selectedParameter && (() => {
                 const range = calculateParameterRange(selectedParameter);
+                let colorInfo;
+                if (selectedParameter === 'BOD5' || selectedParameter === 'BOD0' || selectedParameter === 'BOD1') {
+                  colorInfo = {
+                    icon: '🔴',
+                    color: 'text-red-700',
+                    gradient: 'linear-gradient(to right, #ffffff, #ffcccc, #ff0000)',
+                    midColor: 'bg-red-300',
+                    maxColor: 'bg-red-600',
+                    colorName: 'đỏ'
+                  };
+                } else if (selectedParameter === 'NH40' || selectedParameter === 'NH41') {
+                  colorInfo = {
+                    icon: '🟡',
+                    color: 'text-yellow-700',
+                    gradient: 'linear-gradient(to right, #ffffff, #ffffcc, #ffff00)',
+                    midColor: 'bg-yellow-300',
+                    maxColor: 'bg-yellow-500',
+                    colorName: 'vàng'
+                  };
+                } else if (selectedParameter === 'NO3') {
+                  colorInfo = {
+                    icon: '🔵',
+                    color: 'text-blue-700',
+                    gradient: 'linear-gradient(to right, #ffffff, #ccddff, #0066ff)',
+                    midColor: 'bg-blue-300',
+                    maxColor: 'bg-blue-600',
+                    colorName: 'xanh lam'
+                  };
+                } else {
+                  colorInfo = {
+                    icon: '🔴',
+                    color: 'text-red-700',
+                    gradient: 'linear-gradient(to right, #ffffff, #ffcccc, #ff0000)',
+                    midColor: 'bg-red-300',
+                    maxColor: 'bg-red-600',
+                    colorName: 'đỏ'
+                  };
+                }
+                
                 return (
                   <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded border border-blue-200 mb-4">
                     <div className="font-semibold mb-2">📊 Heatmap hiển thị nồng độ {selectedParameter} từ mô phỏng (Thang màu động):</div>
                     
                     <div className="space-y-1 mb-2">
-                      <div className="font-medium text-red-700">🔴 {selectedParameter} - Thang màu động:</div>
+                      <div className={`font-medium ${colorInfo.color}`}>{colorInfo.icon} {selectedParameter} - Thang màu động:</div>
                       <div className="flex items-center gap-2">
-                        <span className="inline-block w-16 h-4 rounded border" style={{background: 'linear-gradient(to right, #ffffff, #ffcccc, #ff0000)'}}></span>
+                        <span className="inline-block w-16 h-4 rounded border" style={{background: colorInfo.gradient}}></span>
                         <span>{range.min.toFixed(3)} mg/L → {range.max.toFixed(3)} mg/L</span>
                       </div>
                       <div className="text-xs mt-1 text-gray-600 space-y-1">
                         <div>• <span className="inline-block w-3 h-3 mr-2 bg-white border"></span>Giá trị thấp nhất: <strong>{range.min.toFixed(3)} mg/L</strong> (màu trắng)</div>
-                        <div>• <span className="inline-block w-3 h-3 mr-2 bg-red-300 border"></span>Giá trị trung bình: <strong>{((range.min + range.max) / 2).toFixed(3)} mg/L</strong> (màu hồng)</div>
-                        <div>• <span className="inline-block w-3 h-3 mr-2 bg-red-600 border"></span>Giá trị cao nhất: <strong>{range.max.toFixed(3)} mg/L</strong> (màu đỏ)</div>
+                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.midColor} border`}></span>Giá trị trung bình: <strong>{((range.min + range.max) / 2).toFixed(3)} mg/L</strong> (màu {colorInfo.colorName} nhạt)</div>
+                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.maxColor} border`}></span>Giá trị cao nhất: <strong>{range.max.toFixed(3)} mg/L</strong> (màu {colorInfo.colorName})</div>
                       </div>
                       <div className="text-xs mt-2 text-gray-600 bg-white p-2 rounded border">
                         {selectedParameter === 'BOD5' && '* BOD5: Giá trị trung bình của mẫu 0 và mẫu 1'}
