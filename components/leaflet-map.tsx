@@ -140,16 +140,54 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
       if (showHeatmap && heatmapData.length > 0 && window.L.heatLayer) {
         const heatData = heatmapData.map(point => [point.lat, point.lng, point.intensity]);
         
-        // Thang màu động thống nhất: Trắng (min) → Đỏ (max) cho tất cả parameter
-        const gradient = {
-          0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
-          0.1: '#ffe6e6',  // Hồng rất nhạt
-          0.25: '#ffcccc', // Hồng nhạt
-          0.5: '#ff9999',  // Hồng
-          0.75: '#ff6666', // Đỏ nhạt
-          0.9: '#ff3333',  // Đỏ
-          1.0: '#ff0000'   // Đỏ đậm (giá trị cao nhất)
-        };
+        // Thang màu động với màu đặc trưng cho từng chất
+        let gradient = {};
+        
+        if (selectedParameter === 'BOD5' || selectedParameter === 'BOD0' || selectedParameter === 'BOD1') {
+          // BOD: Trắng → Đỏ
+          gradient = {
+            0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
+            0.1: '#ffe6e6',  // Hồng rất nhạt
+            0.25: '#ffcccc', // Hồng nhạt
+            0.5: '#ff9999',  // Hồng
+            0.75: '#ff6666', // Đỏ nhạt
+            0.9: '#ff3333',  // Đỏ
+            1.0: '#ff0000'   // Đỏ đậm (giá trị cao nhất)
+          };
+        } else if (selectedParameter === 'NH40' || selectedParameter === 'NH41') {
+          // NH4: Trắng → Vàng
+          gradient = {
+            0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
+            0.1: '#ffffcc',  // Vàng rất nhạt
+            0.25: '#ffff99', // Vàng nhạt
+            0.5: '#ffff66',  // Vàng
+            0.75: '#ffff33', // Vàng đậm
+            0.9: '#ffff11',  // Vàng rất đậm
+            1.0: '#ffff00'   // Vàng đậm nhất (giá trị cao nhất)
+          };
+        } else if (selectedParameter === 'NO3') {
+          // NO3: Trắng → Xanh lam
+          gradient = {
+            0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
+            0.1: '#e6f2ff',  // Xanh lam rất nhạt
+            0.25: '#ccddff', // Xanh lam nhạt
+            0.5: '#99ccff',  // Xanh lam
+            0.75: '#6699ff', // Xanh lam đậm
+            0.9: '#3366ff',  // Xanh lam rất đậm
+            1.0: '#0066ff'   // Xanh lam đậm nhất (giá trị cao nhất)
+          };
+        } else {
+          // Mặc định: Đỏ
+          gradient = {
+            0.0: '#ffffff',
+            0.1: '#ffe6e6',
+            0.25: '#ffcccc',
+            0.5: '#ff9999',
+            0.75: '#ff6666',
+            0.9: '#ff3333',
+            1.0: '#ff0000'
+          };
+        }
         
         window.L.heatLayer(heatData, {
           radius: 25,        // Tăng bán kính để dễ nhìn

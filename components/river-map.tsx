@@ -708,16 +708,38 @@ const RiverMap: React.FC<RiverMapProps> = ({
           break;
       }
       
-      // Calculate dynamic color based on actual min/max range
+      // Calculate dynamic color based on actual min/max range with parameter-specific colors
       const range = parameterRange.max - parameterRange.min;
       const ratio = range > 0 ? (value - parameterRange.min) / range : 0;
       
-      // White (min) to Red (max) gradient
       const intensity = Math.max(0, Math.min(1, ratio));
-      const redValue = Math.floor(255 * intensity);
-      const greenValue = Math.floor(255 * (1 - intensity));
-      const blueValue = Math.floor(255 * (1 - intensity));
-      const color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      let color;
+      
+      if (selectedParameter === "BOD5" || selectedParameter === "BOD0" || selectedParameter === "BOD1") {
+        // BOD: White → Red
+        const redValue = Math.floor(255 * intensity);
+        const greenValue = Math.floor(255 * (1 - intensity));
+        const blueValue = Math.floor(255 * (1 - intensity));
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      } else if (selectedParameter === "NH40" || selectedParameter === "NH41") {
+        // NH4: White → Yellow
+        const redValue = Math.floor(255 * intensity);
+        const greenValue = Math.floor(255 * intensity);
+        const blueValue = Math.floor(255 * (1 - intensity));
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      } else if (selectedParameter === "NO3") {
+        // NO3: White → Blue
+        const redValue = Math.floor(255 * (1 - intensity));
+        const greenValue = Math.floor(255 * (1 - intensity));
+        const blueValue = 255; // Always have blue component
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      } else {
+        // Default: Red
+        const redValue = Math.floor(255 * intensity);
+        const greenValue = Math.floor(255 * (1 - intensity));
+        const blueValue = Math.floor(255 * (1 - intensity));
+        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+      }
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
       const nextRiverIndex = Math.floor(
         nextProgress * (riverPoints.length - 1),
