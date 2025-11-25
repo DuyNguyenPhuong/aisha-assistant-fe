@@ -702,7 +702,6 @@ const RiverMap: React.FC<RiverMapProps> = ({
           break;
       }
       
-      // Calculate dynamic color based on actual min/max range with parameter-specific colors
       const range = parameterRange.max - parameterRange.min;
       const ratio = range > 0 ? (value - parameterRange.min) / range : 0;
       
