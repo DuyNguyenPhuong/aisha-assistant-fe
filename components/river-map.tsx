@@ -20,7 +20,7 @@ interface RiverMapProps {
   height?: number;
   rainfall: number;
   temperature: number;
-  selectedParameter?: "BOD5" | "BOD0" | "BOD1" | "NH40" | "NH41" | "NO3" | null;
+  selectedParameter?: "BOD0" | "BOD1" | "NH40" | "NH41" | "NO3" | null;
   onPositionSelect?: (position: number, data: WaterQualityData) => void;
 }
 interface Coordinate {
@@ -606,7 +606,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     }
   };
   // Calculate dynamic min/max values for the selected parameter
-  const calculateParameterRange = (parameter: 'BOD5' | 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
+  const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
     let minValue = Infinity;
     let maxValue = -Infinity;
     
@@ -618,9 +618,6 @@ const RiverMap: React.FC<RiverMapProps> = ({
       
       let value = 0;
       switch (parameter) {
-        case 'BOD5':
-          value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
-          break;
         case 'BOD0':
           value = waterQuality.BOD5_sample0;
           break;
@@ -688,9 +685,6 @@ const RiverMap: React.FC<RiverMapProps> = ({
       // Get value based on selected parameter
       let value = 0;
       switch (selectedParameter) {
-        case "BOD5":
-          value = (waterQuality.BOD5_sample0 + waterQuality.BOD5_sample1) / 2;
-          break;
         case "BOD0":
           value = waterQuality.BOD5_sample0;
           break;
@@ -715,7 +709,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
       const intensity = Math.max(0, Math.min(1, ratio));
       let color;
       
-      if (selectedParameter === "BOD5" || selectedParameter === "BOD0" || selectedParameter === "BOD1") {
+      if (selectedParameter === "BOD0" || selectedParameter === "BOD1") {
         // BOD: White → Red
         const redValue = Math.floor(255 * intensity);
         const greenValue = Math.floor(255 * (1 - intensity));
