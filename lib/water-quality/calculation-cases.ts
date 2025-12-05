@@ -160,7 +160,7 @@ export const calculateCase5 = (X: number, Y: number): WaterQualityData => {
 // Placeholder cases 6-18 (cần implement đầy đủ logic sau)
 export const calculateCase6 = (Z: number, X: number, Y: number): WaterQualityData => {
   const Q2 = 1480 + 17370 * X;
-  const time3 = 480 * (Z - 1114) / Q2; // Time from 1114 to current Z
+  const time3 = 480 * (Z - 1112) / Q2; // Time from 1112 to current Z
   
   // Get values from case 5 (Z = 1114) - the mixed values after Dai Tu
   const case5Values = calculateCase5(X, Y);
@@ -194,7 +194,7 @@ export const calculateCase6 = (Z: number, X: number, Y: number): WaterQualityDat
 
 export const calculateCase7 = (X: number, Y: number): WaterQualityData => {
   const Q2 = 1480 + 17370 * X;
-  const time30 = 480 * (3168 - 1114) / Q2; // Time from 1114 to 3168, not from start
+  const time30 = 480 * (3168 - 1112) / Q2; // Time from 1112 to 3168
   
   // Get values from case 5 (Z = 1114) - the mixed values after Dai Tu
   const case5Values = calculateCase5(X, Y);
@@ -282,7 +282,7 @@ export const calculateCase9 = (X: number, Y: number): WaterQualityData => {
 
 export const calculateCase10 = (Z: number, X: number, Y: number): WaterQualityData => {
   const Q3 = 2522 + 35700 * X;
-  const time4 = 480 * (Z - 3172) / Q3; // Time from 3172 to current Z
+  const time4 = 480 * (Z - 3170) / Q3; // Time from 3170 to current Z
   
   // Get values from case 9 (Z = 3172)
   const case9Values = calculateCase9(X, Y);
@@ -315,8 +315,37 @@ export const calculateCase10 = (Z: number, X: number, Y: number): WaterQualityDa
 };
 
 export const calculateCase11 = (X: number, Y: number): WaterQualityData => {
-  // Calculate at Z = 4587 (just before 4588)
-  return calculateCase10(4587, X, Y);
+  const Q3 = 2522 + 35700 * X;
+  const time40 = 480 * (4588 - 3170) / Q3; // 680640 / Q3
+  
+  // Get values from case 9 (Z = 3172)
+  const case9Values = calculateCase9(X, Y);
+  const BOD1_3 = case9Values.BOD5_sample1;
+  const BOD0_3 = case9Values.BOD5_sample0;
+  const NH41_3 = case9Values.NH4_sample1;
+  const NH40_3 = case9Values.NH4_sample0;
+  const NO31_3 = case9Values.NO3_sample1;
+
+  // Degradation from BOD1.3 to Z = 4588
+  let BOD1_Z4588 = BOD1_3 - calculateTBOD(time40, Y) * D_BOD1(time40);
+  let BOD0_Z4588 = BOD0_3 - calculateTBOD(time40, Y) * D_BOD0(time40);
+  let NH41_Z4588 = NH41_3 - calculateTN(time40, Y) * D_NH41(time40);
+  let NH40_Z4588 = NH40_3 - calculateTN(time40, Y) * D_NH40(time40);
+  let NO31_Z4588 = NO31_3 - calculateTN(time40, Y) * D_NO31(time40);
+
+  BOD1_Z4588 = applyAlgorithmConstraints(BOD1_Z4588, BOD1_3, 'decreasing');
+  BOD0_Z4588 = applyAlgorithmConstraints(BOD0_Z4588, BOD0_3, 'decreasing');
+  NH41_Z4588 = applyAlgorithmConstraints(NH41_Z4588, NH41_3, 'decreasing');
+  NH40_Z4588 = applyAlgorithmConstraints(NH40_Z4588, NH40_3, 'decreasing');
+  NO31_Z4588 = applyAlgorithmConstraints(NO31_Z4588, NO31_3, 'increasing');
+
+  return {
+    BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z4588)),
+    BOD5_sample1: Math.max(0, truncateToTwoDecimals(BOD1_Z4588)),
+    NH4_sample0: Math.max(0, truncateToTwoDecimals(NH40_Z4588)),
+    NH4_sample1: Math.max(0, truncateToTwoDecimals(NH41_Z4588)),
+    NO3_sample1: Math.max(0, truncateToTwoDecimals(NO31_Z4588)),
+  };
 };
 
 export const calculateCase12 = (X: number): WaterQualityData => {
@@ -358,7 +387,7 @@ export const calculateCase13 = (X: number, Y: number): WaterQualityData => {
   const NH40_Z4590 = case12Values.NH4_sample0;
   const NO31_Z4590 = case12Values.NO3_sample1;
 
-  // Weighted average mixing
+  // Weighted average mixing - NOTE: Formula in requirements uses BOD1.Z4590, not BOD1.Z3170
   const BOD1_4 = (BOD1_Z4588 * Q3 + BOD1_Z4590 * q4) / Q4;
   const BOD0_4 = (BOD0_Z4588 * Q3 + BOD0_Z4590 * q4) / Q4;
   const NH41_4 = (NH41_Z4588 * Q3 + NH41_Z4590 * q4) / Q4;
@@ -376,7 +405,7 @@ export const calculateCase13 = (X: number, Y: number): WaterQualityData => {
 
 export const calculateCase14 = (Z: number, X: number, Y: number): WaterQualityData => {
   const Q4 = 4839 + 46720 * X;
-  const time5 = 480 * (Z - 4592) / Q4; // Time from 4592 to current Z
+  const time5 = 480 * (Z - 4590) / Q4; // Time from 4590 to current Z
   
   // Get values from case 13 (Z = 4592)
   const case13Values = calculateCase13(X, Y);
@@ -409,8 +438,37 @@ export const calculateCase14 = (Z: number, X: number, Y: number): WaterQualityDa
 };
 
 export const calculateCase15 = (X: number, Y: number): WaterQualityData => {
-  // Calculate at Z = 7067 (just before 7068)
-  return calculateCase14(7067, X, Y);
+  const Q4 = 4839 + 46720 * X;
+  const time50 = 480 * (7068 - 4590) / Q4; // 1189440 / Q4
+  
+  // Get values from case 13 (Z = 4592)
+  const case13Values = calculateCase13(X, Y);
+  const BOD1_4 = case13Values.BOD5_sample1;
+  const BOD0_4 = case13Values.BOD5_sample0;
+  const NH41_4 = case13Values.NH4_sample1;
+  const NH40_4 = case13Values.NH4_sample0;
+  const NO31_4 = case13Values.NO3_sample1;
+
+  // Degradation from BOD1.4 to Z = 7068
+  let BOD1_Z7068 = BOD1_4 - calculateTBOD(time50, Y) * D_BOD1(time50);
+  let BOD0_Z7068 = BOD0_4 - calculateTBOD(time50, Y) * D_BOD0(time50);
+  let NH41_Z7068 = NH41_4 - calculateTN(time50, Y) * D_NH41(time50);
+  let NH40_Z7068 = NH40_4 - calculateTN(time50, Y) * D_NH40(time50);
+  let NO31_Z7068 = NO31_4 - calculateTN(time50, Y) * D_NO31(time50);
+
+  BOD1_Z7068 = applyAlgorithmConstraints(BOD1_Z7068, BOD1_4, 'decreasing');
+  BOD0_Z7068 = applyAlgorithmConstraints(BOD0_Z7068, BOD0_4, 'decreasing');
+  NH41_Z7068 = applyAlgorithmConstraints(NH41_Z7068, NH41_4, 'decreasing');
+  NH40_Z7068 = applyAlgorithmConstraints(NH40_Z7068, NH40_4, 'decreasing');
+  NO31_Z7068 = applyAlgorithmConstraints(NO31_Z7068, NO31_4, 'increasing');
+
+  return {
+    BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z7068)),
+    BOD5_sample1: Math.max(0, truncateToTwoDecimals(BOD1_Z7068)),
+    NH4_sample0: Math.max(0, truncateToTwoDecimals(NH40_Z7068)),
+    NH4_sample1: Math.max(0, truncateToTwoDecimals(NH41_Z7068)),
+    NO3_sample1: Math.max(0, truncateToTwoDecimals(NO31_Z7068)),
+  };
 };
 
 export const calculateCase16 = (X: number): WaterQualityData => {
@@ -470,7 +528,7 @@ export const calculateCase17 = (X: number, Y: number): WaterQualityData => {
 
 export const calculateCase18 = (Z: number, X: number, Y: number): WaterQualityData => {
   const Q5 = 6074 + 53610 * X;
-  const time6 = 480 * (Z - 7072) / Q5; // Time from 7072 to current Z
+  const time6 = 480 * (Z - 7070) / Q5; // Time from 7070 to current Z
   
   // Get values from case 17 (Z = 7072)
   const case17Values = calculateCase17(X, Y);

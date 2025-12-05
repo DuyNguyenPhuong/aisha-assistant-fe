@@ -17,8 +17,8 @@ import { useWeatherData } from '@/lib/weather-service';
 const RiverMapPage: NextPage = () => {
   
   // State management
-  const [rainfall, setRainfall] = useState(1);
-  const [temperature, setTemperature] = useState(31);
+  const [rainfall, setRainfall] = useState(0);
+  const [temperature, setTemperature] = useState(26);
   const [selectedParameter, setSelectedParameter] = useState<'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [selectedPositionData, setSelectedPositionData] = useState<WaterQualityData | null>(null);

@@ -1,24 +1,24 @@
-// Hàm suy giảm BOD1
+// Hàm suy giảm BOD1 (BOD5 mẫu 1)
 export const D_BOD1 = (time: number): number => {
-  return -1e-5 * time * time + 0.0305 * time - 0.4113;
+  return -1e-5 * time * time + 0.0311 * time - 0.438;
 };
 
-// Hàm suy giảm BOD0
+// Hàm suy giảm BOD0 (BOD mẫu 0)
 export const D_BOD0 = (time: number): number => {
-  return 0.0012 * time - 2e-15;
+  return -2e-8 * time * time + 0.0012 * time - 0.0002;
 };
 
-// Hàm suy giảm NH41
+// Hàm suy giảm NH41 (NH4+ mẫu 1)
 export const D_NH41 = (time: number): number => {
-  return -1e-6 * time * time + 0.0021 * time - 0.0121;
+  return -2e-6 * time * time + 0.0023 * time - 0.0199;
 };
 
-// Hàm suy giảm NH40
+// Hàm suy giảm NH40 (NH4+ mẫu 0)
 export const D_NH40 = (time: number): number => {
-  return -2e-7 * time * time + 0.0003 * time - 0.0006;
+  return -3e-7 * time * time + 0.0003 * time - 0.0012;
 };
 
-// Hàm suy giảm NO31
+// Hàm suy giảm NO31 (NO3- mẫu 1)
 export const D_NO31 = (time: number): number => {
-  return 6e-7 * time * time - 0.0006 * time - 0.0085;
+  return 9e-7 * time * time - 0.0009 * time + 0.0293;
 };
