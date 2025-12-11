@@ -46,6 +46,18 @@ const LineChart: React.FC<LineChartProps> = ({
     x: number;
     y: number;
   } | null>(null);
+  
+  // Zoom states
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [yAxisRange, setYAxisRange] = useState<{
+    min: number;
+    max: number;
+    auto: boolean;
+  }>({
+    min: 0,
+    max: 1,
+    auto: true
+  });
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
@@ -127,28 +139,124 @@ const LineChart: React.FC<LineChartProps> = ({
 
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
-  const getYScale = () => {
-    let maxValue = 0;
-    chartData.forEach((point) => {
-      if (enabledSeries.BOD5_sample0)
-        maxValue = Math.max(maxValue, point.data.BOD5_sample0);
-      if (enabledSeries.BOD5_sample1)
-        maxValue = Math.max(maxValue, point.data.BOD5_sample1);
-      if (enabledSeries.NH4_sample0)
-        maxValue = Math.max(maxValue, point.data.NH4_sample0);
-      if (enabledSeries.NH4_sample1)
-        maxValue = Math.max(maxValue, point.data.NH4_sample1);
-      if (enabledSeries.NO3_sample1)
-        maxValue = Math.max(maxValue, point.data.NO3_sample1);
+
+  // Zoom functions
+  const handleZoomIn = () => {
+    setZoomLevel(prev => {
+      const newLevel = prev < 2 ? prev * 1.5 : prev < 10 ? prev * 1.2 : prev * 1.1;
+      return Math.min(newLevel, 50); // Tăng max zoom lên 50x
     });
-    return Math.max(maxValue * 1.1, 1);
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => {
+      const newLevel = prev > 5 ? prev / 1.1 : prev > 2 ? prev / 1.2 : prev / 1.5;
+      return Math.max(newLevel, 0.1); // Giảm min zoom xuống 0.1x
+    });
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setYAxisRange(prev => ({ ...prev, auto: true }));
+  };
+
+  const handleAutoFitToSeries = () => {
+    if (chartData.length === 0) return;
+    
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    
+    chartData.forEach((point) => {
+      const values = [];
+      if (enabledSeries.BOD5_sample0) values.push(point.data.BOD5_sample0);
+      if (enabledSeries.BOD5_sample1) values.push(point.data.BOD5_sample1);
+      if (enabledSeries.NH4_sample0) values.push(point.data.NH4_sample0);
+      if (enabledSeries.NH4_sample1) values.push(point.data.NH4_sample1);
+      if (enabledSeries.NO3_sample1) values.push(point.data.NO3_sample1);
+      
+      values.forEach(value => {
+        minValue = Math.min(minValue, value);
+        maxValue = Math.max(maxValue, value);
+      });
+    });
+    
+    if (minValue !== Infinity) {
+      const range = maxValue - minValue;
+      const buffer = range * 0.05; // 5% buffer
+      setYAxisRange({
+        min: Math.max(0, minValue - buffer),
+        max: maxValue + buffer,
+        auto: false
+      });
+      setZoomLevel(1);
+    }
+  };
+
+  const handleToggleAutoScale = () => {
+    setYAxisRange(prev => ({ ...prev, auto: !prev.auto }));
+  };
+  const getYScale = () => {
+    if (!yAxisRange.auto) {
+      return { min: yAxisRange.min, max: yAxisRange.max };
+    }
+
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    
+    chartData.forEach((point) => {
+      const values = [];
+      if (enabledSeries.BOD5_sample0) values.push(point.data.BOD5_sample0);
+      if (enabledSeries.BOD5_sample1) values.push(point.data.BOD5_sample1);
+      if (enabledSeries.NH4_sample0) values.push(point.data.NH4_sample0);
+      if (enabledSeries.NH4_sample1) values.push(point.data.NH4_sample1);
+      if (enabledSeries.NO3_sample1) values.push(point.data.NO3_sample1);
+      
+      values.forEach(value => {
+        minValue = Math.min(minValue, value);
+        maxValue = Math.max(maxValue, value);
+      });
+    });
+    
+    // Nếu không có dữ liệu
+    if (minValue === Infinity) {
+      return { min: 0, max: 1 };
+    }
+    
+    // Đảm bảo có range tối thiểu để tránh zoom quá gần
+    let range = maxValue - minValue;
+    const minRange = 0.001; // Range tối thiểu 0.001 mg/L
+    if (range < minRange) {
+      range = minRange;
+      const center = (minValue + maxValue) / 2;
+      minValue = center - range / 2;
+      maxValue = center + range / 2;
+    }
+    
+    // Áp dụng zoom level với logic cải tiến
+    const zoomedRange = Math.max(range / zoomLevel, minRange);
+    const center = (minValue + maxValue) / 2;
+    
+    // Buffer động dựa trên zoom level
+    const bufferPercent = Math.max(0.02, 0.1 / Math.sqrt(zoomLevel)); // Buffer giảm khi zoom in
+    const buffer = zoomedRange * bufferPercent;
+    
+    const calculatedMin = center - zoomedRange / 2 - buffer;
+    const calculatedMax = center + zoomedRange / 2 + buffer;
+    
+    return {
+      min: Math.max(0, calculatedMin),
+      max: calculatedMax
+    };
   };
   const drawChart = (ctx: CanvasRenderingContext2D) => {
     const { width: cWidth, height: cHeight } = canvasSize;
     const padding = 60;
     const chartWidth = cWidth - 2 * padding;
     const chartHeight = cHeight - 2 * padding;
-    const yMax = getYScale();
+    const yScale = getYScale();
+    const yMin = yScale.min;
+    const yMax = yScale.max;
+    const yRange = yMax - yMin;
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, cWidth, cHeight);
     ctx.strokeStyle = "#333";
@@ -220,9 +328,18 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.textBaseline = "middle";
     ctx.font = "11px Arial";
     for (let i = 0; i <= gridSteps; i++) {
-      const value = yMax * (1 - i / gridSteps);
+      const value = yMin + (yRange * (1 - i / gridSteps));
       const y = padding + (i / gridSteps) * chartHeight;
-      ctx.fillText(value.toFixed(1), padding - 5, y);
+      
+      // Động precision dựa trên zoom level và range
+      let precision = 3;
+      if (yRange < 0.001) precision = 6;
+      else if (yRange < 0.01) precision = 5;
+      else if (yRange < 0.1) precision = 4;
+      else if (yRange > 100) precision = 1;
+      else if (yRange > 10) precision = 2;
+      
+      ctx.fillText(value.toFixed(precision), padding - 5, y);
     }
     ctx.fillStyle = "#333";
     ctx.font = "bold 14px Arial";
@@ -242,7 +359,8 @@ const LineChart: React.FC<LineChartProps> = ({
       chartData.forEach((point, i) => {
         const x = padding + (i / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
-        const y = cHeight - padding - (value / yMax) * chartHeight;
+        const normalizedValue = (value - yMin) / yRange;
+        const y = cHeight - padding - normalizedValue * chartHeight;
         if (i === 0) {
           ctx.moveTo(x, y);
         } else {
@@ -254,7 +372,8 @@ const LineChart: React.FC<LineChartProps> = ({
       chartData.forEach((point, index) => {
         const x = padding + (index / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
-        const y = cHeight - padding - (value / yMax) * chartHeight;
+        const normalizedValue = (value - yMin) / yRange;
+        const y = cHeight - padding - normalizedValue * chartHeight;
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, 2 * Math.PI);
         ctx.fill();
@@ -278,6 +397,8 @@ const LineChart: React.FC<LineChartProps> = ({
     canvasSize.height,
     rainfall,
     temperature,
+    zoomLevel,
+    yAxisRange,
     drawChart,
   ]);
   const handleResponsiveMouseMove = (
@@ -320,6 +441,129 @@ const LineChart: React.FC<LineChartProps> = ({
   };
   return (
     <div ref={containerRef} className="w-full max-w-full overflow-x-auto">
+      {/* Zoom Controls */}
+      <div className="mb-4 flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">🔍 Zoom:</span>
+          <button
+            onClick={handleZoomOut}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              zoomLevel <= 0.1 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+            disabled={zoomLevel <= 0.1}
+          >
+            Zoom Out
+          </button>
+          <span className="px-2 py-1 bg-white rounded border text-sm min-w-[70px] text-center font-mono">
+            {zoomLevel >= 10 ? `${zoomLevel.toFixed(0)}x` : zoomLevel.toFixed(1)}x
+          </span>
+          <button
+            onClick={handleZoomIn}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              zoomLevel >= 50 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+            disabled={zoomLevel >= 50}
+          >
+            Zoom In
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleResetZoom}
+            className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm font-medium transition-colors"
+          >
+            🔄 Reset
+          </button>
+          <button
+            onClick={handleAutoFitToSeries}
+            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-medium transition-colors"
+          >
+            📏 Auto Fit
+          </button>
+          <button
+            onClick={handleToggleAutoScale}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              yAxisRange.auto 
+                ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+                : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+            }`}
+          >
+            {yAxisRange.auto ? '🤖 Auto Scale' : '📐 Manual Scale'}
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-2 text-xs text-gray-600">
+          {yAxisRange.auto ? (
+            <>
+              <span>📊 Y-axis: Auto</span>
+              <span className="text-blue-600">| Zoom: {zoomLevel >= 10 ? zoomLevel.toFixed(0) : zoomLevel.toFixed(1)}x</span>
+              {chartData.length > 0 && (() => {
+                const scale = getYScale();
+                const range = scale.max - scale.min;
+                return (
+                  <span className="text-green-600">| Range: {range < 0.001 ? range.toExponential(2) : range.toFixed(range < 0.1 ? 4 : 3)}</span>
+                );
+              })()}
+            </>
+          ) : (
+            <>
+              <span>📊 Y-axis: Manual ({yAxisRange.min.toFixed(3)} - {yAxisRange.max.toFixed(3)})</span>
+              <span className="text-blue-600">| Zoom: {zoomLevel >= 10 ? zoomLevel.toFixed(0) : zoomLevel.toFixed(1)}x</span>
+            </>
+          )}
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">🎯 Quick Fit:</span>
+          {Object.entries(enabledSeries).filter(([_, enabled]) => enabled).map(([seriesName, _]) => {
+            const getParameterRange = (paramName: string) => {
+              let min = Infinity, max = -Infinity;
+              chartData.forEach(point => {
+                const value = point.data[paramName as keyof WaterQualityData];
+                min = Math.min(min, value);
+                max = Math.max(max, value);
+              });
+              return { min, max };
+            };
+
+            const handleQuickFit = () => {
+              const range = getParameterRange(seriesName);
+              if (range.min !== Infinity) {
+                const buffer = (range.max - range.min) * 0.1;
+                setYAxisRange({
+                  min: Math.max(0, range.min - buffer),
+                  max: range.max + buffer,
+                  auto: false
+                });
+                setZoomLevel(1);
+              }
+            };
+
+            return (
+              <button
+                key={seriesName}
+                onClick={handleQuickFit}
+                className="px-2 py-1 bg-white hover:bg-gray-100 border rounded text-xs font-medium transition-colors flex items-center gap-1"
+                title={`Fit to ${seriesLabels[seriesName as keyof typeof seriesLabels]} range`}
+              >
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor: seriesColors[seriesName as keyof typeof seriesColors]
+                  }}
+                />
+                {seriesLabels[seriesName as keyof typeof seriesLabels]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="relative" style={{ width: "100%" }}>
         <canvas
           ref={canvasRef}
@@ -404,6 +648,15 @@ const LineChart: React.FC<LineChartProps> = ({
           • Số series đang hiển thị:{" "}
           {Object.values(enabledSeries).filter(Boolean).length}
         </p>
+        <p>• Zoom level: {zoomLevel >= 10 ? zoomLevel.toFixed(0) : zoomLevel.toFixed(1)}x (0.1x - 50x)</p>
+        <p>• Y-axis range: {yAxisRange.auto ? 'Auto-calculated with smart zoom' : `Manual: ${yAxisRange.min.toFixed(3)} - ${yAxisRange.max.toFixed(3)} mg/L`}</p>
+        {yAxisRange.auto && chartData.length > 0 && (() => {
+          const scale = getYScale();
+          const range = scale.max - scale.min;
+          return (
+            <p>• Current view range: {scale.min.toFixed(range < 0.1 ? 4 : 3)} - {scale.max.toFixed(range < 0.1 ? 4 : 3)} mg/L (span: {range < 0.001 ? range.toExponential(2) : range.toFixed(range < 0.1 ? 4 : 3)})</p>
+          );
+        })()}
         <p>• Các cổng: {chartData.map((d) => d.name).join(", ")}</p>
       </div>
     </div>
