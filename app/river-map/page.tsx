@@ -145,8 +145,10 @@ const RiverMapPage: NextPage = () => {
 
   // Handle heatmap parameter selection  
   const handleHeatmapSelect = (param: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    console.log('Heatmap parameter clicked:', param);
-    setSelectedParameter(selectedParameter === param ? null : param);
+    console.log('🎯 Heatmap parameter clicked:', param);
+    const newParam = selectedParameter === param ? null : param;
+    console.log('🔄 Setting selectedParameter from', selectedParameter, 'to', newParam);
+    setSelectedParameter(newParam);
   };
 
   // Function to get color scheme for each parameter với thang màu động
@@ -226,6 +228,11 @@ const RiverMapPage: NextPage = () => {
       setSelectedPositionData(newData);
     }
   }, [rainfall, temperature, selectedPosition, realtimeMode, samplingStep]);
+
+  // Debug selectedParameter changes
+  useEffect(() => {
+    console.log('📊 selectedParameter changed to:', selectedParameter);
+  }, [selectedParameter]);
 
   // Force re-render of heatmap when parameters change
   const heatmapKey = `${selectedParameter}-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${showHeatmap}`;

@@ -456,6 +456,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     drawLandscape(ctx);
     drawSecondaryRivers(ctx);
     if (selectedParameter) {
+      console.log('🎨 Drawing heatmap for parameter:', selectedParameter);
       drawHeatmap(ctx);
     } else {
       ctx.beginPath();
@@ -609,6 +610,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
     let minValue = Infinity;
     let maxValue = -Infinity;
+    const sampleValues: number[] = [];
     
     // Sample positions along the river to find actual min/max
     for (let i = 0; i <= 100; i++) {
@@ -635,24 +637,30 @@ const RiverMap: React.FC<RiverMapProps> = ({
           break;
       }
       
+      sampleValues.push(value);
       minValue = Math.min(minValue, value);
       maxValue = Math.max(maxValue, value);
     }
+    
+    console.log(`📈 Parameter ${parameter} range: ${minValue.toFixed(2)} - ${maxValue.toFixed(2)}`);
+    console.log(`📊 Sample values:`, sampleValues.slice(0, 10).map(v => v.toFixed(2))); // First 10 values
     
     return { min: minValue, max: maxValue };
   };
 
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
     if (!selectedParameter) return;
-    const heatmapSegments = 100;
+    console.log('🔥 Drawing heatmap for parameter:', selectedParameter);
+    const heatmapSegments = 150; // More segments for smoother gradient
     
     // Calculate dynamic range for the selected parameter
     const parameterRange = calculateParameterRange(selectedParameter);
+    console.log('📊 Parameter range:', parameterRange);
     
-    // Vẽ nền sông trước
+    // Vẽ nền sông trước với màu nhạt hơn
     ctx.beginPath();
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
-    ctx.lineWidth = 28;
+    ctx.strokeStyle = "rgba(200, 200, 200, 0.3)";
+    ctx.lineWidth = 50; // Wider background
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     if (riverPoints.length > 0) {
@@ -708,29 +716,32 @@ const RiverMap: React.FC<RiverMapProps> = ({
       const intensity = Math.max(0, Math.min(1, ratio));
       let color;
       
+      // Enhance intensity for better visibility
+      const enhancedIntensity = Math.pow(intensity, 0.7); // Make gradients more visible
+      
       if (selectedParameter === "BOD0" || selectedParameter === "BOD1") {
-        // BOD: White → Red
-        const redValue = Math.floor(255 * intensity);
-        const greenValue = Math.floor(255 * (1 - intensity));
-        const blueValue = Math.floor(255 * (1 - intensity));
+        // BOD: White → Red (stronger red)
+        const redValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
+        const greenValue = Math.floor(255 * (1 - enhancedIntensity));
+        const blueValue = Math.floor(255 * (1 - enhancedIntensity));
         color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
       } else if (selectedParameter === "NH40" || selectedParameter === "NH41") {
-        // NH4: White → Yellow
-        const redValue = Math.floor(255 * intensity);
-        const greenValue = Math.floor(255 * intensity);
-        const blueValue = Math.floor(255 * (1 - intensity));
+        // NH4: White → Yellow (stronger yellow)
+        const redValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
+        const greenValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
+        const blueValue = Math.floor(255 * (1 - enhancedIntensity));
         color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
       } else if (selectedParameter === "NO3") {
-        // NO3: White → Blue
-        const redValue = Math.floor(255 * (1 - intensity));
-        const greenValue = Math.floor(255 * (1 - intensity));
-        const blueValue = 255; // Always have blue component
+        // NO3: White → Blue (stronger blue)
+        const redValue = Math.floor(255 * (1 - enhancedIntensity));
+        const greenValue = Math.floor(255 * (1 - enhancedIntensity));
+        const blueValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
         color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
       } else {
         // Default: Red
-        const redValue = Math.floor(255 * intensity);
-        const greenValue = Math.floor(255 * (1 - intensity));
-        const blueValue = Math.floor(255 * (1 - intensity));
+        const redValue = Math.floor(128 + 127 * enhancedIntensity);
+        const greenValue = Math.floor(255 * (1 - enhancedIntensity));
+        const blueValue = Math.floor(255 * (1 - enhancedIntensity));
         color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
       }
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
@@ -742,13 +753,13 @@ const RiverMap: React.FC<RiverMapProps> = ({
         riverPoints[Math.min(nextRiverIndex, riverPoints.length - 1)];
       if (currentPoint && nextPoint) {
         // Debug log để kiểm tra màu sắc
-        if (i % 20 === 0) {
-          console.log(`🎨 Heatmap Debug - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Color: ${color}`);
+        if (i % 30 === 0) {
+          console.log(`🎨 Heatmap Debug - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Intensity: ${intensity.toFixed(2)}, Enhanced: ${enhancedIntensity.toFixed(2)}, Color: ${color}`);
         }
         
         ctx.beginPath();
         ctx.strokeStyle = color;
-        ctx.lineWidth = 22;
+        ctx.lineWidth = 45; // Make heatmap lines thicker for better visibility
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.moveTo(currentPoint.x, currentPoint.y);
