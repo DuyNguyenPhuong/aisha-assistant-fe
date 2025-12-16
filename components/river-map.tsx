@@ -612,9 +612,9 @@ const RiverMap: React.FC<RiverMapProps> = ({
     let maxValue = -Infinity;
     const sampleValues: number[] = [];
     
-    // Sample positions along the river to find actual min/max
-    for (let i = 0; i <= 100; i++) {
-      const progress = i / 100;
+    // Sample positions along the river to find actual min/max - use 80 samples for consistency
+    for (let i = 0; i <= 80; i++) {
+      const progress = i / 80;
       const positionMeters = progress * RIVER_LENGTH;
       const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
       
@@ -710,40 +710,20 @@ const RiverMap: React.FC<RiverMapProps> = ({
           break;
       }
       
-      const range = parameterRange.max - parameterRange.min;
-      const ratio = range > 0 ? (value - parameterRange.min) / range : 0;
+      // Use standardized color calculation with dynamic range
+      const dynamicColorScale = {
+        min: parameterRange.min,
+        max: parameterRange.max,
+        colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
+          ? ["white", "lightpink", "red"]
+          : selectedParameter === 'NH40' || selectedParameter === 'NH41'
+          ? ["white", "lightyellow", "gold"]
+          : selectedParameter === 'NO3'
+          ? ["white", "lightblue", "deepskyblue"]
+          : ["white", "lightpink", "red"] // default
+      };
       
-      const intensity = Math.max(0, Math.min(1, ratio));
-      let color;
-      
-      // Enhance intensity for better visibility
-      const enhancedIntensity = Math.pow(intensity, 0.7); // Make gradients more visible
-      
-      if (selectedParameter === "BOD0" || selectedParameter === "BOD1") {
-        // BOD: White → Red (stronger red)
-        const redValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
-        const greenValue = Math.floor(255 * (1 - enhancedIntensity));
-        const blueValue = Math.floor(255 * (1 - enhancedIntensity));
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      } else if (selectedParameter === "NH40" || selectedParameter === "NH41") {
-        // NH4: White → Yellow (stronger yellow)
-        const redValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
-        const greenValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
-        const blueValue = Math.floor(255 * (1 - enhancedIntensity));
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      } else if (selectedParameter === "NO3") {
-        // NO3: White → Blue (stronger blue)
-        const redValue = Math.floor(255 * (1 - enhancedIntensity));
-        const greenValue = Math.floor(255 * (1 - enhancedIntensity));
-        const blueValue = Math.floor(128 + 127 * enhancedIntensity); // Range: 128-255
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      } else {
-        // Default: Red
-        const redValue = Math.floor(128 + 127 * enhancedIntensity);
-        const greenValue = Math.floor(255 * (1 - enhancedIntensity));
-        const blueValue = Math.floor(255 * (1 - enhancedIntensity));
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      }
+      const color = getColorFromValue(value, dynamicColorScale);
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
       const nextRiverIndex = Math.floor(
         nextProgress * (riverPoints.length - 1),
@@ -754,7 +734,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
       if (currentPoint && nextPoint) {
         // Debug log để kiểm tra màu sắc
         if (i % 30 === 0) {
-          console.log(`🎨 Heatmap Debug - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Intensity: ${intensity.toFixed(2)}, Enhanced: ${enhancedIntensity.toFixed(2)}, Color: ${color}`);
+          console.log(`🎨 Heatmap Debug - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Range: ${parameterRange.min.toFixed(2)}-${parameterRange.max.toFixed(2)}, Color: ${color}`);
         }
         
         ctx.beginPath();
