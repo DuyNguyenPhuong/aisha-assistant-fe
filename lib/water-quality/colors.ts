@@ -61,8 +61,23 @@ const interpolateColor = (
 };
 
 export const getColorFromValue = (value: number, scale: ColorScale): string => {
-  const normalizedValue =
-    Math.min(Math.max(value, scale.min), scale.max) / scale.max;
+  // Handle NaN and invalid values
+  if (!isFinite(value) || isNaN(value)) {
+    return "rgb(255, 255, 255)"; // Return white for invalid values
+  }
+  
+  // Handle invalid scale
+  if (!scale || !scale.colors || scale.colors.length < 3 || !isFinite(scale.min) || !isFinite(scale.max)) {
+    return "rgb(255, 255, 255)"; // Return white for invalid scale
+  }
+  
+  // Clamp value within the scale range
+  const clampedValue = Math.min(Math.max(value, scale.min), scale.max);
+  
+  // Normalize to 0-1 based on the actual range
+  const range = scale.max - scale.min;
+  const normalizedValue = range > 0 ? (clampedValue - scale.min) / range : 0;
+  
   if (normalizedValue <= 0.5) {
     const t = normalizedValue * 2;
     return interpolateColor(scale.colors[0], scale.colors[1], t);

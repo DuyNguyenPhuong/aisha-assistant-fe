@@ -1,5 +1,9 @@
 // Hàm làm tròn xuống 2 chữ số thập phân
 export const truncateToTwoDecimals = (value: number): number => {
+  // Handle NaN, Infinity, and undefined/null cases
+  if (!isFinite(value) || isNaN(value)) {
+    return 0;
+  }
   return Math.floor(value * 100) / 100;
 };
 
@@ -11,6 +15,14 @@ export const applyAlgorithmConstraints = (
   previousValue: number,
   constraintType: 'decreasing' | 'increasing' | 'none'
 ): number => {
+  // Handle NaN cases - return previous value as fallback
+  if (!isFinite(newValue) || isNaN(newValue)) {
+    return isFinite(previousValue) && !isNaN(previousValue) ? previousValue : 0;
+  }
+  if (!isFinite(previousValue) || isNaN(previousValue)) {
+    return newValue;
+  }
+  
   if (constraintType === 'decreasing' && newValue > previousValue) {
     return previousValue;
   } else if (constraintType === 'increasing' && newValue < previousValue) {

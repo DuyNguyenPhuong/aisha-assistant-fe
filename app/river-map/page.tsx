@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 
 import { RIVER_POSITIONS, RIVER_LENGTH, WaterQualityData, calculateConcentration } from '@/lib/water-quality-calculations';
 import { useWeatherData } from '@/lib/weather-service';
+import { getColorFromValue } from '@/lib/water-quality/colors';
 
 const RiverMapPage: NextPage = () => {
   
@@ -309,7 +310,6 @@ const RiverMapPage: NextPage = () => {
       
       // Lấy giá trị theo parameter được chọn
       let value = 0;
-      let color = '#ffffff'; // Màu mặc định trắng
       
       switch (selectedParameter) {
         case 'BOD0':
@@ -329,41 +329,24 @@ const RiverMapPage: NextPage = () => {
           break;
       }
       
-      // Tính ratio dựa trên khoảng min-max thực tế
+      // Use standardized color calculation with dynamic range
+      const dynamicColorScale = {
+        min: parameterRange.min,
+        max: parameterRange.max,
+        colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
+          ? ["white", "lightpink", "red"]
+          : selectedParameter === 'NH40' || selectedParameter === 'NH41'
+          ? ["white", "lightyellow", "gold"]
+          : selectedParameter === 'NO3'
+          ? ["white", "lightblue", "deepskyblue"]
+          : ["white", "lightpink", "red"] // default
+      };
+      
+      const color = getColorFromValue(value, dynamicColorScale);
+      
+      // Calculate intensity for leaflet heatmap (0-1)
       const range = parameterRange.max - parameterRange.min;
-      const ratio = range > 0 ? (value - parameterRange.min) / range : 0;
-      
-      // Thang màu động với màu đặc trưng cho từng chất
-      const intensity = Math.max(0, Math.min(1, ratio));
-      
-      if (selectedParameter === 'BOD0' || selectedParameter === 'BOD1') {
-        // BOD: Trắng → Đỏ
-        const redValue = Math.floor(255 * intensity);
-        const greenValue = Math.floor(255 * (1 - intensity));
-        const blueValue = Math.floor(255 * (1 - intensity));
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      } else if (selectedParameter === 'NH40' || selectedParameter === 'NH41') {
-        // NH4: Trắng → Vàng
-        const redValue = Math.floor(255 * intensity);
-        const greenValue = Math.floor(255 * intensity);
-        const blueValue = Math.floor(255 * (1 - intensity));
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      } else if (selectedParameter === 'NO3') {
-        // NO3: Trắng → Xanh lam
-        const redValue = Math.floor(255 * (1 - intensity));
-        const greenValue = Math.floor(255 * (1 - intensity));
-        const blueValue = 255; // Luôn có thành phần xanh
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      } else {
-        // Mặc định: đỏ
-        const redValue = Math.floor(255 * intensity);
-        const greenValue = Math.floor(255 * (1 - intensity));
-        const blueValue = Math.floor(255 * (1 - intensity));
-        color = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
-      }
-      
-      // Normalize intensity cho leaflet heatmap (0-1)
-      const normalizedIntensity = intensity;
+      const normalizedIntensity = range > 0 ? Math.max(0, Math.min(1, (value - parameterRange.min) / range)) : 0;
       
       heatmapPoints.push({
         lat,
