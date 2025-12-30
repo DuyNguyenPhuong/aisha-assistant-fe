@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 
 import { RIVER_POSITIONS, RIVER_LENGTH, WaterQualityData, calculateConcentration } from '@/lib/water-quality-calculations';
 import { useWeatherData } from '@/lib/weather-service';
-import { getColorFromValue } from '@/lib/water-quality/colors';
+import { getColorFromValue, COLOR_SCALES } from '@/lib/water-quality/colors';
 
 const RiverMapPage: NextPage = () => {
   
@@ -27,7 +27,7 @@ const RiverMapPage: NextPage = () => {
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [heatmapMode, setHeatmapMode] = useState<'hard' | 'dynamic'>('hard'); // 'hard' for hardcoded values, 'dynamic' for actual min/max
+  const [heatmapMode, setHeatmapMode] = useState<'hard' | 'dynamic'>('dynamic'); // 'hard' for hard values, 'dynamic' for actual min/max
 
   // Weather data hook - always set up, but only auto-refresh when realtimeMode is on
   // 5 minutes = 300000ms
@@ -153,24 +153,23 @@ const RiverMapPage: NextPage = () => {
     setSelectedParameter(newParam);
   };
 
-  // Function to get color scheme for each parameter với thang màu động/cố định
+  // Function to get color scheme for each parameter với thang màu động
   const getParameterColorInfo = (param: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    let description;
+    // Tính khoảng giá trị thực tế cho parameter này (luôn luôn tính, không phụ thuộc selectedParameter)
+    const range = calculateParameterRange(param);
     
+    let description;
     if (heatmapMode === 'hard') {
-      // Show hardcoded ranges for different parameters
-      if (param === 'BOD0' || param === 'BOD1') {
-        description = 'Cố định (0-38.1 mg/L)';
-      } else if (param === 'NH40' || param === 'NH41') {
-        description = 'Cố định (0-15.3 mg/L)';
-      } else if (param === 'NO3') {
-        description = 'Cố định (0-15.55 mg/L)';
-      } else {
-        description = 'Cố định';
-      }
+      // Show hard-coded ranges
+      const hardRanges = {
+        'BOD0': '0-38.1',
+        'BOD1': '0-38.1', 
+        'NH40': '0-15.3',
+        'NH41': '0-15.3',
+        'NO3': '0-15.55'
+      };
+      description = `Cứng (${hardRanges[param]} mg/L)`;
     } else {
-      // Calculate dynamic range for this parameter
-      const range = calculateParameterRange(param);
       description = range.max > range.min 
         ? `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`
         : 'Đang tính toán...';
@@ -252,20 +251,44 @@ const RiverMapPage: NextPage = () => {
   }, [selectedParameter]);
 
   // Force re-render of heatmap when parameters change
-  const heatmapKey = `${selectedParameter}-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${showHeatmap}`;
+  const heatmapKey = `${selectedParameter}-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${showHeatmap}-${heatmapMode}`;
 
   // Calculate dynamic min/max values for each parameter
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    // Hardcoded color ranges based on specifications
-    const parameterRanges: Record<string, { min: number; max: number }> = {
-      'BOD0': { min: 0, max: 38.1 },      // White: 0, Green: 15, Blue: 25, Red: 38.1
-      'BOD1': { min: 0, max: 38.1 },      // White: 0, Green: 15, Blue: 25, Red: 38.1
-      'NH40': { min: 0, max: 15.3 },      // Blue: 0.9, Red: 15.3
-      'NH41': { min: 0, max: 15.3 },      // Blue: 0.9, Red: 15.3
-      'NO3': { min: 0, max: 15.55 }       // White: 0, Green: 10, Blue: 15, Red: 15.55
-    };
+    const currentWeather = getCurrentWeatherValues();
+    let minValue = Infinity;
+    let maxValue = -Infinity;
     
-    return parameterRanges[parameter] || { min: 0, max: 100 };
+    // Sample positions along the river to find actual min/max
+    for (let i = 0; i <= 80; i++) {
+      const progress = i / 80;
+      const positionMeters = progress * RIVER_LENGTH;
+      const waterQuality = calculateConcentration(positionMeters, currentWeather.rainfall, currentWeather.temperature);
+      
+      let value = 0;
+      switch (parameter) {
+        case 'BOD0':
+          value = waterQuality.BOD5_sample0;
+          break;
+        case 'BOD1':
+          value = waterQuality.BOD5_sample1;
+          break;
+        case 'NH40':
+          value = waterQuality.NH4_sample0;
+          break;
+        case 'NH41':
+          value = waterQuality.NH4_sample1;
+          break;
+        case 'NO3':
+          value = waterQuality.NO3_sample1;
+          break;
+      }
+      
+      minValue = Math.min(minValue, value);
+      maxValue = Math.max(maxValue, value);
+    }
+    
+    return { min: minValue, max: maxValue };
   };
 
   // Generate heatmap data với thang màu động dựa trên min/max thực tế
@@ -321,24 +344,45 @@ const RiverMapPage: NextPage = () => {
           break;
       }
       
-      // Use standardized color calculation with hardcoded ranges
-      const dynamicColorScale = {
-        min: parameterRange.min,
-        max: parameterRange.max,
-        colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
-          ? ["white", "lightpink", "red"]      // BOD5: White(0) -> Green(15) -> Blue(25) -> Red(38.1)
-          : selectedParameter === 'NH40' || selectedParameter === 'NH41'
-          ? ["white", "lightyellow", "red"]   // NH4: Blue(0.9) -> Red(15.3)
-          : selectedParameter === 'NO3'
-          ? ["white", "lightblue", "red"]     // NO3: White(0) -> Green(10) -> Blue(15) -> Red(15.55)
-          : ["white", "lightpink", "red"]     // default
-      };
+      // Use standardized color calculation with either hard-coded or dynamic range
+      let colorScale, range, minValue, maxValue;
       
-      const color = getColorFromValue(value, dynamicColorScale);
+      if (heatmapMode === 'hard') {
+        // Use hard-coded ranges from COLOR_SCALES
+        const scaleKey = selectedParameter === 'BOD0' ? 'BOD0' : selectedParameter === 'BOD1' ? 'BOD5' : selectedParameter;
+        const hardScale = COLOR_SCALES[scaleKey] || COLOR_SCALES.BOD5;
+        
+        colorScale = {
+          min: hardScale.min,
+          max: hardScale.max,
+          colors: hardScale.colors,
+          colorStops: hardScale.colorStops
+        };
+        range = hardScale.max - hardScale.min;
+        minValue = hardScale.min;
+        maxValue = hardScale.max;
+      } else {
+        // Use dynamic range
+        colorScale = {
+          min: parameterRange.min,
+          max: parameterRange.max,
+          colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
+            ? ["white", "lightpink", "red"]
+            : selectedParameter === 'NH40' || selectedParameter === 'NH41'
+            ? ["white", "lightyellow", "gold"]
+            : selectedParameter === 'NO3'
+            ? ["white", "lightblue", "deepskyblue"]
+            : ["white", "lightpink", "red"] // default
+        };
+        range = parameterRange.max - parameterRange.min;
+        minValue = parameterRange.min;
+        maxValue = parameterRange.max;
+      }
+      
+      const color = getColorFromValue(value, colorScale);
       
       // Calculate intensity for leaflet heatmap (0-1)
-      const range = parameterRange.max - parameterRange.min;
-      const normalizedIntensity = range > 0 ? Math.max(0, Math.min(1, (value - parameterRange.min) / range)) : 0;
+      const normalizedIntensity = range > 0 ? Math.max(0, Math.min(1, (value - minValue) / range)) : 0;
       
       heatmapPoints.push({
         lat,
@@ -496,28 +540,22 @@ const RiverMapPage: NextPage = () => {
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Heatmap</h3>
                   
-                  {/* Heatmap Mode Toggle */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Chế độ thang màu
-                    </label>
+                  {/* Mode Switch Button */}
+                  <div className="mb-4">
                     <Button
                       onClick={() => setHeatmapMode(heatmapMode === 'hard' ? 'dynamic' : 'hard')}
                       variant={heatmapMode === 'dynamic' ? "default" : "outline"}
-                      className="w-full text-sm"
+                      className="w-full"
                       type="button"
                     >
-                      {heatmapMode === 'hard' 
-                        ? '📊 Giá trị cố định' 
-                        : '🔄 Min/Max thực tế'
-                      }
+                      {heatmapMode === 'dynamic' ? '🎯 Chế độ: Giá trị động' : '📊 Chế độ: Giá trị cứng'}
                     </Button>
-                    <p className="text-xs text-gray-500">
-                      {heatmapMode === 'hard' 
-                        ? 'Sử dụng thang màu với giá trị cố định (0-38.1 mg/L cho BOD5, 0-15.3 mg/L cho NH4+, 0-15.55 mg/L cho NO3-)' 
-                        : 'Tự động tính toán thang màu dựa trên giá trị min/max thực tế của từng chất'
+                    <div className="text-xs text-gray-500 mt-1 text-center">
+                      {heatmapMode === 'dynamic' 
+                        ? 'Dựa trên min/max thực tế của mỗi chất' 
+                        : 'Dựa trên thang đo tiêu chuẩn cố định'
                       }
-                    </p>
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
@@ -919,7 +957,7 @@ const RiverMapPage: NextPage = () => {
               
               <div className="overflow-x-auto">
                 <RiverMap
-                  key={`river-map-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${selectedParameter}-${heatmapMode}`}
+                  key={heatmapKey}
                   width={1200}
                   height={600}
                   rainfall={getCurrentWeatherValues().rainfall}
