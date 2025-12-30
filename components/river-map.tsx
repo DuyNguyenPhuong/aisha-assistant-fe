@@ -21,6 +21,7 @@ interface RiverMapProps {
   rainfall: number;
   temperature: number;
   selectedParameter?: "BOD0" | "BOD1" | "NH40" | "NH41" | "NO3" | null;
+  heatmapMode?: 'hard' | 'dynamic';
   onPositionSelect?: (position: number, data: WaterQualityData) => void;
 }
 interface Coordinate {
@@ -33,6 +34,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
   rainfall,
   temperature,
   selectedParameter = null,
+  heatmapMode = 'hard',
   onPositionSelect,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -622,7 +624,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
 
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
     if (!selectedParameter) return;
-    console.log('🔥 Drawing heatmap for parameter:', selectedParameter);
+    console.log('🔥 Drawing heatmap for parameter:', selectedParameter, 'Mode:', heatmapMode);
     const heatmapSegments = 150; // More segments for smoother gradient
     
     // Calculate dynamic range for the selected parameter
@@ -682,20 +684,32 @@ const RiverMap: React.FC<RiverMapProps> = ({
           break;
       }
       
-      // Use standardized color calculation with hardcoded ranges
-      const dynamicColorScale = {
-        min: parameterRange.min,
-        max: parameterRange.max,
-        colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
-          ? ["white", "lightpink", "red"]      // BOD5: White(0) -> Green(15) -> Blue(25) -> Red(38.1)
-          : selectedParameter === 'NH40' || selectedParameter === 'NH41'
-          ? ["white", "lightyellow", "red"]   // NH4: Blue(0.9) -> Red(15.3)
-          : selectedParameter === 'NO3'
-          ? ["white", "lightblue", "red"]     // NO3: White(0) -> Green(10) -> Blue(15) -> Red(15.55)
-          : ["white", "lightpink", "red"]     // default
-      };
+      // Choose color scale based on heatmap mode
+      let colorScale;
+      if (heatmapMode === 'hard') {
+        // Use hardcoded values from COLOR_SCALES
+        const scaleKey = selectedParameter === 'BOD0' ? 'BOD0' : 
+                        selectedParameter === 'BOD1' ? 'BOD5' : 
+                        selectedParameter === 'NH40' ? 'NH40' :
+                        selectedParameter === 'NH41' ? 'NH41' :
+                        selectedParameter === 'NO3' ? 'NO3' : 'BOD5';
+        colorScale = COLOR_SCALES[scaleKey];
+      } else {
+        // Use dynamic range based on actual min/max values
+        colorScale = {
+          min: parameterRange.min,
+          max: parameterRange.max,
+          colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
+            ? ["white", "lightpink", "red"]
+            : selectedParameter === 'NH40' || selectedParameter === 'NH41'
+            ? ["white", "lightyellow", "gold"]
+            : selectedParameter === 'NO3'
+            ? ["white", "lightblue", "deepskyblue"]
+            : ["white", "lightpink", "red"] // default
+        };
+      }
       
-      const color = getColorFromValue(value, dynamicColorScale);
+      const color = getColorFromValue(value, colorScale);
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
       const nextRiverIndex = Math.floor(
         nextProgress * (riverPoints.length - 1),
@@ -706,7 +720,10 @@ const RiverMap: React.FC<RiverMapProps> = ({
       if (currentPoint && nextPoint) {
         // Debug log để kiểm tra màu sắc
         if (i % 30 === 0) {
-          console.log(`🎨 Heatmap Debug - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Range: ${parameterRange.min.toFixed(2)}-${parameterRange.max.toFixed(2)}, Color: ${color}`);
+          const rangeInfo = heatmapMode === 'hard' 
+            ? `Hard range: ${colorScale.min}-${colorScale.max}` 
+            : `Dynamic range: ${parameterRange.min.toFixed(2)}-${parameterRange.max.toFixed(2)}`;
+          console.log(`🎨 Heatmap Debug [${heatmapMode}] - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, ${rangeInfo}, Color: ${color}`);
         }
         
         ctx.beginPath();
@@ -803,6 +820,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     selectedPosition,
     rainfall,
     temperature,
+    heatmapMode,
   ]);
   return (
     <div className="relative">
