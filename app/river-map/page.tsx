@@ -256,40 +256,16 @@ const RiverMapPage: NextPage = () => {
 
   // Calculate dynamic min/max values for each parameter
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    const currentWeather = getCurrentWeatherValues();
-    let minValue = Infinity;
-    let maxValue = -Infinity;
+    // Hardcoded color ranges based on specifications
+    const parameterRanges: Record<string, { min: number; max: number }> = {
+      'BOD0': { min: 0, max: 38.1 },      // White: 0, Green: 15, Blue: 25, Red: 38.1
+      'BOD1': { min: 0, max: 38.1 },      // White: 0, Green: 15, Blue: 25, Red: 38.1
+      'NH40': { min: 0, max: 15.3 },      // Blue: 0.9, Red: 15.3
+      'NH41': { min: 0, max: 15.3 },      // Blue: 0.9, Red: 15.3
+      'NO3': { min: 0, max: 15.55 }       // White: 0, Green: 10, Blue: 15, Red: 15.55
+    };
     
-    // Sample positions along the river to find actual min/max
-    for (let i = 0; i <= 80; i++) {
-      const progress = i / 80;
-      const positionMeters = progress * RIVER_LENGTH;
-      const waterQuality = calculateConcentration(positionMeters, currentWeather.rainfall, currentWeather.temperature);
-      
-      let value = 0;
-      switch (parameter) {
-        case 'BOD0':
-          value = waterQuality.BOD5_sample0;
-          break;
-        case 'BOD1':
-          value = waterQuality.BOD5_sample1;
-          break;
-        case 'NH40':
-          value = waterQuality.NH4_sample0;
-          break;
-        case 'NH41':
-          value = waterQuality.NH4_sample1;
-          break;
-        case 'NO3':
-          value = waterQuality.NO3_sample1;
-          break;
-      }
-      
-      minValue = Math.min(minValue, value);
-      maxValue = Math.max(maxValue, value);
-    }
-    
-    return { min: minValue, max: maxValue };
+    return parameterRanges[parameter] || { min: 0, max: 100 };
   };
 
   // Generate heatmap data với thang màu động dựa trên min/max thực tế
@@ -345,17 +321,17 @@ const RiverMapPage: NextPage = () => {
           break;
       }
       
-      // Use standardized color calculation with dynamic range
+      // Use standardized color calculation with hardcoded ranges
       const dynamicColorScale = {
         min: parameterRange.min,
         max: parameterRange.max,
         colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
-          ? ["white", "lightpink", "red"]
+          ? ["white", "lightpink", "red"]      // BOD5: White(0) -> Green(15) -> Blue(25) -> Red(38.1)
           : selectedParameter === 'NH40' || selectedParameter === 'NH41'
-          ? ["white", "lightyellow", "gold"]
+          ? ["white", "lightyellow", "red"]   // NH4: Blue(0.9) -> Red(15.3)
           : selectedParameter === 'NO3'
-          ? ["white", "lightblue", "deepskyblue"]
-          : ["white", "lightpink", "red"] // default
+          ? ["white", "lightblue", "red"]     // NO3: White(0) -> Green(10) -> Blue(15) -> Red(15.55)
+          : ["white", "lightpink", "red"]     // default
       };
       
       const color = getColorFromValue(value, dynamicColorScale);
