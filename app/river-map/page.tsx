@@ -27,6 +27,7 @@ const RiverMapPage: NextPage = () => {
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapMode, setHeatmapMode] = useState<'hard' | 'dynamic'>('hard'); // 'hard' for hardcoded values, 'dynamic' for actual min/max
 
   // Weather data hook - always set up, but only auto-refresh when realtimeMode is on
   // 5 minutes = 300000ms
@@ -152,13 +153,28 @@ const RiverMapPage: NextPage = () => {
     setSelectedParameter(newParam);
   };
 
-  // Function to get color scheme for each parameter với thang màu động
+  // Function to get color scheme for each parameter với thang màu động/cố định
   const getParameterColorInfo = (param: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    // Tính khoảng giá trị thực tế cho parameter này (luôn luôn tính, không phụ thuộc selectedParameter)
-    const range = calculateParameterRange(param);
-    const description = range.max > range.min 
-      ? `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`
-      : 'Đang tính toán...';
+    let description;
+    
+    if (heatmapMode === 'hard') {
+      // Show hardcoded ranges for different parameters
+      if (param === 'BOD0' || param === 'BOD1') {
+        description = 'Cố định (0-38.1 mg/L)';
+      } else if (param === 'NH40' || param === 'NH41') {
+        description = 'Cố định (0-15.3 mg/L)';
+      } else if (param === 'NO3') {
+        description = 'Cố định (0-15.55 mg/L)';
+      } else {
+        description = 'Cố định';
+      }
+    } else {
+      // Calculate dynamic range for this parameter
+      const range = calculateParameterRange(param);
+      description = range.max > range.min 
+        ? `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`
+        : 'Đang tính toán...';
+    }
     
     // Màu sắc đặc trưng cho từng chất
     let bgClass, gradientStyle;
@@ -503,6 +519,31 @@ const RiverMapPage: NextPage = () => {
                 {/* Heatmap Controls */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Heatmap</h3>
+                  
+                  {/* Heatmap Mode Toggle */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                      Chế độ thang màu
+                    </label>
+                    <Button
+                      onClick={() => setHeatmapMode(heatmapMode === 'hard' ? 'dynamic' : 'hard')}
+                      variant={heatmapMode === 'dynamic' ? "default" : "outline"}
+                      className="w-full text-sm"
+                      type="button"
+                    >
+                      {heatmapMode === 'hard' 
+                        ? '📊 Giá trị cố định' 
+                        : '🔄 Min/Max thực tế'
+                      }
+                    </Button>
+                    <p className="text-xs text-gray-500">
+                      {heatmapMode === 'hard' 
+                        ? 'Sử dụng thang màu với giá trị cố định (0-38.1 mg/L cho BOD5, 0-15.3 mg/L cho NH4+, 0-15.55 mg/L cho NO3-)' 
+                        : 'Tự động tính toán thang màu dựa trên giá trị min/max thực tế của từng chất'
+                      }
+                    </p>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Button
                       variant="outline"
@@ -902,12 +943,13 @@ const RiverMapPage: NextPage = () => {
               
               <div className="overflow-x-auto">
                 <RiverMap
-                  key={`river-map-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${selectedParameter}`}
+                  key={`river-map-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${selectedParameter}-${heatmapMode}`}
                   width={1200}
                   height={600}
                   rainfall={getCurrentWeatherValues().rainfall}
                   temperature={getCurrentWeatherValues().temperature}
                   selectedParameter={selectedParameter}
+                  heatmapMode={heatmapMode}
                   onPositionSelect={handlePositionSelect}
                 />
               </div>

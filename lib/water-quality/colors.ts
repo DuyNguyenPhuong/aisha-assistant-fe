@@ -2,38 +2,45 @@ export interface ColorScale {
   min: number;
   max: number;
   colors: string[];
+  colorStops?: number[];
 }
 
 export const COLOR_SCALES: { [key: string]: ColorScale } = {
   BOD5: {
     min: 0,
-    max: 50,
-    colors: ["white", "lightpink", "red"],
+    max: 38.1,
+    colors: ["white", "green", "blue", "red"],
+    colorStops: [0, 15, 25, 38.1]
   },
   BOD0: {
     min: 0,
-    max: 50,
-    colors: ["white", "lightpink", "red"],
+    max: 38.1,
+    colors: ["white", "green", "blue", "red"],
+    colorStops: [0, 15, 25, 38.1]
   },
   NH4: {
     min: 0,
-    max: 25,
-    colors: ["white", "lightyellow", "gold"],
+    max: 15.3,
+    colors: ["white", "blue", "red"],
+    colorStops: [0, 0.9, 15.3]
   },
   NH40: {
     min: 0,
-    max: 25,
-    colors: ["white", "lightyellow", "gold"],
+    max: 15.3,
+    colors: ["white", "blue", "red"],
+    colorStops: [0, 0.9, 15.3]
   },
   NH41: {
     min: 0,
-    max: 25,
-    colors: ["white", "lightyellow", "gold"],
+    max: 15.3,
+    colors: ["white", "blue", "red"],
+    colorStops: [0, 0.9, 15.3]
   },
   NO3: {
     min: 0,
-    max: 30,
-    colors: ["white", "lightblue", "deepskyblue"],
+    max: 15.55,
+    colors: ["white", "green", "blue", "red"],
+    colorStops: [0, 10, 15, 15.55]
   },
 };
 
@@ -44,8 +51,10 @@ const interpolateColor = (
 ): string => {
   const getColorValues = (color: string) => {
     if (color === "white") return [255, 255, 255];
-    if (color === "lightpink") return [255, 182, 193];
+    if (color === "green") return [0, 255, 0];
+    if (color === "blue") return [0, 0, 255];
     if (color === "red") return [255, 0, 0];
+    if (color === "lightpink") return [255, 182, 193];
     if (color === "lightyellow") return [255, 255, 224];
     if (color === "gold") return [255, 215, 0];
     if (color === "lightblue") return [173, 216, 230];
@@ -67,22 +76,43 @@ export const getColorFromValue = (value: number, scale: ColorScale): string => {
   }
   
   // Handle invalid scale
-  if (!scale || !scale.colors || scale.colors.length < 3 || !isFinite(scale.min) || !isFinite(scale.max)) {
+  if (!scale || !scale.colors || scale.colors.length < 2 || !isFinite(scale.min) || !isFinite(scale.max)) {
     return "rgb(255, 255, 255)"; // Return white for invalid scale
   }
   
   // Clamp value within the scale range
   const clampedValue = Math.min(Math.max(value, scale.min), scale.max);
   
-  // Normalize to 0-1 based on the actual range
+  // Handle colorStops for multi-color gradients
+  if (scale.colorStops && scale.colorStops.length === scale.colors.length) {
+    // Find which segment the value falls into
+    for (let i = 0; i < scale.colorStops.length - 1; i++) {
+      if (clampedValue >= scale.colorStops[i] && clampedValue <= scale.colorStops[i + 1]) {
+        const segmentRange = scale.colorStops[i + 1] - scale.colorStops[i];
+        const t = segmentRange > 0 ? (clampedValue - scale.colorStops[i]) / segmentRange : 0;
+        return interpolateColor(scale.colors[i], scale.colors[i + 1], t);
+      }
+    }
+    // If value is exactly at the last stop
+    return interpolateColor(scale.colors[scale.colors.length - 2], scale.colors[scale.colors.length - 1], 1);
+  }
+  
+  // Fallback to original logic for simple 2-3 color gradients
   const range = scale.max - scale.min;
   const normalizedValue = range > 0 ? (clampedValue - scale.min) / range : 0;
   
-  if (normalizedValue <= 0.5) {
-    const t = normalizedValue * 2;
-    return interpolateColor(scale.colors[0], scale.colors[1], t);
-  } else {
-    const t = (normalizedValue - 0.5) * 2;
-    return interpolateColor(scale.colors[1], scale.colors[2], t);
+  if (scale.colors.length === 3) {
+    if (normalizedValue <= 0.5) {
+      const t = normalizedValue * 2;
+      return interpolateColor(scale.colors[0], scale.colors[1], t);
+    } else {
+      const t = (normalizedValue - 0.5) * 2;
+      return interpolateColor(scale.colors[1], scale.colors[2], t);
+    }
+  } else if (scale.colors.length === 2) {
+    return interpolateColor(scale.colors[0], scale.colors[1], normalizedValue);
   }
+  
+  // Fallback
+  return "rgb(255, 255, 255)";
 };
