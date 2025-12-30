@@ -34,7 +34,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
   rainfall,
   temperature,
   selectedParameter = null,
-  heatmapMode = 'hard',
+  heatmapMode = 'dynamic',
   onPositionSelect,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -610,21 +610,49 @@ const RiverMap: React.FC<RiverMapProps> = ({
   };
   // Calculate dynamic min/max values for the selected parameter
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    // Hardcoded color ranges based on specifications
-    const parameterRanges: Record<string, { min: number; max: number }> = {
-      'BOD0': { min: 0, max: 38.1 },      // White: 0, Green: 15, Blue: 25, Red: 38.1
-      'BOD1': { min: 0, max: 38.1 },      // White: 0, Green: 15, Blue: 25, Red: 38.1
-      'NH40': { min: 0, max: 15.3 },      // Blue: 0.9, Red: 15.3
-      'NH41': { min: 0, max: 15.3 },      // Blue: 0.9, Red: 15.3
-      'NO3': { min: 0, max: 15.55 }       // White: 0, Green: 10, Blue: 15, Red: 15.55
-    };
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    const sampleValues: number[] = [];
     
-    return parameterRanges[parameter] || { min: 0, max: 100 };
+    // Sample positions along the river to find actual min/max - use 80 samples for consistency
+    for (let i = 0; i <= 80; i++) {
+      const progress = i / 80;
+      const positionMeters = progress * RIVER_LENGTH;
+      const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
+      
+      let value = 0;
+      switch (parameter) {
+        case 'BOD0':
+          value = waterQuality.BOD5_sample0;
+          break;
+        case 'BOD1':
+          value = waterQuality.BOD5_sample1;
+          break;
+        case 'NH40':
+          value = waterQuality.NH4_sample0;
+          break;
+        case 'NH41':
+          value = waterQuality.NH4_sample1;
+          break;
+        case 'NO3':
+          value = waterQuality.NO3_sample1;
+          break;
+      }
+      
+      sampleValues.push(value);
+      minValue = Math.min(minValue, value);
+      maxValue = Math.max(maxValue, value);
+    }
+    
+    console.log(`📈 Parameter ${parameter} range: ${minValue.toFixed(2)} - ${maxValue.toFixed(2)}`);
+    console.log(`📊 Sample values:`, sampleValues.slice(0, 10).map(v => v.toFixed(2))); // First 10 values
+    
+    return { min: minValue, max: maxValue };
   };
 
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
     if (!selectedParameter) return;
-    console.log('🔥 Drawing heatmap for parameter:', selectedParameter, 'Mode:', heatmapMode);
+    console.log('🔥 Drawing heatmap for parameter:', selectedParameter);
     const heatmapSegments = 150; // More segments for smoother gradient
     
     // Calculate dynamic range for the selected parameter
@@ -684,18 +712,25 @@ const RiverMap: React.FC<RiverMapProps> = ({
           break;
       }
       
-      // Choose color scale based on heatmap mode
-      let colorScale;
+      // Use standardized color calculation with either hard-coded or dynamic range
+      let colorScale, range, minValue, maxValue;
+      
       if (heatmapMode === 'hard') {
-        // Use hardcoded values from COLOR_SCALES
-        const scaleKey = selectedParameter === 'BOD0' ? 'BOD0' : 
-                        selectedParameter === 'BOD1' ? 'BOD5' : 
-                        selectedParameter === 'NH40' ? 'NH40' :
-                        selectedParameter === 'NH41' ? 'NH41' :
-                        selectedParameter === 'NO3' ? 'NO3' : 'BOD5';
-        colorScale = COLOR_SCALES[scaleKey];
+        // Use hard-coded ranges from COLOR_SCALES
+        const scaleKey = selectedParameter === 'BOD0' ? 'BOD0' : selectedParameter === 'BOD1' ? 'BOD5' : selectedParameter;
+        const hardScale = COLOR_SCALES[scaleKey] || COLOR_SCALES.BOD5;
+        
+        colorScale = {
+          min: hardScale.min,
+          max: hardScale.max,
+          colors: hardScale.colors,
+          colorStops: hardScale.colorStops
+        };
+        range = hardScale.max - hardScale.min;
+        minValue = hardScale.min;
+        maxValue = hardScale.max;
       } else {
-        // Use dynamic range based on actual min/max values
+        // Use dynamic range
         colorScale = {
           min: parameterRange.min,
           max: parameterRange.max,
@@ -707,6 +742,9 @@ const RiverMap: React.FC<RiverMapProps> = ({
             ? ["white", "lightblue", "deepskyblue"]
             : ["white", "lightpink", "red"] // default
         };
+        range = parameterRange.max - parameterRange.min;
+        minValue = parameterRange.min;
+        maxValue = parameterRange.max;
       }
       
       const color = getColorFromValue(value, colorScale);
@@ -720,10 +758,8 @@ const RiverMap: React.FC<RiverMapProps> = ({
       if (currentPoint && nextPoint) {
         // Debug log để kiểm tra màu sắc
         if (i % 30 === 0) {
-          const rangeInfo = heatmapMode === 'hard' 
-            ? `Hard range: ${colorScale.min}-${colorScale.max}` 
-            : `Dynamic range: ${parameterRange.min.toFixed(2)}-${parameterRange.max.toFixed(2)}`;
-          console.log(`🎨 Heatmap Debug [${heatmapMode}] - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, ${rangeInfo}, Color: ${color}`);
+          const rangeInfo = heatmapMode === 'hard' ? `${minValue.toFixed(2)}-${maxValue.toFixed(2)} (hard)` : `${minValue.toFixed(2)}-${maxValue.toFixed(2)} (dynamic)`;
+          console.log(`🎨 Heatmap Debug [${heatmapMode}] - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Range: ${rangeInfo}, Color: ${color}`);
         }
         
         ctx.beginPath();
@@ -820,7 +856,6 @@ const RiverMap: React.FC<RiverMapProps> = ({
     selectedPosition,
     rainfall,
     temperature,
-    heatmapMode,
   ]);
   return (
     <div className="relative">
