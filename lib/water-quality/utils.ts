@@ -23,11 +23,21 @@ export const applyAlgorithmConstraints = (
     return newValue;
   }
   
-  if (constraintType === 'decreasing' && newValue > previousValue) {
-    return previousValue;
-  } else if (constraintType === 'increasing' && newValue < previousValue) {
-    return previousValue;
-  } else {
-    return newValue;
+  const result = constraintType === 'decreasing' && newValue > previousValue
+    ? previousValue
+    : constraintType === 'increasing' && newValue < previousValue
+    ? previousValue
+    : newValue;
+  
+  // Debug logging for constraint application
+  if (constraintType === 'increasing' && Math.abs(newValue - previousValue) > 0.01) {
+    console.log(`🚫 Constraint applied (${constraintType}):`, {
+      newValue,
+      previousValue,
+      result,
+      wasConstrained: result !== newValue
+    });
   }
+  
+  return result;
 };
