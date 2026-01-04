@@ -170,9 +170,14 @@ const RiverMapPage: NextPage = () => {
       };
       description = `Cứng (${hardRanges[param]} mg/L)`;
     } else {
-      description = range.max > range.min 
-        ? `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`
-        : 'Đang tính toán...';
+      // Handle case where min == max (constant values) or very close values
+      const rangeDiff = Math.abs(range.max - range.min);
+      if (rangeDiff < 0.001) {
+        // If values are essentially the same, show as constant value
+        description = `Động (≈${range.min.toFixed(3)} mg/L)`;
+      } else {
+        description = `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
+      }
     }
     
     // Màu sắc đặc trưng cho từng chất
@@ -258,6 +263,7 @@ const RiverMapPage: NextPage = () => {
     const currentWeather = getCurrentWeatherValues();
     let minValue = Infinity;
     let maxValue = -Infinity;
+    const values: number[] = []; // For debugging
     
     // Sample positions along the river to find actual min/max
     for (let i = 0; i <= 80; i++) {
@@ -284,8 +290,21 @@ const RiverMapPage: NextPage = () => {
           break;
       }
       
+      values.push(value);
       minValue = Math.min(minValue, value);
       maxValue = Math.max(maxValue, value);
+    }
+    
+    // Debug logging for NO3 specifically
+    if (parameter === 'NO3') {
+      console.log(`🔍 NO3 Debug:`, {
+        parameter,
+        minValue,
+        maxValue,
+        rangeDiff: maxValue - minValue,
+        sampleValues: values.slice(0, 10), // First 10 values
+        weather: currentWeather
+      });
     }
     
     return { min: minValue, max: maxValue };
@@ -1041,9 +1060,17 @@ const RiverMapPage: NextPage = () => {
                         <span>{range.min.toFixed(3)} mg/L → {range.max.toFixed(3)} mg/L</span>
                       </div>
                       <div className="text-xs mt-1 text-gray-600 space-y-1">
-                        <div>• <span className="inline-block w-3 h-3 mr-2 bg-white border"></span>Giá trị thấp nhất: <strong>{range.min.toFixed(3)} mg/L</strong> (màu trắng)</div>
-                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.midColor} border`}></span>Giá trị trung bình: <strong>{((range.min + range.max) / 2).toFixed(3)} mg/L</strong> (màu {colorInfo.colorName} nhạt)</div>
-                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.maxColor} border`}></span>Giá trị cao nhất: <strong>{range.max.toFixed(3)} mg/L</strong> (màu {colorInfo.colorName})</div>
+                        {Math.abs(range.max - range.min) < 0.001 ? (
+                          // Case when values are essentially constant
+                          <div>• <span className="inline-block w-3 h-3 mr-2 bg-white border"></span>Giá trị không đổi: <strong>{range.min.toFixed(3)} mg/L</strong> (nồng độ ổn định dọc sông)</div>
+                        ) : (
+                          // Case with actual range
+                          <>
+                            <div>• <span className="inline-block w-3 h-3 mr-2 bg-white border"></span>Giá trị thấp nhất: <strong>{range.min.toFixed(3)} mg/L</strong> (màu trắng)</div>
+                            <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.midColor} border`}></span>Giá trị trung bình: <strong>{((range.min + range.max) / 2).toFixed(3)} mg/L</strong> (màu {colorInfo.colorName} nhạt)</div>
+                            <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.maxColor} border`}></span>Giá trị cao nhất: <strong>{range.max.toFixed(3)} mg/L</strong> (màu {colorInfo.colorName})</div>
+                          </>
+                        )}
                       </div>
                       <div className="text-xs mt-2 text-gray-600 bg-white p-2 rounded border">
                         {selectedParameter === 'BOD0' && '* BOD5 mẫu 0: Giá trị đo được từ mẫu thứ nhất'}
