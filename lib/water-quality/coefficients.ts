@@ -1,3 +1,23 @@
+/**
+ * Quy đổi nhiệt độ từ dữ liệu thời tiết thực sang nhiệt độ tính toán
+ * T = 0.7 * Tair
+ */
+export const convertAirTemperatureToCalculation = (airTemperature: number): number => {
+  return 0.7 * airTemperature;
+};
+
+/**
+ * Quy đổi lượng mưa từ dữ liệu thời tiết thực sang lượng mưa sông
+ * - Nếu Rmưa ≤ 3mm/giờ, thì Rmưa,sông = 0
+ * - Nếu Rmưa > 3mm/giờ thì Rmưa,sông = 50% * (Rmưa - 3)
+ */
+export const convertRainfallToRiverRainfall = (rainfall: number): number => {
+  if (rainfall <= 3) {
+    return 0;
+  }
+  return 0.5 * (rainfall - 3);
+};
+
 // Hệ số nhiệt độ: T = 2.5^((Y - 26)/10)
 export const calculateT = (temperature: number): number => {
   return Math.pow(2.5, (temperature - 26) / 10);
