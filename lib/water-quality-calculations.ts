@@ -10,6 +10,9 @@ import {
   calculateCase16, calculateCase17, calculateCase18, calculateDefaultCase 
 } from './water-quality/calculation-cases';
 
+// Temporary flag for debugging
+const USE_LEGACY_CALCULATION = false; // Set to true to bypass new conversion formulas
+
 /**
  * Tính toán chất lượng nước sông tại vị trí Z với dữ liệu thời tiết thực
  * Hàm này tự động quy đổi dữ liệu thời tiết thực sang giá trị tính toán theo công thức mới:
@@ -29,11 +32,31 @@ export const calculateConcentration = (
   Z = Math.max(0, Math.min(RIVER_LENGTH, Z));
 
   // Quy đổi dữ liệu thời tiết thực sang dữ liệu tính toán
-  // T = 0.7 * Tair (nhiệt độ tính toán)
-  const Y = convertAirTemperatureToCalculation(airTemperature);
+  let Y, X;
   
-  // Rmưa,sông = 0 nếu Rmưa ≤ 3mm/giờ, ngược lại = 50% * (Rmưa - 3)
-  const X = convertRainfallToRiverRainfall(rawRainfall);
+  if (USE_LEGACY_CALCULATION) {
+    // Legacy: sử dụng trực tiếp giá trị thời tiết
+    Y = airTemperature;
+    X = rawRainfall;
+    console.log('⚠️ Using LEGACY calculation mode');
+  } else {
+    // New: quy đổi theo công thức mới
+    // T = 0.7 * Tair (nhiệt độ tính toán)
+    Y = convertAirTemperatureToCalculation(airTemperature);
+    
+    // Rmưa,sông = 0 nếu Rmưa ≤ 3mm/giờ, ngược lại = 50% * (Rmưa - 3)
+    X = convertRainfallToRiverRainfall(rawRainfall);
+  }
+  
+  // Debug logging
+  if (Z === 0 || Z === 1110 || Z === 3170) {
+    console.log(`🔬 Debug calculateConcentration Z=${Z}:`, {
+      inputs: { airTemperature, rawRainfall },
+      converted: { X, Y },
+      position: Z,
+      legacyMode: USE_LEGACY_CALCULATION
+    });
+  }
 
   // Trường hợp 1: Z = 0 (vị trí 1. Sài Đồng)
   if (Z === 0) {
