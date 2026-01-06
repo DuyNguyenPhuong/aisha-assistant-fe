@@ -77,6 +77,20 @@ const RiverMapPage: NextPage = () => {
     return { rainfall, temperature };
   };
 
+  // Convert air temperature to calculation temperature: T = 0.7 * Tair
+  const getCalculationTemperature = (airTemperature: number): number => {
+    return 0.7 * airTemperature;
+  };
+
+  // Get current effective weather values for calculations (with temperature conversion)
+  const getCurrentCalculationValues = () => {
+    const weatherValues = getCurrentWeatherValues();
+    return {
+      rainfall: weatherValues.rainfall,
+      temperature: getCalculationTemperature(weatherValues.temperature)
+    };
+  };
+
   // Helper function to convert wind direction to compass direction
   const getWindDirection = (degrees: number): string => {
     const directions = ['Bắc', 'Đông Bắc', 'Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc'];
@@ -128,7 +142,7 @@ const RiverMapPage: NextPage = () => {
       setManualPosition('');
       
       // Recalculate data for this position with current weather
-      const currentWeather = getCurrentWeatherValues();
+      const currentWeather = getCurrentCalculationValues();
       const newData = calculateConcentration(pos, currentWeather.rainfall, currentWeather.temperature);
       setSelectedPositionData(newData);
     }
@@ -140,7 +154,7 @@ const RiverMapPage: NextPage = () => {
     setSelectedPosition(position);
     
     // Recalculate data for this position with current weather
-    const currentWeather = getCurrentWeatherValues();
+    const currentWeather = getCurrentCalculationValues();
     const newData = calculateConcentration(position, currentWeather.rainfall, currentWeather.temperature);
     setSelectedPositionData(newData);
   };
@@ -170,13 +184,17 @@ const RiverMapPage: NextPage = () => {
       };
       description = `Cứng (${hardRanges[param]} mg/L)`;
     } else {
-      // Handle case where min == max (constant values) or very close values
-      const rangeDiff = Math.abs(range.max - range.min);
-      if (rangeDiff < 0.001) {
-        // If values are essentially the same, show as constant value
-        description = `Động (≈${range.min.toFixed(3)} mg/L)`;
+      // Check if we have valid range data
+      if (range.max !== -Infinity && range.min !== Infinity) {
+        if (range.max === range.min) {
+          // All values are the same across the river
+          description = `Động (${range.min.toFixed(2)} mg/L)`;
+        } else {
+          // Normal range with different min/max
+          description = `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
+        }
       } else {
-        description = `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
+        description = 'Đang tính toán...';
       }
     }
     
@@ -236,7 +254,8 @@ const RiverMapPage: NextPage = () => {
       
       // If we have a selected position, recalculate its data
       if (selectedPosition !== null) {
-        const newData = calculateConcentration(selectedPosition, weatherData.rainfall, weatherData.temperature);
+        const calculationTemp = getCalculationTemperature(weatherData.temperature);
+        const newData = calculateConcentration(selectedPosition, weatherData.rainfall, calculationTemp);
         setSelectedPositionData(newData);
       }
     }
@@ -245,7 +264,8 @@ const RiverMapPage: NextPage = () => {
   // Update selected position data when weather parameters or samplingStep change (manual mode)
   useEffect(() => {
     if (!realtimeMode && selectedPosition !== null) {
-      const newData = calculateConcentration(selectedPosition, rainfall, temperature);
+      const calculationTemp = getCalculationTemperature(temperature);
+      const newData = calculateConcentration(selectedPosition, rainfall, calculationTemp);
       setSelectedPositionData(newData);
     }
   }, [rainfall, temperature, selectedPosition, realtimeMode, samplingStep]);
@@ -256,11 +276,12 @@ const RiverMapPage: NextPage = () => {
   }, [selectedParameter]);
 
   // Force re-render of heatmap when parameters change
-  const heatmapKey = `${selectedParameter}-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${showHeatmap}-${heatmapMode}`;
+  const calculationValues = getCurrentCalculationValues();
+  const heatmapKey = `${selectedParameter}-${calculationValues.rainfall}-${calculationValues.temperature}-${showHeatmap}-${heatmapMode}`;
 
   // Calculate dynamic min/max values for each parameter
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    const currentWeather = getCurrentWeatherValues();
+    const currentWeather = getCurrentCalculationValues();
     let minValue = Infinity;
     let maxValue = -Infinity;
     const values: number[] = []; // For debugging
@@ -314,7 +335,7 @@ const RiverMapPage: NextPage = () => {
   const getHeatmapData = () => {
     if (!showHeatmap || !selectedParameter) return [];
     
-    const currentWeather = getCurrentWeatherValues();
+    const currentWeather = getCurrentCalculationValues();
     const parameterRange = calculateParameterRange(selectedParameter);
     const heatmapPoints: Array<{ 
       lat: number; 
@@ -418,7 +439,7 @@ const RiverMapPage: NextPage = () => {
 
   // Export functions
   const handleExportPDF = async () => {
-    const currentWeather = getCurrentWeatherValues();
+    const currentWeather = getCurrentCalculationValues();
     const { generateExportData, exportToPDF } = await import('@/lib/export-utils');
     
     const exportData = generateExportData(currentWeather.rainfall, currentWeather.temperature);
@@ -426,7 +447,7 @@ const RiverMapPage: NextPage = () => {
   };
 
   const handleExportCSV = async () => {
-    const currentWeather = getCurrentWeatherValues();
+    const currentWeather = getCurrentCalculationValues();
     const { generateExportData, downloadCSV } = await import('@/lib/export-utils');
     
     const exportData = generateExportData(currentWeather.rainfall, currentWeather.temperature);
@@ -886,11 +907,11 @@ const RiverMapPage: NextPage = () => {
                 </div>
                 
                 <LineChart
-                  key={`line-chart-${getCurrentWeatherValues().rainfall}-${getCurrentWeatherValues().temperature}-${samplingStep}-${JSON.stringify(enabledSeries)}`}
+                  key={`line-chart-${calculationValues.rainfall}-${calculationValues.temperature}-${samplingStep}-${JSON.stringify(enabledSeries)}`}
                   width={1200}
                   height={500}
-                  rainfall={getCurrentWeatherValues().rainfall}
-                  temperature={getCurrentWeatherValues().temperature}
+                  rainfall={calculationValues.rainfall}
+                  temperature={calculationValues.temperature}
                   enabledSeries={enabledSeries}
                   samplingStep={samplingStep}
                 />
@@ -909,7 +930,11 @@ const RiverMapPage: NextPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🌡️</span>
-                    <span><strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
+                    <span><strong>Nhiệt độ không khí:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🧮</span>
+                    <span><strong>Nhiệt độ tính toán:</strong> {calculationValues.temperature.toFixed(1)}°C</span>
                   </div>
                   {realtimeMode && weatherData && (
                     <>
@@ -979,8 +1004,8 @@ const RiverMapPage: NextPage = () => {
                   key={heatmapKey}
                   width={1200}
                   height={600}
-                  rainfall={getCurrentWeatherValues().rainfall}
-                  temperature={getCurrentWeatherValues().temperature}
+                  rainfall={calculationValues.rainfall}
+                  temperature={calculationValues.temperature}
                   selectedParameter={selectedParameter}
                   heatmapMode={heatmapMode}
                   onPositionSelect={handlePositionSelect}
@@ -1083,8 +1108,8 @@ const RiverMapPage: NextPage = () => {
                     
                     <div className="mt-2 text-gray-600 text-xs border-t pt-2">
                       <strong>Điều kiện hiện tại:</strong> 
-                      <strong>Mưa:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)}mm/hr | 
-                      <strong>Nhiệt độ:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C |
+                      <strong>Mưa:</strong> {calculationValues.rainfall.toFixed(1)}mm/hr | 
+                      <strong>Nhiệt độ tính toán:</strong> {calculationValues.temperature.toFixed(1)}°C (từ {getCurrentWeatherValues().temperature.toFixed(1)}°C không khí) |
                       <strong>Chất:</strong> {selectedParameter}
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
