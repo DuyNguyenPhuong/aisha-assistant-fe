@@ -82,11 +82,22 @@ const RiverMapPage: NextPage = () => {
     return 0.7 * airTemperature;
   };
 
+  // Convert weather rainfall to calculation rainfall:
+  // If Rmưa ≤ 3mm/h, then Rmưa,sông = 0
+  // If Rmưa > 3mm/h, then Rmưa,sông = 50% * (Rmưa - 3)
+  const getCalculationRainfall = (weatherRainfall: number): number => {
+    if (weatherRainfall <= 3) {
+      return 0;
+    } else {
+      return 0.5 * (weatherRainfall - 3);
+    }
+  };
+
   // Get current effective weather values for calculations (with temperature conversion)
   const getCurrentCalculationValues = () => {
     const weatherValues = getCurrentWeatherValues();
     return {
-      rainfall: weatherValues.rainfall,
+      rainfall: getCalculationRainfall(weatherValues.rainfall),
       temperature: getCalculationTemperature(weatherValues.temperature)
     };
   };
@@ -243,7 +254,7 @@ const RiverMapPage: NextPage = () => {
       // Show brief notification
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300';
-      notification.innerHTML = `🔄 Đã cập nhật dữ liệu thời tiết<br>🌧️ Mưa: ${weatherData.rainfall} mm/hr<br>🌡️ Nhiệt độ: ${weatherData.temperature}°C`;
+      notification.innerHTML = `🔄 Đã cập nhật dữ liệu thời tiết<br>🌧️ Mưa: ${weatherData.rainfall} mm/hr → ${getCalculationRainfall(weatherData.rainfall).toFixed(1)} mm/hr<br>🌡️ Nhiệt độ: ${weatherData.temperature}°C → ${getCalculationTemperature(weatherData.temperature).toFixed(1)}°C`;
       document.body.appendChild(notification);
       
       // Auto remove after 3 seconds
@@ -254,8 +265,9 @@ const RiverMapPage: NextPage = () => {
       
       // If we have a selected position, recalculate its data
       if (selectedPosition !== null) {
+        const calculationRainfall = getCalculationRainfall(weatherData.rainfall);
         const calculationTemp = getCalculationTemperature(weatherData.temperature);
-        const newData = calculateConcentration(selectedPosition, weatherData.rainfall, calculationTemp);
+        const newData = calculateConcentration(selectedPosition, calculationRainfall, calculationTemp);
         setSelectedPositionData(newData);
       }
     }
@@ -264,8 +276,9 @@ const RiverMapPage: NextPage = () => {
   // Update selected position data when weather parameters or samplingStep change (manual mode)
   useEffect(() => {
     if (!realtimeMode && selectedPosition !== null) {
+      const calculationRainfall = getCalculationRainfall(rainfall);
       const calculationTemp = getCalculationTemperature(temperature);
-      const newData = calculateConcentration(selectedPosition, rainfall, calculationTemp);
+      const newData = calculateConcentration(selectedPosition, calculationRainfall, calculationTemp);
       setSelectedPositionData(newData);
     }
   }, [rainfall, temperature, selectedPosition, realtimeMode, samplingStep]);
@@ -912,7 +925,11 @@ const RiverMapPage: NextPage = () => {
                   {/* Hàng 1: Thông tin cơ bản */}
                   <div className="flex items-center gap-2">
                     <span>🌧️</span>
-                    <span><strong>Mưa:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
+                    <span><strong>Mưa thời tiết:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>💧</span>
+                    <span><strong>Mưa tính toán:</strong> {calculationValues.rainfall.toFixed(1)} mm/hr</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🌡️</span>
@@ -1086,7 +1103,7 @@ const RiverMapPage: NextPage = () => {
                     
                     <div className="mt-2 text-gray-600 text-xs border-t pt-2">
                       <strong>Điều kiện hiện tại:</strong> 
-                      <strong>Mưa:</strong> {calculationValues.rainfall.toFixed(1)}mm/hr | 
+                      <strong>Mưa tính toán:</strong> {calculationValues.rainfall.toFixed(1)}mm/hr (từ {getCurrentWeatherValues().rainfall.toFixed(1)}mm/hr thời tiết) | 
                       <strong>Nhiệt độ tính toán:</strong> {calculationValues.temperature.toFixed(1)}°C (từ {getCurrentWeatherValues().temperature.toFixed(1)}°C không khí) |
                       <strong>Chất:</strong> {selectedParameter}
                     </div>
