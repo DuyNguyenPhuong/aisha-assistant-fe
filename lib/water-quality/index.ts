@@ -8,8 +8,11 @@ export type { WaterQualityData, RiverPosition, AlgorithmConstraintType } from '.
 export { RIVER_POSITIONS, CRITICAL_POSITIONS, RIVER_LENGTH } from './constants';
 
 // Mathematical functions
-export { calculateT, calculateTBOD, calculateTN } from './coefficients';
+export { calculateT, calculateTBOD, calculateTN, convertAirTemperatureToCalculation, convertRainfallToRiverRainfall } from './coefficients';
 export { D_BOD1, D_BOD0, D_NH41, D_NH40, D_NO31 } from './degradation';
+
+// Formula demonstration and comparison
+export { demonstrateNewFormulas, compareCalculationResults } from './formula-demo';
 
 // Utilities
 export { truncateToTwoDecimals, applyAlgorithmConstraints } from './utils';

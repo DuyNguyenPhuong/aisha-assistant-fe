@@ -12,6 +12,15 @@ export const calculateCase1 = (X: number): WaterQualityData => {
   const NH41_1 = (19125 + 0.56 * 13550 * X) / Q1;
   const NH40_1 = (19125 + 0.56 * 13550 * X) / Q1;
   const NO31_1 = (313 + 0.14 * 13550 * X) / Q1;
+  
+  // Debug logging for NO3
+  console.log(`🔬 Case1 (Z=0) NO3 calculation:`, {
+    X,
+    Q1,
+    numerator: 313 + 0.14 * 13550 * X,
+    NO31_1_raw: NO31_1,
+    NO31_1_final: Math.max(0, truncateToTwoDecimals(NO31_1))
+  });
 
   return {
     BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_1)),
@@ -39,12 +48,29 @@ export const calculateCase2 = (Z: number, X: number, Y: number): WaterQualityDat
   let NH41_Z = NH4_initial - calculateTN(time2, Y) * D_NH41(time2);
   let NH40_Z = NH4_initial - calculateTN(time2, Y) * D_NH40(time2);
   let NO31_Z = NO3_initial - calculateTN(time2, Y) * D_NO31(time2);
+  
+  // Debug logging for NO3 before constraint
+  const NO31_Z_before_constraint = NO31_Z;
 
   BOD1_Z = applyAlgorithmConstraints(BOD1_Z, BOD_initial, 'decreasing');
   BOD0_Z = applyAlgorithmConstraints(BOD0_Z, BOD_initial, 'decreasing');
   NH41_Z = applyAlgorithmConstraints(NH41_Z, NH4_initial, 'decreasing');
   NH40_Z = applyAlgorithmConstraints(NH40_Z, NH4_initial, 'decreasing');
   NO31_Z = applyAlgorithmConstraints(NO31_Z, NO3_initial, 'increasing');
+  
+  // Debug logging for NO3
+  if (Z <= 100) {
+    console.log(`🔬 Case2 (Z=${Z}) NO3 calculation:`, {
+      X, Y, Z,
+      Q1, time2,
+      NO3_initial,
+      TN,
+      D_NO31: D_NO31(time2),
+      NO31_Z_before_constraint,
+      NO31_Z_after_constraint: NO31_Z,
+      was_constrained: NO31_Z !== NO31_Z_before_constraint
+    });
+  }
 
   return {
     BOD5_sample0: Math.max(0, truncateToTwoDecimals(BOD0_Z)),
