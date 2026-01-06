@@ -170,9 +170,18 @@ const RiverMapPage: NextPage = () => {
       };
       description = `Cứng (${hardRanges[param]} mg/L)`;
     } else {
-      description = range.max > range.min 
-        ? `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`
-        : 'Đang tính toán...';
+      // Check if we have valid range data
+      if (range.max !== -Infinity && range.min !== Infinity) {
+        if (range.max === range.min) {
+          // All values are the same across the river
+          description = `Động (${range.min.toFixed(2)} mg/L)`;
+        } else {
+          // Normal range with different min/max
+          description = `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
+        }
+      } else {
+        description = 'Đang tính toán...';
+      }
     }
     
     // Màu sắc đặc trưng cho từng chất
