@@ -94,16 +94,27 @@ export const exportToCSV = (
     "NH4+ mẫu 0",
     "NO3- Mẫu 1",
   ];
+  
+  // Helper function to properly escape CSV fields
+  const escapeCSVField = (field: any): string => {
+    const str = String(field);
+    // If field contains comma, quote, or newline, wrap in quotes and escape quotes
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+  
   const csvContent = [
-    `Bảng kết quả tính toán chất lượng nước sông Cầu Bây`,
-    `Lượng mưa (X): ${rainfall} mm/hr, Nhiệt độ (Y): ${temperature}°C`,
+    escapeCSVField(`Bảng kết quả tính toán chất lượng nước sông Cầu Bây`),
+    escapeCSVField(`Lượng mưa (X): ${rainfall} mm/hr, Nhiệt độ (Y): ${temperature}°C`),
     "",
-    headers.join(","),
+    headers.map(header => escapeCSVField(header)).join(","),
     ...data.map((row) =>
       [
-        row.tt,
-        `"${row.viTri}"`,
-        row.z.toLocaleString(),
+        row.tt.toString(),
+        escapeCSVField(row.viTri),
+        row.z.toString(), // Use toString() instead of toLocaleString() to avoid comma separators
         row.bod5_sample1.toFixed(2),
         row.bod5_sample0.toFixed(2),
         row.nh4_sample1.toFixed(2),
@@ -120,9 +131,15 @@ export const downloadCSV = (
   temperature: number,
 ): void => {
   const csvContent = exportToCSV(data, rainfall, temperature);
-  const blob = new Blob(["\uFEFF" + csvContent], {
+  
+  // Use UTF-8 BOM for better compatibility with Excel and other applications
+  const BOM = '\uFEFF';
+  
+  // Create blob with explicit UTF-8 encoding
+  const blob = new Blob([BOM + csvContent], {
     type: "text/csv;charset=utf-8;",
   });
+  
   const link = document.createElement("a");
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
@@ -135,6 +152,9 @@ export const downloadCSV = (
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Clean up the object URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 };
 export const generateHTMLTable = (
