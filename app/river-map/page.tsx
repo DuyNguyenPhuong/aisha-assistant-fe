@@ -17,7 +17,6 @@ import { getColorFromValue, COLOR_SCALES } from '@/lib/water-quality/colors';
 
 const RiverMapPage: NextPage = () => {
   
-  // State management
   const [rainfall, setRainfall] = useState(0);
   const [temperature, setTemperature] = useState(26);
   const [selectedParameter, setSelectedParameter] = useState<'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3' | null>(null);
@@ -27,20 +26,20 @@ const RiverMapPage: NextPage = () => {
   const [showChart, setShowChart] = useState(false);
   const [samplingStep, setSamplingStep] = useState(10);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [heatmapMode, setHeatmapMode] = useState<'hard' | 'dynamic'>('dynamic'); // 'hard' for hard values, 'dynamic' for actual min/max
+  const [heatmapMode, setHeatmapMode] = useState<'hard' | 'dynamic'>('dynamic'); 
 
-  // Weather data hook - always set up, but only auto-refresh when realtimeMode is on
-  // 5 minutes = 300000ms
+  
+  
   const WEATHER_UPDATE_INTERVAL = 300000;
   const { weatherData, isLoading: weatherLoading, error: weatherError, refetch: refetchWeather } = useWeatherData(
-    realtimeMode, // autoRefresh only when realtime is enabled
+    realtimeMode, 
     WEATHER_UPDATE_INTERVAL
   );
 
-  // Ensure weather is refetched every 5 minutes in realtime mode
+  
   useEffect(() => {
     if (!realtimeMode) return;
-    // Refetch immediately on enable
+    
     refetchWeather();
     const timer = setInterval(() => {
       refetchWeather();
@@ -48,7 +47,7 @@ const RiverMapPage: NextPage = () => {
     return () => clearInterval(timer);
   }, [realtimeMode, refetchWeather]);
   
-  // Chart series control
+  
   const [enabledSeries, setEnabledSeries] = useState({
     BOD5_sample0: true,
     BOD5_sample1: false,
@@ -57,16 +56,16 @@ const RiverMapPage: NextPage = () => {
     NO3_sample1: false
   });
 
-  // Manual position input
+  
   const [manualPosition, setManualPosition] = useState('');
 
-  // Handle position selection from map
+  
   const handlePositionSelect = (position: number, data: WaterQualityData) => {
     setSelectedPosition(position);
     setSelectedPositionData(data);
   };
 
-  // Get current effective weather values (realtime or manual)
+  
   const getCurrentWeatherValues = () => {
     if (realtimeMode && weatherData) {
       return {
@@ -77,14 +76,14 @@ const RiverMapPage: NextPage = () => {
     return { rainfall, temperature };
   };
 
-  // Convert air temperature to calculation temperature: T = 0.7 * Tair
+  
   const getCalculationTemperature = (airTemperature: number): number => {
     return 0.7 * airTemperature;
   };
 
-  // Convert weather rainfall to calculation rainfall:
-  // If Rmưa ≤ 3mm/h, then Rmưa,sông = 0
-  // If Rmưa > 3mm/h, then Rmưa,sông = 50% * (Rmưa - 3)
+  
+  
+  
   const getCalculationRainfall = (weatherRainfall: number): number => {
     if (weatherRainfall <= 3) {
       return 0;
@@ -93,7 +92,7 @@ const RiverMapPage: NextPage = () => {
     }
   };
 
-  // Get current effective weather values for calculations (with temperature conversion)
+  
   const getCurrentCalculationValues = () => {
     const weatherValues = getCurrentWeatherValues();
     return {
@@ -102,21 +101,21 @@ const RiverMapPage: NextPage = () => {
     };
   };
 
-  // Helper function to convert wind direction to compass direction
+  
   const getWindDirection = (degrees: number): string => {
     const directions = ['Bắc', 'Đông Bắc', 'Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc'];
     const index = Math.round(degrees / 45) % 8;
     return directions[index];
   };
 
-  // Helper function to get pressure status
+  
   const getPressureStatus = (pressure: number): string => {
     if (pressure < 1000) return '(Thấp)';
     if (pressure > 1020) return '(Cao)';
     return '(Bình thường)';
   };
 
-  // Helper function to get air quality assessment
+  
   const getAirQualityAssessment = (weatherData: {
     humidity: number;
     visibility: number;
@@ -126,7 +125,7 @@ const RiverMapPage: NextPage = () => {
     const { humidity, visibility, windSpeed, cloudiness } = weatherData;
     let score = 0;
     
-    // Tốt: visibility cao, gió vừa phải, độ ẩm vừa, ít mây
+    
     if (visibility >= 10000) score += 2;
     else if (visibility >= 5000) score += 1;
     
@@ -145,32 +144,32 @@ const RiverMapPage: NextPage = () => {
     return { level: 'Kém', color: 'text-red-600', emoji: '😷' };
   };
 
-  // Handle manual position input
+  
   const handleManualPositionSubmit = () => {
     const pos = parseFloat(manualPosition);
     if (!isNaN(pos) && pos >= 0 && pos <= 8013) {
       setSelectedPosition(pos);
-      setManualPosition('');
       
-      // Recalculate data for this position with current weather
+      
+      
       const currentWeather = getCurrentCalculationValues();
       const newData = calculateConcentration(pos, currentWeather.rainfall, currentWeather.temperature);
       setSelectedPositionData(newData);
     }
   };
 
-  // Handle preset position selection
+  
   const handlePresetPosition = (position: number) => {
     console.log('Preset position clicked:', position);
     setSelectedPosition(position);
     
-    // Recalculate data for this position with current weather
+    
     const currentWeather = getCurrentCalculationValues();
     const newData = calculateConcentration(position, currentWeather.rainfall, currentWeather.temperature);
     setSelectedPositionData(newData);
   };
 
-  // Handle heatmap parameter selection  
+  
   const handleHeatmapSelect = (param: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
     console.log('🎯 Heatmap parameter clicked:', param);
     const newParam = selectedParameter === param ? null : param;
@@ -178,14 +177,14 @@ const RiverMapPage: NextPage = () => {
     setSelectedParameter(newParam);
   };
 
-  // Function to get color scheme for each parameter với thang màu động
+  
   const getParameterColorInfo = (param: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
-    // Tính khoảng giá trị thực tế cho parameter này (luôn luôn tính, không phụ thuộc selectedParameter)
+    
     const range = calculateParameterRange(param);
     
     let description;
     if (heatmapMode === 'hard') {
-      // Show hard-coded ranges
+      
       const hardRanges = {
         'BOD0': '0-38.1',
         'BOD1': '0-38.1', 
@@ -195,13 +194,13 @@ const RiverMapPage: NextPage = () => {
       };
       description = `Cứng (${hardRanges[param]} mg/L)`;
     } else {
-      // Check if we have valid range data
+      
       if (range.max !== -Infinity && range.min !== Infinity) {
         if (range.max === range.min) {
-          // All values are the same across the river
+          
           description = `Động (${range.min.toFixed(2)} mg/L)`;
         } else {
-          // Normal range with different min/max
+          
           description = `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
         }
       } else {
@@ -209,23 +208,23 @@ const RiverMapPage: NextPage = () => {
       }
     }
     
-    // Màu sắc đặc trưng cho từng chất
+    
     let bgClass, gradientStyle;
     
     if (param === 'BOD0' || param === 'BOD1') {
-      // BOD: Trắng → Đỏ
+      
       bgClass = selectedParameter === param ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100';
       gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ffcccc 50%, #ff0000 100%)' };
     } else if (param === 'NH40' || param === 'NH41') {
-      // NH4: Trắng → Vàng
+      
       bgClass = selectedParameter === param ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100';
       gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ffffcc 50%, #ffff00 100%)' };
     } else if (param === 'NO3') {
-      // NO3: Trắng → Xanh lam
+      
       bgClass = selectedParameter === param ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100';
       gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ccddff 50%, #0066ff 100%)' };
     } else {
-      // Mặc định: đỏ
+      
       bgClass = selectedParameter === param ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100';
       gradientStyle = { background: 'linear-gradient(to right, #ffffff 0%, #ffcccc 50%, #ff0000 100%)' };
     }
@@ -237,7 +236,7 @@ const RiverMapPage: NextPage = () => {
     };
   };
 
-  // Toggle series
+  
   const toggleSeries = (seriesName: keyof typeof enabledSeries) => {
     setEnabledSeries(prev => ({
       ...prev,
@@ -245,25 +244,25 @@ const RiverMapPage: NextPage = () => {
     }));
   };
 
-  // Update local weather values when realtime data changes
+  
   useEffect(() => {
     if (realtimeMode && weatherData) {
       console.log('🌦️ Realtime weather updated:', weatherData);
       console.log('📊 New values - Rainfall:', weatherData.rainfall, 'mm/hr, Temperature:', weatherData.temperature, '°C');
       
-      // Show brief notification
+      
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300';
       notification.innerHTML = `🔄 Đã cập nhật dữ liệu thời tiết<br>🌧️ Mưa: ${weatherData.rainfall} mm/hr → ${getCalculationRainfall(weatherData.rainfall).toFixed(1)} mm/hr<br>🌡️ Nhiệt độ: ${weatherData.temperature}°C → ${getCalculationTemperature(weatherData.temperature).toFixed(1)}°C`;
       document.body.appendChild(notification);
       
-      // Auto remove after 3 seconds
+      
       setTimeout(() => {
         notification.style.opacity = '0';
         setTimeout(() => document.body.removeChild(notification), 300);
       }, 3000);
       
-      // If we have a selected position, recalculate its data
+      
       if (selectedPosition !== null) {
         const calculationRainfall = getCalculationRainfall(weatherData.rainfall);
         const calculationTemp = getCalculationTemperature(weatherData.temperature);
@@ -273,7 +272,7 @@ const RiverMapPage: NextPage = () => {
     }
   }, [weatherData, realtimeMode, selectedPosition]);
 
-  // Update selected position data when weather parameters or samplingStep change (manual mode)
+  
   useEffect(() => {
     if (!realtimeMode && selectedPosition !== null) {
       const calculationRainfall = getCalculationRainfall(rainfall);
@@ -283,22 +282,22 @@ const RiverMapPage: NextPage = () => {
     }
   }, [rainfall, temperature, selectedPosition, realtimeMode, samplingStep]);
 
-  // Debug selectedParameter changes
+  
   useEffect(() => {
     console.log('📊 selectedParameter changed to:', selectedParameter);
   }, [selectedParameter]);
 
-  // Force re-render of heatmap when parameters change
+  
   const calculationValues = getCurrentCalculationValues();
   const heatmapKey = `${selectedParameter}-${calculationValues.rainfall}-${calculationValues.temperature}-${showHeatmap}-${heatmapMode}`;
 
-  // Calculate dynamic min/max values for each parameter
+  
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
     const currentWeather = getCurrentCalculationValues();
     let minValue = Infinity;
     let maxValue = -Infinity;
     
-    // Sample positions along the river to find actual min/max
+    
     for (let i = 0; i <= 80; i++) {
       const progress = i / 80;
       const positionMeters = progress * RIVER_LENGTH;
@@ -330,7 +329,7 @@ const RiverMapPage: NextPage = () => {
     return { min: minValue, max: maxValue };
   };
 
-  // Generate heatmap data với thang màu động dựa trên min/max thực tế
+  
   const getHeatmapData = () => {
     if (!showHeatmap || !selectedParameter) return [];
     
@@ -345,12 +344,12 @@ const RiverMapPage: NextPage = () => {
       color?: string;
     }> = [];
     
-    // Tạo nhiều điểm dọc theo sông để hiển thị gradient nồng độ
-    for (let i = 0; i <= 80; i++) { // Tăng số điểm để heatmap mượt hơn
+    
+    for (let i = 0; i <= 80; i++) { 
       const progress = i / 80;
       const positionMeters = progress * RIVER_LENGTH;
       
-      // Tính tọa độ dọc theo sông (từ tây bắc xuống đông nam)
+      
       const startLat = 21.032323;
       const startLng = 105.919651;
       const endLat = 20.998456;
@@ -359,10 +358,10 @@ const RiverMapPage: NextPage = () => {
       const lat = startLat + (endLat - startLat) * progress;
       const lng = startLng + (endLng - startLng) * progress;
       
-      // Tính nồng độ tại vị trí này
+      
       const waterQuality = calculateConcentration(positionMeters, currentWeather.rainfall, currentWeather.temperature);
       
-      // Lấy giá trị theo parameter được chọn
+      
       let value = 0;
       
       switch (selectedParameter) {
@@ -383,11 +382,11 @@ const RiverMapPage: NextPage = () => {
           break;
       }
       
-      // Use standardized color calculation with either hard-coded or dynamic range
+      
       let colorScale, range, minValue, maxValue;
       
       if (heatmapMode === 'hard') {
-        // Use hard-coded ranges from COLOR_SCALES
+        
         const scaleKey = selectedParameter === 'BOD0' ? 'BOD0' : selectedParameter === 'BOD1' ? 'BOD5' : selectedParameter;
         const hardScale = COLOR_SCALES[scaleKey] || COLOR_SCALES.BOD5;
         
@@ -401,7 +400,7 @@ const RiverMapPage: NextPage = () => {
         minValue = hardScale.min;
         maxValue = hardScale.max;
       } else {
-        // Use dynamic range
+        
         colorScale = {
           min: parameterRange.min,
           max: parameterRange.max,
@@ -411,7 +410,7 @@ const RiverMapPage: NextPage = () => {
             ? ["white", "lightyellow", "gold"]
             : selectedParameter === 'NO3'
             ? ["white", "lightblue", "deepskyblue"]
-            : ["white", "lightpink", "red"] // default
+            : ["white", "lightpink", "red"] 
         };
         range = parameterRange.max - parameterRange.min;
         minValue = parameterRange.min;
@@ -420,7 +419,7 @@ const RiverMapPage: NextPage = () => {
       
       const color = getColorFromValue(value, colorScale);
       
-      // Calculate intensity for leaflet heatmap (0-1)
+      
       const normalizedIntensity = range > 0 ? Math.max(0, Math.min(1, (value - minValue) / range)) : 0;
       
       heatmapPoints.push({
@@ -436,7 +435,7 @@ const RiverMapPage: NextPage = () => {
     return heatmapPoints;
   };
 
-  // Export functions
+  
   const handleExportPDF = async () => {
     const currentWeather = getCurrentCalculationValues();
     const { generateExportData, exportToPDF } = await import('@/lib/export-utils');
@@ -472,12 +471,12 @@ const RiverMapPage: NextPage = () => {
               </p>
             </header>
 
-            {/* Controls Panel */}
+            {}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               <h2 className="text-xl font-semibold mb-6">Bảng điều khiển</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {/* Weather Controls */}
+                {}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Thông số thời tiết</h3>
                   <div>
@@ -487,7 +486,17 @@ const RiverMapPage: NextPage = () => {
                     <Input
                       type="number"
                       value={realtimeMode ? getCurrentWeatherValues().rainfall : rainfall}
-                      onChange={(e) => setRainfall(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setRainfall(0);
+                        } else {
+                          const numValue = parseFloat(value);
+                          if (!isNaN(numValue)) {
+                            setRainfall(numValue);
+                          }
+                        }
+                      }}
                       min="0"
                       step="0.1"
                       disabled={realtimeMode}
@@ -501,7 +510,17 @@ const RiverMapPage: NextPage = () => {
                     <Input
                       type="number"
                       value={realtimeMode ? getCurrentWeatherValues().temperature : temperature}
-                      onChange={(e) => setTemperature(parseFloat(e.target.value) || 25)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setTemperature(25);
+                        } else {
+                          const numValue = parseFloat(value);
+                          if (!isNaN(numValue)) {
+                            setTemperature(numValue);
+                          }
+                        }
+                      }}
                       min="0"
                       max="50"
                       disabled={realtimeMode}
@@ -533,7 +552,7 @@ const RiverMapPage: NextPage = () => {
                   )}
                 </div>
 
-                {/* Position Controls */}
+                {}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Chọn vị trí (Z)</h3>
                   <div>
@@ -575,11 +594,11 @@ const RiverMapPage: NextPage = () => {
                   </div>
                 </div>
 
-                {/* Heatmap Controls */}
+                {}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Heatmap</h3>
                   
-                  {/* Mode Switch Button */}
+                  {}
                   <div className="mb-4">
                     <Button
                       onClick={() => setHeatmapMode(heatmapMode === 'hard' ? 'dynamic' : 'hard')}
@@ -678,7 +697,7 @@ const RiverMapPage: NextPage = () => {
                   </Button>
                 </div>
 
-                {/* Chart Controls */}
+                {}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-700">Biểu đồ</h3>
                   <Button
@@ -690,7 +709,7 @@ const RiverMapPage: NextPage = () => {
                     {showChart ? '📈 Ẩn biểu đồ' : '📊 Hiện biểu đồ'}
                   </Button>
                   
-                  {/* Color Legend */}
+                  {}
                   {showChart && (
                     <div className="bg-gray-50 p-3 rounded border text-xs">
                       <div className="font-medium text-gray-700 mb-2">🎨 Màu sắc đường:</div>
@@ -747,7 +766,7 @@ const RiverMapPage: NextPage = () => {
                   </div>
                 </div>
 
-                {/* Weather Details Panel */}
+                {}
                 {realtimeMode && weatherData && (
                   <div className="space-y-4 bg-blue-50 p-4 rounded-lg">
                     <h3 className="font-medium text-gray-700">Chi tiết thời tiết</h3>
@@ -824,7 +843,7 @@ const RiverMapPage: NextPage = () => {
               </div>
             </div>
 
-            {/* Selected Position Data */}
+            {}
             {selectedPosition !== null && selectedPositionData && (
               <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                 <h2 className="text-xl font-semibold mb-4">
@@ -870,14 +889,14 @@ const RiverMapPage: NextPage = () => {
               </div>
             )}
 
-            {/* Line Chart */}
+            {}
             {showChart && (
               <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Biểu đồ nồng độ</h2>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(enabledSeries).map(([seriesName, enabled]) => {
-                      // Màu sắc và tên hiển thị cho từng series
+                      
                       const seriesConfig = {
                         'BOD5_sample0': { color: '#228B22', name: 'BOD5 mẫu 0', bgColor: 'bg-green-100' },
                         'BOD5_sample1': { color: '#FF8C00', name: 'BOD5 mẫu 1', bgColor: 'bg-orange-100' },
@@ -917,12 +936,12 @@ const RiverMapPage: NextPage = () => {
               </div>
             )}
 
-            {/* River Map */}
+            {}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              {/* Weather Status Bar - Chi tiết */}
+              {}
               <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200" style={{background: 'linear-gradient(to right, rgb(239 246 255), rgb(240 253 244)'}}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 text-sm">
-                  {/* Hàng 1: Thông tin cơ bản */}
+                  {}
                   <div className="flex items-center gap-2">
                     <span>🌧️</span>
                     <span><strong>Mưa thời tiết:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
@@ -983,7 +1002,7 @@ const RiverMapPage: NextPage = () => {
                   )}
                 </div>
                 
-                {/* Thông tin trạng thái */}
+                {}
                 <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4 text-xs text-gray-600">
                   {realtimeMode && weatherData && (
                     <span className="text-green-600 font-medium">
@@ -1016,7 +1035,7 @@ const RiverMapPage: NextPage = () => {
               </div>
             </div>
 
-            {/* Map of Cau Bay River */}
+            {}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
               <div className="flex justify-between items-center mb-4">
                 <div>

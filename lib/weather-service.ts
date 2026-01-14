@@ -1,23 +1,23 @@
-// OpenWeather API integration for realtime weather data
+
 import React from "react";
 
 export interface WeatherData {
-  temperature: number; // °C
-  rainfall: number; // mm/hr
+  temperature: number; 
+  rainfall: number; 
   location: string;
   timestamp: number;
-  // Thông tin chi tiết thêm
-  humidity: number; // %
-  pressure: number; // hPa
-  windSpeed: number; // m/s
-  windDirection: number; // độ
-  visibility: number; // m
-  cloudiness: number; // %
-  feelsLike: number; // °C
-  description: string; // mô tả thời tiết
-  icon: string; // icon code
-  sunrise: number; // timestamp
-  sunset: number; // timestamp
+  
+  humidity: number; 
+  pressure: number; 
+  windSpeed: number; 
+  windDirection: number; 
+  visibility: number; 
+  cloudiness: number; 
+  feelsLike: number; 
+  description: string; 
+  icon: string; 
+  sunrise: number; 
+  sunset: number; 
 }
 
 export class WeatherService {
@@ -28,9 +28,7 @@ export class WeatherService {
     this.apiKey = apiKey;
   }
 
-  /**
-   * Get current weather for Hanoi (default location for river simulation)
-   */
+  
   async getCurrentWeather(lat = 21.0285, lon = 105.8542): Promise<WeatherData> {
     try {
       const response = await fetch(
@@ -43,14 +41,14 @@ export class WeatherService {
 
       const data = await response.json();
 
-      // Extract rainfall from rain object
+      
       let rainfall = 0;
       if (data.rain) {
-        // OpenWeather provides rain.1h (last hour) or rain.3h (last 3 hours)
+        
         if (data.rain["1h"]) {
-          rainfall = data.rain["1h"]; // mm in last hour
+          rainfall = data.rain["1h"]; 
         } else if (data.rain["3h"]) {
-          rainfall = data.rain["3h"] / 3; // Convert 3h to mm/hr
+          rainfall = data.rain["3h"] / 3; 
         }
       }
 
@@ -74,7 +72,7 @@ export class WeatherService {
     } catch (error) {
       console.error("Failed to fetch weather data:", error);
 
-      // Return fallback data
+      
       return {
         temperature: 31,
         rainfall: 10,
@@ -89,8 +87,8 @@ export class WeatherService {
         feelsLike: 26,
         description: "clear sky",
         icon: "01d",
-        sunrise: Date.now() - 6 * 3600 * 1000, // 6 giờ trước
-        sunset: Date.now() + 12 * 3600 * 1000, // 12 giờ sau
+        sunrise: Date.now() - 6 * 3600 * 1000, 
+        sunset: Date.now() + 12 * 3600 * 1000, 
       };
     }
   }
@@ -111,7 +109,7 @@ export class WeatherService {
 
       const data = await response.json();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      
       return data.list.slice(0, hours / 3).map((item: any) => ({
         temperature: item.main.temp,
         rainfall: item.rain ? (item.rain["3h"] || 0) / 3 : 0,
@@ -136,7 +134,7 @@ export class WeatherService {
   }
 }
 
-// Singleton instance for the app
+
 let weatherService: WeatherService | null = null;
 
 export const getWeatherService = (): WeatherService => {
@@ -146,7 +144,7 @@ export const getWeatherService = (): WeatherService => {
       console.warn(
         "OpenWeather API key not found. Weather features will use fallback data.",
       );
-      // Create service with dummy key - will return fallback data
+      
       weatherService = new WeatherService("dummy");
     } else {
       weatherService = new WeatherService(apiKey);
@@ -155,7 +153,7 @@ export const getWeatherService = (): WeatherService => {
   return weatherService;
 };
 
-// Hook for React components to use weather data
+
 export const useWeatherData = (autoRefresh = false, interval = 300000) => {
   const [weatherData, setWeatherData] = React.useState<WeatherData | null>(
     null,

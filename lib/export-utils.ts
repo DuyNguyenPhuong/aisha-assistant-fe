@@ -21,13 +21,11 @@ export const generateExportData = (
   const exportData: ExportDataPoint[] = [];
   let tt = 1;
 
-  // Tạo một map để lấy tên cho các vị trí
   const positionNames = new Map<number, string>();
   RIVER_POSITIONS.forEach((rp, index) => {
     positionNames.set(rp.position, `${index + 1}. ${rp.name} Tại cống`);
   });
 
-  // Thêm các tên cho điểm trước và sau cống
   positionNames.set(1110, "2. Đài Tư Trước cống 2m");
   positionNames.set(1114, "2. Đài Tư Sau cống 2m");
   positionNames.set(3168, "3. An Lạc Trước cống 2m");
@@ -37,30 +35,24 @@ export const generateExportData = (
   positionNames.set(7068, "5. Đa Tốn Trước cống 2m");
   positionNames.set(7072, "5. Đa Tốn Sau cống 2m");
 
-  // Thêm điểm 0 (Sài Đồng)
   positionNames.set(0, "1. Sài Đồng Tại cống");
 
-  // Sử dụng CRITICAL_POSITIONS làm cơ sở, sau đó thêm các điểm trung gian
   const allPositions = new Set<number>();
   
-  // Thêm tất cả các điểm quan trọng
   CRITICAL_POSITIONS.forEach(pos => allPositions.add(pos));
 
-  // Thêm một số điểm trung gian giữa các cống để có đủ dữ liệu
   const additionalPoints = [
-    100, 300, 500, 700, 900, // giữa Sài Đồng và Đài Tư
-    1317, 1517, 1717, 1917, 2117, 2317, 2517, 2717, 2917, 3117, // giữa Đài Tư và An Lạc  
-    3375, 3575, 3775, 3975, 4175, 4375, // giữa An Lạc và Trâu Quỳ
-    4795, 4995, 5195, 5395, 5595, 5795, 5995, 6195, 6395, 6595, 6795, 6995, // giữa Trâu Quỳ và Đa Tốn
-    7275, 7475, 7675, 7875, // giữa Đa Tốn và Xuân Thụy
+    100, 300, 500, 700, 900,
+    1317, 1517, 1717, 1917, 2117, 2317, 2517, 2717, 2917, 3117,
+    3375, 3575, 3775, 3975, 4175, 4375,
+    4795, 4995, 5195, 5395, 5595, 5795, 5995, 6195, 6395, 6595, 6795, 6995,
+    7275, 7475, 7675, 7875,
   ];
   
   additionalPoints.forEach(pos => allPositions.add(pos));
 
-  // Chuyển Set thành Array và sort
   const sortedPositions = Array.from(allPositions).sort((a, b) => a - b);
 
-  // Generate data cho mỗi position
   sortedPositions.forEach((z) => {
     const data = calculateConcentration(z, rainfall, temperature);
     const viTri = positionNames.get(z) || `Z=${z}m`;
@@ -95,10 +87,8 @@ export const exportToCSV = (
     "NO3- Mẫu 1",
   ];
   
-  // Helper function to properly escape CSV fields
   const escapeCSVField = (field: any): string => {
     const str = String(field);
-    // If field contains comma, quote, or newline, wrap in quotes and escape quotes
     if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
       return `"${str.replace(/"/g, '""')}"`;
     }
@@ -114,7 +104,7 @@ export const exportToCSV = (
       [
         row.tt.toString(),
         escapeCSVField(row.viTri),
-        row.z.toString(), // Use toString() instead of toLocaleString() to avoid comma separators
+        row.z.toString(),
         row.bod5_sample1.toFixed(2),
         row.bod5_sample0.toFixed(2),
         row.nh4_sample1.toFixed(2),
@@ -132,10 +122,8 @@ export const downloadCSV = (
 ): void => {
   const csvContent = exportToCSV(data, rainfall, temperature);
   
-  // Use UTF-8 BOM for better compatibility with Excel and other applications
   const BOM = '\uFEFF';
   
-  // Create blob with explicit UTF-8 encoding
   const blob = new Blob([BOM + csvContent], {
     type: "text/csv;charset=utf-8;",
   });
@@ -153,7 +141,6 @@ export const downloadCSV = (
     link.click();
     document.body.removeChild(link);
     
-    // Clean up the object URL after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 };

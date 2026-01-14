@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-// Leaflet Map Component - Miễn phí thay thế cho Google Maps
 interface LeafletMapProps {
   lat: number;
   lng: number;
@@ -16,7 +15,6 @@ interface LeafletMapProps {
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     L: any;
   }
 }
@@ -32,16 +30,13 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
   selectedParameter = 'BOD5'
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Dynamically load Leaflet CSS and JS
     const loadLeaflet = async () => {
       try {
-        // Load CSS
         if (!document.querySelector('link[href*="leaflet.css"]')) {
           const cssLink = document.createElement('link');
           cssLink.rel = 'stylesheet';
@@ -51,7 +46,6 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
           document.head.appendChild(cssLink);
         }
 
-        // Load JS
         if (!window.L) {
           await new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -64,11 +58,10 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
           });
         }
 
-        // Load Heatmap plugin
         if (showHeatmap && !window.L.heatLayer) {
           await new Promise((resolve, reject) => {
             const heatScript = document.createElement('script');
-            heatScript.src = 'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js';
+            heatScript.src = 'https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js';
             heatScript.onload = resolve;
             heatScript.onerror = reject;
             document.head.appendChild(heatScript);
@@ -89,28 +82,23 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
     if (!isLoaded || !mapRef.current || mapInstanceRef.current) return;
 
     try {
-      // Initialize map
       const map = window.L.map(mapRef.current).setView([lat, lng], zoom);
 
-      // Add tile layer (OpenStreetMap - miễn phí)
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
 
-      // Add satellite layer option
       const satelliteLayer = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© <a href="https://www.esri.com/">Esri</a>, © <a href="https://www.digitalglobe.com/">DigitalGlobe</a>',
+        attribution: '© <a href="https://www.esri.com/">Esri</a>',
         maxZoom: 19
       });
 
-      // Add terrain layer option  
-      const terrainLayer = window.L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://opentopomap.org/">OpenTopoMap</a> (CC-BY-SA)',
+      const terrainLayer = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© <a href="https://www.esri.com/">Esri</a>',
         maxZoom: 17
       });
 
-      // Layer control
       const baseLayers = {
         "Bản đồ đường phố": window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors'
@@ -121,7 +109,6 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
 
       window.L.control.layers(baseLayers).addTo(map);
 
-      // Add marker for river starting point
       const marker = window.L.marker([lat, lng]).addTo(map);
       marker.bindPopup(`
         <div style="text-align: center; padding: 8px;">
@@ -136,48 +123,42 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         </div>
       `);
 
-      // Add heatmap if data provided
       if (showHeatmap && heatmapData.length > 0 && window.L.heatLayer) {
         const heatData = heatmapData.map(point => [point.lat, point.lng, point.intensity]);
         
-        // Thang màu động với màu đặc trưng cho từng chất
         let gradient = {};
         
         if (selectedParameter === 'BOD5' || selectedParameter === 'BOD0' || selectedParameter === 'BOD1') {
-          // BOD: Trắng → Đỏ
           gradient = {
-            0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
-            0.1: '#ffe6e6',  // Hồng rất nhạt
-            0.25: '#ffcccc', // Hồng nhạt
-            0.5: '#ff9999',  // Hồng
-            0.75: '#ff6666', // Đỏ nhạt
-            0.9: '#ff3333',  // Đỏ
-            1.0: '#ff0000'   // Đỏ đậm (giá trị cao nhất)
+            0.0: '#ffffff',
+            0.1: '#ffe6e6',
+            0.25: '#ffcccc',
+            0.5: '#ff9999',
+            0.75: '#ff6666',
+            0.9: '#ff3333',
+            1.0: '#ff0000'
           };
         } else if (selectedParameter === 'NH40' || selectedParameter === 'NH41') {
-          // NH4: Trắng → Vàng
           gradient = {
-            0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
-            0.1: '#ffffcc',  // Vàng rất nhạt
-            0.25: '#ffff99', // Vàng nhạt
-            0.5: '#ffff66',  // Vàng
-            0.75: '#ffff33', // Vàng đậm
-            0.9: '#ffff11',  // Vàng rất đậm
-            1.0: '#ffff00'   // Vàng đậm nhất (giá trị cao nhất)
+            0.0: '#ffffff',
+            0.1: '#ffffcc',
+            0.25: '#ffff99',
+            0.5: '#ffff66',
+            0.75: '#ffff33',
+            0.9: '#ffff11',
+            1.0: '#ffff00'
           };
         } else if (selectedParameter === 'NO3') {
-          // NO3: Trắng → Xanh lam
           gradient = {
-            0.0: '#ffffff',  // Trắng (giá trị thấp nhất)
-            0.1: '#e6f2ff',  // Xanh lam rất nhạt
-            0.25: '#ccddff', // Xanh lam nhạt
-            0.5: '#99ccff',  // Xanh lam
-            0.75: '#6699ff', // Xanh lam đậm
-            0.9: '#3366ff',  // Xanh lam rất đậm
-            1.0: '#0066ff'   // Xanh lam đậm nhất (giá trị cao nhất)
+            0.0: '#ffffff',
+            0.1: '#e6f2ff',
+            0.25: '#ccddff',
+            0.5: '#99ccff',
+            0.75: '#6699ff',
+            0.9: '#3366ff',
+            1.0: '#0066ff'
           };
         } else {
-          // Mặc định: Đỏ
           gradient = {
             0.0: '#ffffff',
             0.1: '#ffe6e6',
@@ -190,15 +171,14 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         }
         
         window.L.heatLayer(heatData, {
-          radius: 25,        // Tăng bán kính để dễ nhìn
-          blur: 18,          // Tăng blur để mượt hơn
+          radius: 25,
+          blur: 18,
           maxZoom: 17,
-          minOpacity: 0.3,   // Độ trong suốt tối thiểu
+          minOpacity: 0.3,
           gradient: gradient
         }).addTo(map);
       }
 
-      // Add scale control
       window.L.control.scale().addTo(map);
 
       mapInstanceRef.current = map;
@@ -267,7 +247,6 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         }}
       />
       
-      {/* Title overlay */}
       {title && (
         <div style={{
           position: 'absolute',
@@ -286,7 +265,6 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         </div>
       )}
 
-      {/* Info overlay */}
       <div style={{
         position: 'absolute',
         bottom: '10px',
