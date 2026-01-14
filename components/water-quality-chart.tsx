@@ -47,7 +47,7 @@ const LineChart: React.FC<LineChartProps> = ({
     y: number;
   } | null>(null);
   
-  // Zoom states
+  
   const [zoomLevel, setZoomLevel] = useState(1);
   const [yAxisRange, setYAxisRange] = useState<{
     min: number;
@@ -89,10 +89,10 @@ const LineChart: React.FC<LineChartProps> = ({
     const data: ChartData[] = [];
     const positionsToInclude = new Set<number>();
 
-    // Luôn bao gồm các điểm quan trọng
+    
     CRITICAL_POSITIONS.forEach(pos => positionsToInclude.add(pos));
 
-    // Thêm các điểm trung gian dựa trên samplingStep
+    
     for (
       let segmentIndex = 0;
       segmentIndex < RIVER_POSITIONS.length - 1;
@@ -101,11 +101,11 @@ const LineChart: React.FC<LineChartProps> = ({
       const currentGate = RIVER_POSITIONS[segmentIndex];
       const nextGate = RIVER_POSITIONS[segmentIndex + 1];
       
-      // Thêm điểm đầu và điểm cuối
+      
       positionsToInclude.add(currentGate.position);
       positionsToInclude.add(nextGate.position);
 
-      // Thêm các điểm trung gian
+      
       for (let i = 1; i <= samplingStep; i++) {
         const progress = i / (samplingStep + 1);
         const intermediatePosition =
@@ -115,10 +115,10 @@ const LineChart: React.FC<LineChartProps> = ({
       }
     }
 
-    // Chuyển Set thành Array và sort
+    
     const sortedPositions = Array.from(positionsToInclude).sort((a, b) => a - b);
 
-    // Tạo data cho mỗi position
+    
     sortedPositions.forEach(position => {
       const waterQuality = calculateConcentration(
         position,
@@ -126,7 +126,7 @@ const LineChart: React.FC<LineChartProps> = ({
         temperature,
       );
 
-      // Tìm tên cho position này
+      
       const namedPosition = RIVER_POSITIONS.find(rp => rp.position === position);
       const name = namedPosition ? namedPosition.name : "";
 
@@ -140,18 +140,18 @@ const LineChart: React.FC<LineChartProps> = ({
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
 
-  // Zoom functions
+  
   const handleZoomIn = () => {
     setZoomLevel(prev => {
       const newLevel = prev < 2 ? prev * 1.5 : prev < 10 ? prev * 1.2 : prev * 1.1;
-      return Math.min(newLevel, 50); // Tăng max zoom lên 50x
+      return Math.min(newLevel, 50); 
     });
   };
 
   const handleZoomOut = () => {
     setZoomLevel(prev => {
       const newLevel = prev > 5 ? prev / 1.1 : prev > 2 ? prev / 1.2 : prev / 1.5;
-      return Math.max(newLevel, 0.1); // Giảm min zoom xuống 0.1x
+      return Math.max(newLevel, 0.1); 
     });
   };
 
@@ -182,7 +182,7 @@ const LineChart: React.FC<LineChartProps> = ({
     
     if (minValue !== Infinity) {
       const range = maxValue - minValue;
-      const buffer = range * 0.05; // 5% buffer
+      const buffer = range * 0.05; 
       setYAxisRange({
         min: Math.max(0, minValue - buffer),
         max: maxValue + buffer,
@@ -217,14 +217,14 @@ const LineChart: React.FC<LineChartProps> = ({
       });
     });
     
-    // Nếu không có dữ liệu
+    
     if (minValue === Infinity) {
       return { min: 0, max: 1 };
     }
     
-    // Đảm bảo có range tối thiểu để tránh zoom quá gần
+    
     let range = maxValue - minValue;
-    const minRange = 0.001; // Range tối thiểu 0.001 mg/L
+    const minRange = 0.001; 
     if (range < minRange) {
       range = minRange;
       const center = (minValue + maxValue) / 2;
@@ -232,12 +232,12 @@ const LineChart: React.FC<LineChartProps> = ({
       maxValue = center + range / 2;
     }
     
-    // Áp dụng zoom level với logic cải tiến
+    
     const zoomedRange = Math.max(range / zoomLevel, minRange);
     const center = (minValue + maxValue) / 2;
     
-    // Buffer động dựa trên zoom level
-    const bufferPercent = Math.max(0.02, 0.1 / Math.sqrt(zoomLevel)); // Buffer giảm khi zoom in
+    
+    const bufferPercent = Math.max(0.02, 0.1 / Math.sqrt(zoomLevel)); 
     const buffer = zoomedRange * bufferPercent;
     
     const calculatedMin = center - zoomedRange / 2 - buffer;
@@ -273,19 +273,19 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.lineWidth = 1;
     
     RIVER_POSITIONS.forEach((riverPos) => {
-      // Tìm điểm có position chính xác bằng riverPos.position
+      
       const exactIndex = chartData.findIndex(d => d.position === riverPos.position);
       
       if (exactIndex >= 0) {
-        // Tìm thấy exact match, tính X dựa trên index thực tế
+        
         const x = padding + (exactIndex / (chartData.length - 1)) * chartWidth;
         ctx.beginPath();
         ctx.moveTo(x, padding);
         ctx.lineTo(x, cHeight - padding);
         ctx.stroke();
       } else {
-        // Backup: nếu không tìm thấy exact match, tính dựa trên tỷ lệ vị trí
-        // từ position đầu tiên đến cuối cùng trong chartData
+        
+        
         if (chartData.length > 0) {
           const firstPos = chartData[0].position;
           const lastPos = chartData[chartData.length - 1].position;
@@ -331,7 +331,7 @@ const LineChart: React.FC<LineChartProps> = ({
       const value = yMin + (yRange * (1 - i / gridSteps));
       const y = padding + (i / gridSteps) * chartHeight;
       
-      // Động precision dựa trên zoom level và range
+      
       let precision = 3;
       if (yRange < 0.001) precision = 6;
       else if (yRange < 0.01) precision = 5;
@@ -441,7 +441,7 @@ const LineChart: React.FC<LineChartProps> = ({
   };
   return (
     <div ref={containerRef} className="w-full max-w-full overflow-x-auto">
-      {/* Zoom Controls */}
+      {}
       <div className="mb-4 flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">🔍 Zoom:</span>

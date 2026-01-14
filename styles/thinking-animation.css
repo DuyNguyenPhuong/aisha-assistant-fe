@@ -39,7 +39,7 @@
   justify-content: flex-start;
 }
 
-/* Default (English) */
+
 :where(.aui-md[data-status='running']):empty::after {
   content: 'Thinking';
   position: relative;
@@ -48,19 +48,19 @@
   animation: text-cycle-en 9s ease infinite;
 }
 
-/* Russian */
+
 :where(.aui-lang-ru.aui-md[data-status='running']):empty::after {
   animation: text-cycle-ru 9s ease infinite;
 }
 
-/* Vietnamese */
+
 :where(.aui-lang-vi.aui-md[data-status='running']):empty::after {
   animation: text-cycle-vi 9s ease infinite;
 }
 
-/* English Text cycling animation */
+
 @keyframes text-cycle-en {
-  /* First text: "Thinking" */
+  
   0%,
   2% {
     content: 'Thinking...';
@@ -80,7 +80,7 @@
     transform: translateY(-10px);
   }
 
-  /* Second text: "Crafting response" */
+  
   33.1%,
   35% {
     content: 'Crafting response...';
@@ -100,7 +100,7 @@
     transform: translateY(-10px);
   }
 
-  /* Third text: "Almost there" */
+  
   66.1%,
   68% {
     content: 'Almost there...';
@@ -121,9 +121,9 @@
   }
 }
 
-/* Russian Text cycling animation */
+
 @keyframes text-cycle-ru {
-  /* First text: "Thinking" in Russian */
+  
   0%,
   2% {
     content: 'Думаю...';
@@ -143,7 +143,7 @@
     transform: translateY(-10px);
   }
 
-  /* Second text: "Crafting response" in Russian */
+  
   33.1%,
   35% {
     content: 'Формирую ответ...';
@@ -163,7 +163,7 @@
     transform: translateY(-10px);
   }
 
-  /* Third text: "Almost there" in Russian */
+  
   66.1%,
   68% {
     content: 'Почти готово...';
@@ -184,9 +184,9 @@
   }
 }
 
-/* Vietnamese Text cycling animation */
+
 @keyframes text-cycle-vi {
-  /* First text: "Thinking" in Vietnamese */
+  
   0%,
   2% {
     content: 'Đang suy nghĩ...';
@@ -206,7 +206,7 @@
     transform: translateY(-10px);
   }
 
-  /* Second text: "Crafting response" in Vietnamese */
+  
   33.1%,
   35% {
     content: 'Đang soạn câu trả lời...';
@@ -226,7 +226,7 @@
     transform: translateY(-10px);
   }
 
-  /* Third text: "Almost there" in Vietnamese */
+  
   66.1%,
   68% {
     content: 'Sắp xong...';

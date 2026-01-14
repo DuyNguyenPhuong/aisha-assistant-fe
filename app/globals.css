@@ -11,7 +11,6 @@
 }
 
 :root {
-  /* Industrial green palette */
   --background: #e9eee9;
   --foreground: #1a2e1a;
   --primary: #1e5631;
@@ -31,14 +30,12 @@
   --border: #d1d9d1;
   --input: #d1d9d1;
   --ring: #88a088;
-  /* Chart colors for data visualization */
   --chart-1: #1e5631;
   --chart-2: #3d5a45;
   --chart-3: #607c5e;
   --chart-4: #a3c986;
   --chart-5: #d1e0c5;
   --radius: 0.5rem;
-  /* Sidebar colors */
   --sidebar: #f5f7f5;
   --sidebar-foreground: #1a2e1a;
   --sidebar-primary: #1e5631;
@@ -50,7 +47,6 @@
 }
 
 .dark {
-  /* Industrial dark mode palette */
   --background: #1a2e1a;
   --foreground: #e9eee9;
   --card: #1a2e1a;
@@ -70,13 +66,11 @@
   --border: #2c3c2c;
   --input: #2c3c2c;
   --ring: #4d5e4d;
-  /* Dark mode chart colors */
   --chart-1: #2d7a45;
   --chart-2: #607c5e;
   --chart-3: #a3c986;
   --chart-4: #d1e0c5;
   --chart-5: #88a088;
-  /* Dark mode sidebar */
   --sidebar: #1e2e1e;
   --sidebar-foreground: #e9eee9;
   --sidebar-primary: #2d7a45;
@@ -136,14 +130,12 @@
 }
 
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
@@ -154,7 +146,6 @@ body {
   font-family: 'Outfit', sans-serif;
 }
 
-/* Add this to ensure the gradient covers the entire viewport */
 html,
 body {
   height: 100%;

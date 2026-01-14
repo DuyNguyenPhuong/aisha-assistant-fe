@@ -70,22 +70,22 @@ const interpolateColor = (
 };
 
 export const getColorFromValue = (value: number, scale: ColorScale): string => {
-  // Handle NaN and invalid values
+  
   if (!isFinite(value) || isNaN(value)) {
-    return "rgb(255, 255, 255)"; // Return white for invalid values
+    return "rgb(255, 255, 255)"; 
   }
   
-  // Handle invalid scale
+  
   if (!scale || !scale.colors || scale.colors.length < 2 || !isFinite(scale.min) || !isFinite(scale.max)) {
-    return "rgb(255, 255, 255)"; // Return white for invalid scale
+    return "rgb(255, 255, 255)"; 
   }
   
-  // Clamp value within the scale range
+  
   const clampedValue = Math.min(Math.max(value, scale.min), scale.max);
   
-  // Handle colorStops for multi-color gradients
+  
   if (scale.colorStops && scale.colorStops.length === scale.colors.length) {
-    // Find which segment the value falls into
+    
     for (let i = 0; i < scale.colorStops.length - 1; i++) {
       if (clampedValue >= scale.colorStops[i] && clampedValue <= scale.colorStops[i + 1]) {
         const segmentRange = scale.colorStops[i + 1] - scale.colorStops[i];
@@ -93,11 +93,11 @@ export const getColorFromValue = (value: number, scale: ColorScale): string => {
         return interpolateColor(scale.colors[i], scale.colors[i + 1], t);
       }
     }
-    // If value is exactly at the last stop
+    
     return interpolateColor(scale.colors[scale.colors.length - 2], scale.colors[scale.colors.length - 1], 1);
   }
   
-  // Fallback to original logic for simple 2-3 color gradients
+  
   const range = scale.max - scale.min;
   const normalizedValue = range > 0 ? (clampedValue - scale.min) / range : 0;
   
@@ -113,6 +113,6 @@ export const getColorFromValue = (value: number, scale: ColorScale): string => {
     return interpolateColor(scale.colors[0], scale.colors[1], normalizedValue);
   }
   
-  // Fallback
+  
   return "rgb(255, 255, 255)";
 };

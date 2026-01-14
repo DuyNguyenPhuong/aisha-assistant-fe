@@ -14,13 +14,11 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
   const mapId = 'cau-bay-3d-map';
 
   useEffect(() => {
-    // Check if Google Maps is available
     if (typeof window !== 'undefined' && window.google && window.google.maps) {
       initializeMap();
     } else {
-      // Load Google Maps API if not loaded
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=geometry,visualization&callback=initCauBayMap`;
+      script.src = `https:
       script.async = true;
       script.defer = true;
       
@@ -40,23 +38,20 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
     const mapElement = document.getElementById(mapId);
     if (!mapElement) return;
 
-    // Tọa độ bắt đầu sông Cầu Bây
     const riverStart = { lat: 21.032323, lng: 105.919651 };
 
-    // Tạo bản đồ 3D
     const map = new google.maps.Map(mapElement, {
       center: riverStart,
       zoom: 14,
       mapTypeId: google.maps.MapTypeId.SATELLITE,
-      tilt: 45, // Góc nghiêng để tạo hiệu ứng 3D
-      heading: 90, // Hướng camera
+      tilt: 45,
+      heading: 90,
       mapTypeControl: true,
       streetViewControl: true,
       fullscreenControl: true,
       zoomControl: true,
     });
 
-    // Các điểm trên sông Cầu Bây (ước tính dựa trên vị trí thực tế)
     const riverPoints = [
       { lat: 21.032323, lng: 105.919651, name: "Sài Đồng", position: 0 },
       { lat: 21.025847, lng: 105.925123, name: "Đài Tư", position: 1112 },
@@ -66,7 +61,6 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
       { lat: 20.998456, lng: 105.952567, name: "Xuân Thụy", position: 8013 }
     ];
 
-    // Tạo đường polyline cho sông
     const riverPath = new google.maps.Polyline({
       path: riverPoints,
       geodesic: true,
@@ -77,7 +71,6 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
 
     riverPath.setMap(map);
 
-    // Thêm marker cho từng điểm
     riverPoints.forEach((point, index) => {
       const marker = new google.maps.Marker({
         position: { lat: point.lat, lng: point.lng },
@@ -85,7 +78,7 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
         title: `${point.name} (${point.position}m)`,
         icon: {
           url: 'data:image/svg+xml;base64,' + btoa(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <svg xmlns="http:
               <circle cx="12" cy="12" r="8" fill="#2196F3" stroke="#ffffff" stroke-width="2"/>
               <text x="12" y="16" text-anchor="middle" fill="white" font-size="10">${index + 1}</text>
             </svg>
@@ -95,7 +88,6 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
         }
       });
 
-      // InfoWindow cho mỗi marker
       const infoWindow = new google.maps.InfoWindow({
         content: `
           <div style="padding: 8px;">
@@ -113,7 +105,6 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
       });
     });
 
-    // Thêm các hiệu ứng 3D buildings nếu có
     map.setOptions({
       styles: [
         {
@@ -164,7 +155,6 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
   );
 };
 
-// Declare global type for Google Maps callback
 declare global {
   interface Window {
     initCauBayMap?: () => void;
