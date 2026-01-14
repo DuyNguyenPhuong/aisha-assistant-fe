@@ -22,7 +22,7 @@ export interface WeatherData {
 
 export class WeatherService {
   private apiKey: string;
-  private baseUrl = "https:
+  private baseUrl = "https://api.openweathermap.org/data/2.5";
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;

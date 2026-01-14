@@ -40,7 +40,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         if (!document.querySelector('link[href*="leaflet.css"]')) {
           const cssLink = document.createElement('link');
           cssLink.rel = 'stylesheet';
-          cssLink.href = 'https:
+          cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
           cssLink.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
           cssLink.crossOrigin = '';
           document.head.appendChild(cssLink);

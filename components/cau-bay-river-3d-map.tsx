@@ -18,7 +18,7 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
       initializeMap();
     } else {
       const script = document.createElement('script');
-      script.src = `https:
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=geometry,places&callback=initCauBayMap`;
       script.async = true;
       script.defer = true;
       
@@ -78,7 +78,7 @@ const CauBayRiver3DMap: React.FC<CauBayRiver3DMapProps> = ({
         title: `${point.name} (${point.position}m)`,
         icon: {
           url: 'data:image/svg+xml;base64,' + btoa(`
-            <svg xmlns="http:
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="8" fill="#2196F3" stroke="#ffffff" stroke-width="2"/>
               <text x="12" y="16" text-anchor="middle" fill="white" font-size="10">${index + 1}</text>
             </svg>

@@ -814,7 +814,7 @@ const RiverMapPage: NextPage = () => {
                       <div className="mt-3 pt-2 border-t border-blue-200">
                         <div className="flex items-center gap-2">
                           <Image 
-                            src={`https:
+                            src={`https://openweathermap.org/img/wn/${weatherData.icon}@2x.png`}
                             alt={weatherData.description}
                             width={32}
                             height={32}
@@ -990,7 +990,7 @@ const RiverMapPage: NextPage = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Image 
-                          src={`https:
+                          src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`}
                           alt={weatherData.description}
                           width={24}
                           height={24}
