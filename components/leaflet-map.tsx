@@ -49,7 +49,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         if (!window.L) {
           await new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https:
+            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
             script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
             script.crossOrigin = '';
             script.onload = resolve;
@@ -61,7 +61,7 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
         if (showHeatmap && !window.L.heatLayer) {
           await new Promise((resolve, reject) => {
             const heatScript = document.createElement('script');
-            heatScript.src = 'https:
+            heatScript.src = 'https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js';
             heatScript.onload = resolve;
             heatScript.onerror = reject;
             document.head.appendChild(heatScript);
@@ -84,23 +84,23 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({
     try {
       const map = window.L.map(mapRef.current).setView([lat, lng], zoom);
 
-      window.L.tileLayer('https:
-        attribution: '© <a href="https:
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
 
-      const satelliteLayer = window.L.tileLayer('https:
-        attribution: '© <a href="https:
+      const satelliteLayer = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© <a href="https://www.esri.com/">Esri</a>',
         maxZoom: 19
       });
 
-      const terrainLayer = window.L.tileLayer('https:
-        attribution: '© <a href="https:
+      const terrainLayer = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© <a href="https://www.esri.com/">Esri</a>',
         maxZoom: 17
       });
 
       const baseLayers = {
-        "Bản đồ đường phố": window.L.tileLayer('https:
+        "Bản đồ đường phố": window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors'
         }),
         "Bản đồ vệ tinh": satelliteLayer,
