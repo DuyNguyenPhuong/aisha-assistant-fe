@@ -101,9 +101,9 @@ export const Thread: FC = () => {
             <ThreadScrollToBottom />
             <Composer />
           </div>
-          <ThreadPrimitive.Empty>
+          {/* <ThreadPrimitive.Empty>
             <PLCDataDisplay />
-          </ThreadPrimitive.Empty>
+          </ThreadPrimitive.Empty> */}
         </ThreadPrimitive.Viewport>
       </div>
     </ThreadPrimitive.Root>
