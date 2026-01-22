@@ -11,7 +11,7 @@ interface LineChartProps {
   height?: number;
   rainfall: number;
   temperature: number;
-  enabledSeries: {
+  enabledSeries?: {
     BOD5_sample0: boolean;
     BOD5_sample1: boolean;
     NH4_sample0: boolean;
@@ -30,7 +30,13 @@ const LineChart: React.FC<LineChartProps> = ({
   height = 400,
   rainfall,
   temperature,
-  enabledSeries,
+  enabledSeries = {
+    BOD5_sample0: true,
+    BOD5_sample1: false,
+    NH4_sample0: false,
+    NH4_sample1: false,
+    NO3_sample1: false,
+  },
   samplingStep,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,8 +52,8 @@ const LineChart: React.FC<LineChartProps> = ({
     x: number;
     y: number;
   } | null>(null);
-  
-  
+
+
   const [zoomLevel, setZoomLevel] = useState(1);
   const [yAxisRange, setYAxisRange] = useState<{
     min: number;
@@ -89,10 +95,10 @@ const LineChart: React.FC<LineChartProps> = ({
     const data: ChartData[] = [];
     const positionsToInclude = new Set<number>();
 
-    
+
     CRITICAL_POSITIONS.forEach(pos => positionsToInclude.add(pos));
 
-    
+
     for (
       let segmentIndex = 0;
       segmentIndex < RIVER_POSITIONS.length - 1;
@@ -100,12 +106,12 @@ const LineChart: React.FC<LineChartProps> = ({
     ) {
       const currentGate = RIVER_POSITIONS[segmentIndex];
       const nextGate = RIVER_POSITIONS[segmentIndex + 1];
-      
-      
+
+
       positionsToInclude.add(currentGate.position);
       positionsToInclude.add(nextGate.position);
 
-      
+
       for (let i = 1; i <= samplingStep; i++) {
         const progress = i / (samplingStep + 1);
         const intermediatePosition =
@@ -115,10 +121,10 @@ const LineChart: React.FC<LineChartProps> = ({
       }
     }
 
-    
+
     const sortedPositions = Array.from(positionsToInclude).sort((a, b) => a - b);
 
-    
+
     sortedPositions.forEach(position => {
       const waterQuality = calculateConcentration(
         position,
@@ -126,7 +132,7 @@ const LineChart: React.FC<LineChartProps> = ({
         temperature,
       );
 
-      
+
       const namedPosition = RIVER_POSITIONS.find(rp => rp.position === position);
       const name = namedPosition ? namedPosition.name : "";
 
@@ -140,18 +146,18 @@ const LineChart: React.FC<LineChartProps> = ({
     setChartData(data);
   }, [rainfall, temperature, samplingStep]);
 
-  
+
   const handleZoomIn = () => {
     setZoomLevel(prev => {
       const newLevel = prev < 2 ? prev * 1.5 : prev < 10 ? prev * 1.2 : prev * 1.1;
-      return Math.min(newLevel, 50); 
+      return Math.min(newLevel, 50);
     });
   };
 
   const handleZoomOut = () => {
     setZoomLevel(prev => {
       const newLevel = prev > 5 ? prev / 1.1 : prev > 2 ? prev / 1.2 : prev / 1.5;
-      return Math.max(newLevel, 0.1); 
+      return Math.max(newLevel, 0.1);
     });
   };
 
@@ -161,28 +167,28 @@ const LineChart: React.FC<LineChartProps> = ({
   };
 
   const handleAutoFitToSeries = () => {
-    if (chartData.length === 0) return;
-    
+    if (chartData.length === 0 || !enabledSeries) return;
+
     let minValue = Infinity;
     let maxValue = -Infinity;
-    
+
     chartData.forEach((point) => {
-      const values = [];
+      const values: number[] = [];
       if (enabledSeries.BOD5_sample0) values.push(point.data.BOD5_sample0);
       if (enabledSeries.BOD5_sample1) values.push(point.data.BOD5_sample1);
       if (enabledSeries.NH4_sample0) values.push(point.data.NH4_sample0);
       if (enabledSeries.NH4_sample1) values.push(point.data.NH4_sample1);
       if (enabledSeries.NO3_sample1) values.push(point.data.NO3_sample1);
-      
+
       values.forEach(value => {
         minValue = Math.min(minValue, value);
         maxValue = Math.max(maxValue, value);
       });
     });
-    
+
     if (minValue !== Infinity) {
       const range = maxValue - minValue;
-      const buffer = range * 0.05; 
+      const buffer = range * 0.05;
       setYAxisRange({
         min: Math.max(0, minValue - buffer),
         max: maxValue + buffer,
@@ -200,49 +206,51 @@ const LineChart: React.FC<LineChartProps> = ({
       return { min: yAxisRange.min, max: yAxisRange.max };
     }
 
+    if (!enabledSeries) return { min: 0, max: 1 };
+
     let minValue = Infinity;
     let maxValue = -Infinity;
-    
+
     chartData.forEach((point) => {
-      const values = [];
+      const values: number[] = [];
       if (enabledSeries.BOD5_sample0) values.push(point.data.BOD5_sample0);
       if (enabledSeries.BOD5_sample1) values.push(point.data.BOD5_sample1);
       if (enabledSeries.NH4_sample0) values.push(point.data.NH4_sample0);
       if (enabledSeries.NH4_sample1) values.push(point.data.NH4_sample1);
       if (enabledSeries.NO3_sample1) values.push(point.data.NO3_sample1);
-      
+
       values.forEach(value => {
         minValue = Math.min(minValue, value);
         maxValue = Math.max(maxValue, value);
       });
     });
-    
-    
+
+
     if (minValue === Infinity) {
       return { min: 0, max: 1 };
     }
-    
-    
+
+
     let range = maxValue - minValue;
-    const minRange = 0.001; 
+    const minRange = 0.001;
     if (range < minRange) {
       range = minRange;
       const center = (minValue + maxValue) / 2;
       minValue = center - range / 2;
       maxValue = center + range / 2;
     }
-    
-    
+
+
     const zoomedRange = Math.max(range / zoomLevel, minRange);
     const center = (minValue + maxValue) / 2;
-    
-    
-    const bufferPercent = Math.max(0.02, 0.1 / Math.sqrt(zoomLevel)); 
+
+
+    const bufferPercent = Math.max(0.02, 0.1 / Math.sqrt(zoomLevel));
     const buffer = zoomedRange * bufferPercent;
-    
+
     const calculatedMin = center - zoomedRange / 2 - buffer;
     const calculatedMax = center + zoomedRange / 2 + buffer;
-    
+
     return {
       min: Math.max(0, calculatedMin),
       max: calculatedMax
@@ -251,8 +259,9 @@ const LineChart: React.FC<LineChartProps> = ({
   const drawChart = (ctx: CanvasRenderingContext2D) => {
     const { width: cWidth, height: cHeight } = canvasSize;
     const padding = 60;
+    const bottomPadding = 80; // Increased bottom padding for X-axis title
     const chartWidth = cWidth - 2 * padding;
-    const chartHeight = cHeight - 2 * padding;
+    const chartHeight = cHeight - padding - bottomPadding;
     const yScale = getYScale();
     const yMin = yScale.min;
     const yMax = yScale.max;
@@ -262,39 +271,39 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(padding, cHeight - padding);
-    ctx.lineTo(cWidth - padding, cHeight - padding);
+    ctx.moveTo(padding, cHeight - bottomPadding);
+    ctx.lineTo(cWidth - padding, cHeight - bottomPadding);
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, cHeight - padding);
+    ctx.lineTo(padding, cHeight - bottomPadding);
     ctx.stroke();
     ctx.strokeStyle = "#eee";
     ctx.lineWidth = 1;
-    
+
     RIVER_POSITIONS.forEach((riverPos) => {
-      
+
       const exactIndex = chartData.findIndex(d => d.position === riverPos.position);
-      
+
       if (exactIndex >= 0) {
-        
+
         const x = padding + (exactIndex / (chartData.length - 1)) * chartWidth;
         ctx.beginPath();
         ctx.moveTo(x, padding);
-        ctx.lineTo(x, cHeight - padding);
+        ctx.lineTo(x, cHeight - bottomPadding);
         ctx.stroke();
       } else {
-        
-        
+
+
         if (chartData.length > 0) {
           const firstPos = chartData[0].position;
           const lastPos = chartData[chartData.length - 1].position;
           const positionRatio = (riverPos.position - firstPos) / (lastPos - firstPos);
           const x = padding + positionRatio * chartWidth;
-          
+
           ctx.beginPath();
           ctx.moveTo(x, padding);
-          ctx.lineTo(x, cHeight - padding);
+          ctx.lineTo(x, cHeight - bottomPadding);
           ctx.stroke();
         }
       }
@@ -307,8 +316,8 @@ const LineChart: React.FC<LineChartProps> = ({
       ctx.lineTo(cWidth - padding, y);
       ctx.stroke();
     }
-    ctx.fillStyle = "#666";
-    ctx.font = "11px Arial";
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
     RIVER_POSITIONS.forEach((riverPos) => {
       const dataIndex = chartData.findIndex(
@@ -316,41 +325,42 @@ const LineChart: React.FC<LineChartProps> = ({
       );
       if (dataIndex >= 0) {
         const x = padding + (dataIndex / (chartData.length - 1)) * chartWidth;
-        ctx.fillText(riverPos.name, x, cHeight - padding + 15);
-        ctx.font = "9px Arial";
-        ctx.fillStyle = "#999";
-        ctx.fillText(`${riverPos.position}m`, x, cHeight - padding + 28);
-        ctx.font = "11px Arial";
-        ctx.fillStyle = "#666";
+        ctx.fillText(riverPos.name, x, cHeight - bottomPadding + 15);
+        ctx.font = "bold 14px Arial";
+        ctx.fillStyle = "#000000";
+        ctx.fillText(`${riverPos.position}m`, x, cHeight - bottomPadding + 28);
+        ctx.font = "bold 16px Arial";
+        ctx.fillStyle = "#000000";
       }
     });
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    ctx.font = "11px Arial";
+    ctx.font = "bold 16px Arial";
+    ctx.fillStyle = "#000000";
     for (let i = 0; i <= gridSteps; i++) {
       const value = yMin + (yRange * (1 - i / gridSteps));
       const y = padding + (i / gridSteps) * chartHeight;
-      
-      
+
+
       let precision = 3;
       if (yRange < 0.001) precision = 6;
       else if (yRange < 0.01) precision = 5;
       else if (yRange < 0.1) precision = 4;
       else if (yRange > 100) precision = 1;
       else if (yRange > 10) precision = 2;
-      
+
       ctx.fillText(value.toFixed(precision), padding - 5, y);
     }
-    ctx.fillStyle = "#333";
-    ctx.font = "bold 14px Arial";
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Các cổng trên sông Cầu Bây", cWidth / 2, cHeight - 5);
-    ctx.save();
-    ctx.translate(15, cHeight / 2);
-    ctx.rotate(-Math.PI / 2);
+    ctx.fillText("Các cổng trên sông Cầu Bây", cWidth / 2, cHeight - bottomPadding + 50);
+    // Move "Nồng độ (mg/L)" to top center of chart
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Nồng độ (mg/L)", 0, 0);
-    ctx.restore();
+    ctx.fillText("Nồng độ (mg/L)", cWidth / 2, 20);
+    if (!enabledSeries) return;
     Object.entries(enabledSeries).forEach(([seriesName, enabled]) => {
       if (!enabled || chartData.length === 0) return;
       ctx.strokeStyle = seriesColors[seriesName as keyof typeof seriesColors];
@@ -360,7 +370,7 @@ const LineChart: React.FC<LineChartProps> = ({
         const x = padding + (i / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
         const normalizedValue = (value - yMin) / yRange;
-        const y = cHeight - padding - normalizedValue * chartHeight;
+        const y = cHeight - bottomPadding - normalizedValue * chartHeight;
         if (i === 0) {
           ctx.moveTo(x, y);
         } else {
@@ -373,7 +383,7 @@ const LineChart: React.FC<LineChartProps> = ({
         const x = padding + (index / (chartData.length - 1)) * chartWidth;
         const value = point.data[seriesName as keyof WaterQualityData];
         const normalizedValue = (value - yMin) / yRange;
-        const y = cHeight - padding - normalizedValue * chartHeight;
+        const y = cHeight - bottomPadding - normalizedValue * chartHeight;
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, 2 * Math.PI);
         ctx.fill();
@@ -415,12 +425,13 @@ const LineChart: React.FC<LineChartProps> = ({
     const canvasY = y * scaleY;
     setMousePosition({ x, y });
     const padding = 60;
+    const bottomPadding = 80;
     const chartWidth = canvasSize.width - 2 * padding;
     if (
       canvasX >= padding &&
       canvasX <= canvasSize.width - padding &&
       canvasY >= padding &&
-      canvasY <= canvasSize.height - padding
+      canvasY <= canvasSize.height - bottomPadding
     ) {
       const relativeX = (canvasX - padding) / chartWidth;
       const pointIndex = Math.round(relativeX * (chartData.length - 1));
@@ -441,17 +452,16 @@ const LineChart: React.FC<LineChartProps> = ({
   };
   return (
     <div ref={containerRef} className="w-full max-w-full overflow-x-auto">
-      {}
+      { }
       <div className="mb-4 flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">🔍 Zoom:</span>
           <button
             onClick={handleZoomOut}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-              zoomLevel <= 0.1 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${zoomLevel <= 0.1
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
             disabled={zoomLevel <= 0.1}
           >
             Zoom Out
@@ -461,17 +471,16 @@ const LineChart: React.FC<LineChartProps> = ({
           </span>
           <button
             onClick={handleZoomIn}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-              zoomLevel >= 50 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${zoomLevel >= 50
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
             disabled={zoomLevel >= 50}
           >
             Zoom In
           </button>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={handleResetZoom}
@@ -487,16 +496,15 @@ const LineChart: React.FC<LineChartProps> = ({
           </button>
           <button
             onClick={handleToggleAutoScale}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-              yAxisRange.auto 
-                ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-            }`}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${yAxisRange.auto
+              ? 'bg-orange-500 hover:bg-orange-600 text-white'
+              : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+              }`}
           >
             {yAxisRange.auto ? '🤖 Auto Scale' : '📐 Manual Scale'}
           </button>
         </div>
-        
+
         <div className="flex items-center gap-2 text-xs text-gray-600">
           {yAxisRange.auto ? (
             <>
@@ -517,10 +525,10 @@ const LineChart: React.FC<LineChartProps> = ({
             </>
           )}
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium text-gray-700">🎯 Quick Fit:</span>
-          {Object.entries(enabledSeries).filter(([_, enabled]) => enabled).map(([seriesName, _]) => {
+          {(enabledSeries ? Object.entries(enabledSeries) : []).filter(([_, enabled]) => enabled).map(([seriesName, _]) => {
             const getParameterRange = (paramName: string) => {
               let min = Infinity, max = -Infinity;
               chartData.forEach(point => {
@@ -574,14 +582,14 @@ const LineChart: React.FC<LineChartProps> = ({
           onMouseMove={handleResponsiveMouseMove}
           onMouseLeave={handleMouseLeave}
         />
-        {}
-        <div className="mt-4 flex flex-wrap gap-4 text-sm">
-          {Object.entries(enabledSeries).map(
+        { }
+        <div className="mt-4 flex flex-wrap gap-4 text-lg font-bold">
+          {(enabledSeries ? Object.entries(enabledSeries) : []).map(
             ([seriesName, enabled]) =>
               enabled && (
                 <div key={seriesName} className="flex items-center gap-2">
                   <div
-                    className="w-4 h-4 rounded"
+                    className="w-5 h-5 rounded"
                     style={{
                       backgroundColor:
                         seriesColors[seriesName as keyof typeof seriesColors],
@@ -594,7 +602,7 @@ const LineChart: React.FC<LineChartProps> = ({
               ),
           )}
         </div>
-        {}
+        { }
         {hoveredPoint && mousePosition && (
           <div
             className="absolute bg-black text-white px-4 py-3 rounded-lg shadow-lg text-xs pointer-events-none z-10 max-w-xs"
@@ -607,27 +615,27 @@ const LineChart: React.FC<LineChartProps> = ({
               Vị trí: {hoveredPoint.data.position.toFixed(0)}m
             </div>
             <div className="space-y-1">
-              {enabledSeries.BOD5_sample0 && (
+              {enabledSeries?.BOD5_sample0 && (
                 <div>
                   BOD5 (mẫu 0): {hoveredPoint.data.BOD5_sample0.toFixed(3)} mg/L
                 </div>
               )}
-              {enabledSeries.BOD5_sample1 && (
+              {enabledSeries?.BOD5_sample1 && (
                 <div>
                   BOD5 (mẫu 1): {hoveredPoint.data.BOD5_sample1.toFixed(3)} mg/L
                 </div>
               )}
-              {enabledSeries.NH4_sample0 && (
+              {enabledSeries?.NH4_sample0 && (
                 <div>
                   NH4+ (mẫu 0): {hoveredPoint.data.NH4_sample0.toFixed(3)} mg/L
                 </div>
               )}
-              {enabledSeries.NH4_sample1 && (
+              {enabledSeries?.NH4_sample1 && (
                 <div>
                   NH4+ (mẫu 1): {hoveredPoint.data.NH4_sample1.toFixed(3)} mg/L
                 </div>
               )}
-              {enabledSeries.NO3_sample1 && (
+              {enabledSeries?.NO3_sample1 && (
                 <div>
                   NO3- (mẫu 1): {hoveredPoint.data.NO3_sample1.toFixed(3)} mg/L
                 </div>
@@ -636,7 +644,7 @@ const LineChart: React.FC<LineChartProps> = ({
           </div>
         )}
       </div>
-      {}
+      { }
       <div className="mt-4 text-sm text-gray-600">
         <p>
           <strong>Thông số biểu đồ:</strong>
@@ -646,7 +654,7 @@ const LineChart: React.FC<LineChartProps> = ({
         <p>• Nhiệt độ: {temperature}°C</p>
         <p>
           • Số series đang hiển thị:{" "}
-          {Object.values(enabledSeries).filter(Boolean).length}
+          {enabledSeries ? Object.values(enabledSeries).filter(Boolean).length : 0}
         </p>
         <p>• Zoom level: {zoomLevel >= 10 ? zoomLevel.toFixed(0) : zoomLevel.toFixed(1)}x (0.1x - 50x)</p>
         <p>• Y-axis range: {yAxisRange.auto ? 'Auto-calculated with smart zoom' : `Manual: ${yAxisRange.min.toFixed(3)} - ${yAxisRange.max.toFixed(3)} mg/L`}</p>
