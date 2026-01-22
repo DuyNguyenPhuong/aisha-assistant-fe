@@ -544,8 +544,8 @@ const RiverMap: React.FC<RiverMapProps> = ({
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.fillStyle = "#333333";
-        ctx.font = "bold 12px Arial";
+        ctx.fillStyle = "#000000";
+        ctx.font = "bold 30px Arial";
         ctx.textAlign = "center";
         let textY = riverPoint.y - 25;
         let textX = riverPoint.x;
@@ -555,20 +555,20 @@ const RiverMap: React.FC<RiverMapProps> = ({
             textX = riverPoint.x - 30;
             break;
           case 1:
-            textY = riverPoint.y - 35;
-            textX = riverPoint.x + 30;
+            textY = riverPoint.y - 0;
+            textX = riverPoint.x + 80;
             break;
           case 2:
             textY = riverPoint.y;
-            textX = riverPoint.x - 45;
+            textX = riverPoint.x - 90;
             break;
           case 3:
-            textY = riverPoint.y;
-            textX = riverPoint.x + 45;
+            textY = riverPoint.y - 30;
+            textX = riverPoint.x + 60;
             break;
           case 4:
             textY = riverPoint.y + 45;
-            textX = riverPoint.x - 30;
+            textX = riverPoint.x - 60;
             break;
           case 5:
             textY = riverPoint.y + 45;
@@ -576,15 +576,15 @@ const RiverMap: React.FC<RiverMapProps> = ({
             break;
         }
         if (index === 0) {
-          textY = riverPoint.y - 35;
-          textX = riverPoint.x - 30;
+          textY = riverPoint.y - 0;
+          textX = riverPoint.x + 100;
         } else if (index === RIVER_POSITIONS.length - 1) {
           textY = riverPoint.y + 45;
           textX = riverPoint.x + 30;
         }
         ctx.fillText(position.name, textX, textY);
-        ctx.font = "12px Arial";
-        ctx.fillStyle = "#666666";
+        ctx.font = "bold 15px Arial";
+        ctx.fillStyle = "#000000";
         ctx.fillText(
           `${position.position.toLocaleString()}m`,
           textX,
@@ -608,18 +608,18 @@ const RiverMap: React.FC<RiverMapProps> = ({
       }
     }
   };
-  
+
   const calculateParameterRange = (parameter: 'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3') => {
     let minValue = Infinity;
     let maxValue = -Infinity;
     const sampleValues: number[] = [];
-    
-    
+
+
     for (let i = 0; i <= 80; i++) {
       const progress = i / 80;
       const positionMeters = progress * RIVER_LENGTH;
       const waterQuality = calculateConcentration(positionMeters, rainfall, temperature);
-      
+
       let value = 0;
       switch (parameter) {
         case 'BOD0':
@@ -638,31 +638,31 @@ const RiverMap: React.FC<RiverMapProps> = ({
           value = waterQuality.NO3_sample1;
           break;
       }
-      
+
       sampleValues.push(value);
       minValue = Math.min(minValue, value);
       maxValue = Math.max(maxValue, value);
     }
-    
+
     console.log(`📈 Parameter ${parameter} range: ${minValue.toFixed(2)} - ${maxValue.toFixed(2)}`);
-    console.log(`📊 Sample values:`, sampleValues.slice(0, 10).map(v => v.toFixed(2))); 
-    
+    console.log(`📊 Sample values:`, sampleValues.slice(0, 10).map(v => v.toFixed(2)));
+
     return { min: minValue, max: maxValue };
   };
 
   const drawHeatmap = (ctx: CanvasRenderingContext2D) => {
     if (!selectedParameter) return;
     console.log('🔥 Drawing heatmap for parameter:', selectedParameter);
-    const heatmapSegments = 150; 
-    
-    
+    const heatmapSegments = 150;
+
+
     const parameterRange = calculateParameterRange(selectedParameter);
     console.log('📊 Parameter range:', parameterRange);
-    
-    
+
+
     ctx.beginPath();
     ctx.strokeStyle = "rgba(200, 200, 200, 0.3)";
-    ctx.lineWidth = 50; 
+    ctx.lineWidth = 50;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     if (riverPoints.length > 0) {
@@ -692,7 +692,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
         rainfall,
         temperature,
       );
-      
+
       let value = 0;
       switch (selectedParameter) {
         case "BOD0":
@@ -711,15 +711,15 @@ const RiverMap: React.FC<RiverMapProps> = ({
           value = waterQuality.NO3_sample1;
           break;
       }
-      
-      
+
+
       let colorScale, range, minValue, maxValue;
-      
+
       if (heatmapMode === 'hard') {
-        
+
         const scaleKey = selectedParameter === 'BOD0' ? 'BOD0' : selectedParameter === 'BOD1' ? 'BOD5' : selectedParameter;
         const hardScale = COLOR_SCALES[scaleKey] || COLOR_SCALES.BOD5;
-        
+
         colorScale = {
           min: hardScale.min,
           max: hardScale.max,
@@ -730,23 +730,23 @@ const RiverMap: React.FC<RiverMapProps> = ({
         minValue = hardScale.min;
         maxValue = hardScale.max;
       } else {
-        
+
         colorScale = {
           min: parameterRange.min,
           max: parameterRange.max,
-          colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1' 
+          colors: selectedParameter === 'BOD0' || selectedParameter === 'BOD1'
             ? ["white", "lightpink", "red"]
             : selectedParameter === 'NH40' || selectedParameter === 'NH41'
-            ? ["white", "lightyellow", "gold"]
-            : selectedParameter === 'NO3'
-            ? ["white", "lightblue", "deepskyblue"]
-            : ["white", "lightpink", "red"] 
+              ? ["white", "lightyellow", "gold"]
+              : selectedParameter === 'NO3'
+                ? ["white", "lightblue", "deepskyblue"]
+                : ["white", "lightpink", "red"]
         };
         range = parameterRange.max - parameterRange.min;
         minValue = parameterRange.min;
         maxValue = parameterRange.max;
       }
-      
+
       const color = getColorFromValue(value, colorScale);
       const currentRiverIndex = Math.floor(progress * (riverPoints.length - 1));
       const nextRiverIndex = Math.floor(
@@ -756,15 +756,15 @@ const RiverMap: React.FC<RiverMapProps> = ({
       const nextPoint =
         riverPoints[Math.min(nextRiverIndex, riverPoints.length - 1)];
       if (currentPoint && nextPoint) {
-        
+
         if (i % 30 === 0) {
           const rangeInfo = heatmapMode === 'hard' ? `${minValue.toFixed(2)}-${maxValue.toFixed(2)} (hard)` : `${minValue.toFixed(2)}-${maxValue.toFixed(2)} (dynamic)`;
           console.log(`🎨 Heatmap Debug [${heatmapMode}] - Position: ${positionMeters.toFixed(0)}m, ${selectedParameter}: ${value.toFixed(2)}, Range: ${rangeInfo}, Color: ${color}`);
         }
-        
+
         ctx.beginPath();
         ctx.strokeStyle = color;
-        ctx.lineWidth = 45; 
+        ctx.lineWidth = 45;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.moveTo(currentPoint.x, currentPoint.y);
@@ -848,7 +848,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     drawRiver(ctx);
-  
+
   }, [
     width,
     height,
@@ -868,7 +868,7 @@ const RiverMap: React.FC<RiverMapProps> = ({
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
       />
-      {}
+      { }
       {mousePosition && hoveredWaterQuality && hoveredCoordinate && (
         <div
           className="absolute bg-black text-white px-4 py-3 rounded-lg shadow-lg text-xs pointer-events-none z-10 max-w-xs"
