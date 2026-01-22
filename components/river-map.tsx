@@ -544,8 +544,8 @@ const RiverMap: React.FC<RiverMapProps> = ({
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.fillStyle = "#333333";
-        ctx.font = "bold 12px Arial";
+        ctx.fillStyle = "#000000";
+        ctx.font = "bold 30px Arial";
         ctx.textAlign = "center";
         let textY = riverPoint.y - 25;
         let textX = riverPoint.x;
@@ -555,20 +555,20 @@ const RiverMap: React.FC<RiverMapProps> = ({
             textX = riverPoint.x - 30;
             break;
           case 1:
-            textY = riverPoint.y - 35;
-            textX = riverPoint.x + 30;
+            textY = riverPoint.y - 0;
+            textX = riverPoint.x + 80;
             break;
           case 2:
             textY = riverPoint.y;
-            textX = riverPoint.x - 45;
+            textX = riverPoint.x - 90;
             break;
           case 3:
-            textY = riverPoint.y;
-            textX = riverPoint.x + 45;
+            textY = riverPoint.y-30;
+            textX = riverPoint.x + 60;
             break;
           case 4:
             textY = riverPoint.y + 45;
-            textX = riverPoint.x - 30;
+            textX = riverPoint.x - 60;
             break;
           case 5:
             textY = riverPoint.y + 45;
@@ -576,15 +576,15 @@ const RiverMap: React.FC<RiverMapProps> = ({
             break;
         }
         if (index === 0) {
-          textY = riverPoint.y - 35;
-          textX = riverPoint.x - 30;
+          textY = riverPoint.y - 0;
+          textX = riverPoint.x + 100;
         } else if (index === RIVER_POSITIONS.length - 1) {
           textY = riverPoint.y + 45;
           textX = riverPoint.x + 30;
         }
         ctx.fillText(position.name, textX, textY);
-        ctx.font = "12px Arial";
-        ctx.fillStyle = "#666666";
+        ctx.font = "bold 15px Arial";
+        ctx.fillStyle = "#000000";
         ctx.fillText(
           `${position.position.toLocaleString()}m`,
           textX,
