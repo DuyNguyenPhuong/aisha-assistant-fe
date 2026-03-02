@@ -771,6 +771,22 @@ const RiverMapPage: NextPage = () => {
                   <div className="space-y-4 bg-blue-50 p-4 rounded-lg">
                     <h3 className="font-medium text-gray-700">Chi tiết thời tiết</h3>
                     <div className="space-y-2 text-sm">
+                      {/* Top row: highlight rainfall & temperature */}
+                      <div className="flex flex-col gap-2 mb-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-semibold text-blue-800">🌧️ Lượng mưa</span>
+                          <span className="px-2 py-1 rounded-full bg-blue-600 text-white text-sm font-bold shadow-sm">
+                            {weatherData.rainfall.toFixed(2)} mm/hr
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-semibold text-orange-800">🌡️ Nhiệt độ</span>
+                          <span className="px-2 py-1 rounded-full bg-orange-500 text-white text-sm font-bold shadow-sm">
+                            {weatherData.temperature.toFixed(2)}°C
+                          </span>
+                        </div>
+                      </div>
+
                       <div className="flex justify-between">
                         <span>📍 Vị trí:</span>
                         <span className="font-medium">{weatherData.location}</span>
