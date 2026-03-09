@@ -17,8 +17,8 @@ import { getColorFromValue, COLOR_SCALES } from '@/lib/water-quality/colors';
 
 const RiverMapPage: NextPage = () => {
   
-  const [rainfall, setRainfall] = useState(0);
-  const [temperature, setTemperature] = useState(26);
+  const [rainfall, setRainfall] = useState<number | null>(0);
+  const [temperature, setTemperature] = useState<number | null>(26);
   const [selectedParameter, setSelectedParameter] = useState<'BOD0' | 'BOD1' | 'NH40' | 'NH41' | 'NO3' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [selectedPositionData, setSelectedPositionData] = useState<WaterQualityData | null>(null);
@@ -73,7 +73,7 @@ const RiverMapPage: NextPage = () => {
         temperature: weatherData.temperature
       };
     }
-    return { rainfall, temperature };
+    return { rainfall: rainfall ?? 0, temperature: temperature ?? 26 };
   };
 
   
@@ -275,8 +275,8 @@ const RiverMapPage: NextPage = () => {
   
   useEffect(() => {
     if (!realtimeMode && selectedPosition !== null) {
-      const calculationRainfall = getCalculationRainfall(rainfall);
-      const calculationTemp = getCalculationTemperature(temperature);
+      const calculationRainfall = getCalculationRainfall(rainfall ?? 0);
+      const calculationTemp = getCalculationTemperature(temperature ?? 26);
       const newData = calculateConcentration(selectedPosition, calculationRainfall, calculationTemp);
       setSelectedPositionData(newData);
     }
@@ -485,11 +485,11 @@ const RiverMapPage: NextPage = () => {
                     </label>
                     <Input
                       type="number"
-                      value={realtimeMode ? getCurrentWeatherValues().rainfall : rainfall}
+                      value={realtimeMode ? getCurrentWeatherValues().rainfall : (rainfall ?? '')}
                       onChange={(e) => {
                         const value = e.target.value;
                         if (value === '') {
-                          setRainfall(0);
+                          setRainfall(null);
                         } else {
                           const numValue = parseFloat(value);
                           if (!isNaN(numValue)) {
@@ -509,11 +509,11 @@ const RiverMapPage: NextPage = () => {
                     </label>
                     <Input
                       type="number"
-                      value={realtimeMode ? getCurrentWeatherValues().temperature : temperature}
+                      value={realtimeMode ? getCurrentWeatherValues().temperature : (temperature ?? '')}
                       onChange={(e) => {
                         const value = e.target.value;
                         if (value === '') {
-                          setTemperature(25);
+                          setTemperature(null);
                         } else {
                           const numValue = parseFloat(value);
                           if (!isNaN(numValue)) {
