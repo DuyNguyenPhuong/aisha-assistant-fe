@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSidebar } from "@/components/ui/sidebar";
-import "../app/i18n";
+import "@/app/i18n";
 const SidebarLanguageToggle: React.FC = () => {
   const { i18n } = useTranslation();
   const { state } = useSidebar();

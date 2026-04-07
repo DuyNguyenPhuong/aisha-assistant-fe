@@ -26,12 +26,12 @@ import {
   PlusIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SidebarTrigger } from '../ui/sidebar';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { MarkdownText } from '@/components/assistant-ui/markdown-text';
 import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button';
 import { useThread } from '@assistant-ui/react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
 import { backendUrl } from '@/lib/constants';
 import { useTranslation } from 'react-i18next';

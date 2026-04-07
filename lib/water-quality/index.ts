@@ -1,5 +1,5 @@
 
-export { calculateConcentration } from '../water-quality-calculations';
+export { calculateConcentration } from '@/lib/water-quality-calculations';
 
 
 export type { WaterQualityData, RiverPosition, AlgorithmConstraintType } from './types';
