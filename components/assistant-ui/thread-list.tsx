@@ -8,8 +8,7 @@ import {
   ArchiveIcon,
   MessageSquare,
   ChevronRight,
-  MapPin,
-  List,
+  Plus,
 } from "lucide-react";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import {
@@ -28,7 +27,6 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import SidebarLanguageToggle from "@/components/language-toggle";
-import Link from "next/link";
 export const ThreadList: FC = () => {
   return (
     <ThreadListPrimitive.Root>
@@ -60,31 +58,14 @@ export const ThreadList: FC = () => {
 };
 const ThreadListNew: FC = () => {
   return (
-    <>
-      <ThreadListPrimitive.New asChild>
-        <Link href="/location">
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Location" className="cursor-pointer">
-              <MapPin className="w-4 h-4" />
-              <span>Location</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </Link>
-      </ThreadListPrimitive.New>
-      <ThreadListPrimitive.New asChild>
-        <Link href="/remember-list">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Remember List"
-              className="cursor-pointer"
-            >
-              <List className="w-4 h-4" />
-              <span>Remember List</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </Link>
-      </ThreadListPrimitive.New>
-    </>
+    <ThreadListPrimitive.New asChild>
+      <SidebarMenuItem>
+        <SidebarMenuButton tooltip="New chat" className="cursor-pointer">
+          <Plus className="w-4 h-4" />
+          <span>New chat</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </ThreadListPrimitive.New>
   );
 };
 const ThreadListItems: FC = () => {
