@@ -907,58 +907,58 @@ const RiverMap: React.FC<RiverMapProps> = ({
       )}
       <div className="mt-4 text-sm text-gray-600">
         <p>
-          <strong>Hệ thống sông Cầu Bây:</strong>
+          <strong>Cau Bay river system:</strong>
         </p>
         <p>
-          • <strong>Sông Cầu Bây</strong> (chính):{" "}
-          {RIVER_LENGTH.toLocaleString()}m - từ Sài Đồng đến Xuân Thụy
+          • <strong>Cau Bay River</strong> (main):{" "}
+          {RIVER_LENGTH.toLocaleString()} m — from Sai Dong to Xuan Thuy
         </p>
         <p>
-          • <strong>Sông Bắc Hưng Hải</strong> (phụ): Phía Nam, chảy Đông-Tây,
-          tiếp nhận sông Cầu Bây tại Xuân Thụy
+          • <strong>Bac Hung Hai River</strong> (tributary): to the south, flows
+          east–west; receives the Cau Bay River at Xuan Thuy
         </p>
         <hr className="my-2 border-gray-300" />
-        <p>• Lượng mưa hiện tại: {rainfall} mm/hr</p>
-        <p>• Nhiệt độ hiện tại: {temperature}°C</p>
+        <p>• Current rainfall: {rainfall} mm/hr</p>
+        <p>• Current temperature: {temperature}°C</p>
         <p>
-          • Chỉ có thể click và hover trên sông Cầu Bây để xem dữ liệu chất
-          lượng nước
+          • Click and hover only on the Cau Bay River to view water-quality
+          data
         </p>
         {selectedParameter && (
           <div>
             <p>
-              • Heatmap hiện tại: <strong>{selectedParameter}</strong>
+              • Active heatmap: <strong>{selectedParameter}</strong>
             </p>
             <div className="mt-2">
-              <p className="text-xs font-semibold mb-1">Thang màu {selectedParameter}:</p>
+              <p className="text-xs font-semibold mb-1">Color scale ({selectedParameter}):</p>
               <div className="flex items-center gap-1">
                 {selectedParameter.startsWith('BOD') ? (
                   <>
                     <div className="w-4 h-4 bg-green-400 border border-gray-300"></div>
-                    <span className="text-xs">Thấp</span>
+                    <span className="text-xs">Low</span>
                     <div className="w-4 h-4 bg-yellow-400 border border-gray-300"></div>
-                    <span className="text-xs">TB</span>
+                    <span className="text-xs">Mid</span>
                     <div className="w-4 h-4 bg-orange-400 border border-gray-300"></div>
                     <div className="w-4 h-4 bg-red-500 border border-gray-300"></div>
-                    <span className="text-xs">Cao</span>
+                    <span className="text-xs">High</span>
                   </>
                 ) : selectedParameter.startsWith('NH4') ? (
                   <>
                     <div className="w-4 h-4 bg-blue-400 border border-gray-300"></div>
-                    <span className="text-xs">Thấp</span>
+                    <span className="text-xs">Low</span>
                     <div className="w-4 h-4 bg-cyan-300 border border-gray-300"></div>
                     <div className="w-4 h-4 bg-yellow-300 border border-gray-300"></div>
                     <div className="w-4 h-4 bg-yellow-500 border border-gray-300"></div>
-                    <span className="text-xs">Cao</span>
+                    <span className="text-xs">High</span>
                   </>
                 ) : (
                   <>
                     <div className="w-4 h-4 bg-blue-100 border border-gray-300"></div>
-                    <span className="text-xs">Thấp</span>
+                    <span className="text-xs">Low</span>
                     <div className="w-4 h-4 bg-blue-300 border border-gray-300"></div>
                     <div className="w-4 h-4 bg-blue-500 border border-gray-300"></div>
                     <div className="w-4 h-4 bg-blue-700 border border-gray-300"></div>
-                    <span className="text-xs">Cao</span>
+                    <span className="text-xs">High</span>
                   </>
                 )}
               </div>

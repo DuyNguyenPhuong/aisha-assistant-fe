@@ -85,11 +85,11 @@ const LineChart: React.FC<LineChartProps> = ({
     NO3_sample1: "#90EE90",
   };
   const seriesLabels = {
-    BOD5_sample0: "BOD5 mẫu 0",
-    BOD5_sample1: "BOD5 mẫu 1",
-    NH4_sample0: "NH4+ mẫu 0",
-    NH4_sample1: "NH4+ mẫu 1",
-    NO3_sample1: "NO3- mẫu 1",
+    BOD5_sample0: "BOD5 sample 0",
+    BOD5_sample1: "BOD5 sample 1",
+    NH4_sample0: "NH4+ sample 0",
+    NH4_sample1: "NH4+ sample 1",
+    NO3_sample1: "NO3- sample 1",
   };
   useEffect(() => {
     const data: ChartData[] = [];
@@ -354,12 +354,12 @@ const LineChart: React.FC<LineChartProps> = ({
     ctx.fillStyle = "#000000";
     ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Các cổng trên sông Cầu Bây", cWidth / 2, cHeight - bottomPadding + 50);
+    ctx.fillText("Gates on Cau Bay River", cWidth / 2, cHeight - bottomPadding + 50);
     // Move "Nồng độ (mg/L)" to top center of chart
     ctx.fillStyle = "#000000";
     ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Nồng độ (mg/L)", cWidth / 2, 20);
+    ctx.fillText("Concentration (mg/L)", cWidth / 2, 20);
     if (!enabledSeries) return;
     Object.entries(enabledSeries).forEach(([seriesName, enabled]) => {
       if (!enabled || chartData.length === 0) return;
@@ -617,27 +617,27 @@ const LineChart: React.FC<LineChartProps> = ({
             <div className="space-y-1">
               {enabledSeries?.BOD5_sample0 && (
                 <div>
-                  BOD5 (mẫu 0): {hoveredPoint.data.BOD5_sample0.toFixed(3)} mg/L
+                  BOD5 (sample 0): {hoveredPoint.data.BOD5_sample0.toFixed(3)} mg/L
                 </div>
               )}
               {enabledSeries?.BOD5_sample1 && (
                 <div>
-                  BOD5 (mẫu 1): {hoveredPoint.data.BOD5_sample1.toFixed(3)} mg/L
+                  BOD5 (sample 1): {hoveredPoint.data.BOD5_sample1.toFixed(3)} mg/L
                 </div>
               )}
               {enabledSeries?.NH4_sample0 && (
                 <div>
-                  NH4+ (mẫu 0): {hoveredPoint.data.NH4_sample0.toFixed(3)} mg/L
+                  NH4+ (sample 0): {hoveredPoint.data.NH4_sample0.toFixed(3)} mg/L
                 </div>
               )}
               {enabledSeries?.NH4_sample1 && (
                 <div>
-                  NH4+ (mẫu 1): {hoveredPoint.data.NH4_sample1.toFixed(3)} mg/L
+                  NH4+ (sample 1): {hoveredPoint.data.NH4_sample1.toFixed(3)} mg/L
                 </div>
               )}
               {enabledSeries?.NO3_sample1 && (
                 <div>
-                  NO3- (mẫu 1): {hoveredPoint.data.NO3_sample1.toFixed(3)} mg/L
+                  NO3- (sample 1): {hoveredPoint.data.NO3_sample1.toFixed(3)} mg/L
                 </div>
               )}
             </div>
