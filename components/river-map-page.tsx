@@ -107,16 +107,16 @@ export default function RiverMapPage() {
 
   
   const getWindDirection = (degrees: number): string => {
-    const directions = ['Bắc', 'Đông Bắc', 'Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc'];
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     const index = Math.round(degrees / 45) % 8;
     return directions[index];
   };
 
   
   const getPressureStatus = (pressure: number): string => {
-    if (pressure < 1000) return '(Thấp)';
-    if (pressure > 1020) return '(Cao)';
-    return '(Bình thường)';
+    if (pressure < 1000) return '(Low)';
+    if (pressure > 1020) return '(High)';
+    return '(Normal)';
   };
 
   
@@ -142,10 +142,10 @@ export default function RiverMapPage() {
     if (cloudiness <= 30) score += 2;
     else if (cloudiness <= 60) score += 1;
     
-    if (score >= 7) return { level: 'Rất tốt', color: 'text-green-600', emoji: '🌟' };
-    if (score >= 5) return { level: 'Tốt', color: 'text-blue-600', emoji: '😊' };
-    if (score >= 3) return { level: 'Khá', color: 'text-yellow-600', emoji: '😐' };
-    return { level: 'Kém', color: 'text-red-600', emoji: '😷' };
+    if (score >= 7) return { level: 'Excellent', color: 'text-green-600', emoji: '🌟' };
+    if (score >= 5) return { level: 'Good', color: 'text-blue-600', emoji: '😊' };
+    if (score >= 3) return { level: 'Moderate', color: 'text-yellow-600', emoji: '😐' };
+    return { level: 'Poor', color: 'text-red-600', emoji: '😷' };
   };
 
   
@@ -196,19 +196,19 @@ export default function RiverMapPage() {
         'NH41': '0-15.3',
         'NO3': '0-15.55'
       };
-      description = `Cứng (${hardRanges[param]} mg/L)`;
+      description = `Fixed (${hardRanges[param]} mg/L)`;
     } else {
       
       if (range.max !== -Infinity && range.min !== Infinity) {
         if (range.max === range.min) {
           
-          description = `Động (${range.min.toFixed(2)} mg/L)`;
+          description = `Dynamic (${range.min.toFixed(2)} mg/L)`;
         } else {
           
-          description = `Động (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
+          description = `Dynamic (${range.min.toFixed(2)}-${range.max.toFixed(2)} mg/L)`;
         }
       } else {
-        description = 'Đang tính toán...';
+        description = 'Calculating...';
       }
     }
     
@@ -257,7 +257,7 @@ export default function RiverMapPage() {
       
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300';
-      notification.innerHTML = `🔄 Đã cập nhật dữ liệu thời tiết<br>🌧️ Mưa: ${weatherData.rainfall} mm/hr → ${getCalculationRainfall(weatherData.rainfall).toFixed(1)} mm/hr<br>🌡️ Nhiệt độ: ${weatherData.temperature}°C → ${getCalculationTemperature(weatherData.temperature).toFixed(1)}°C`;
+      notification.innerHTML = `🔄 Weather data updated<br>🌧️ Rain: ${weatherData.rainfall} mm/hr → ${getCalculationRainfall(weatherData.rainfall).toFixed(1)} mm/hr<br>🌡️ Temperature: ${weatherData.temperature}°C → ${getCalculationTemperature(weatherData.temperature).toFixed(1)}°C`;
       document.body.appendChild(notification);
       
       
@@ -466,7 +466,7 @@ export default function RiverMapPage() {
               <Button variant="outline" size="sm" asChild className="gap-1.5">
                 <Link href="/">
                   <ArrowLeft className="size-4" aria-hidden />
-                  Quay lại
+                  Back
                 </Link>
               </Button>
             )}
@@ -476,24 +476,24 @@ export default function RiverMapPage() {
           <div className="max-w-7xl mx-auto mt-16">
             <header className="text-center mb-8">
               <h1 className="text-4xl font-bold text-gray-800">
-                Mô phỏng Chất lượng Nước Sông
+                River Water Quality Simulation
               </h1>
               <p className="mt-2 text-gray-600">
-                Hệ thống mô phỏng nồng độ 5 đại lượng trên dòng sông dài 8,013m
+                Simulates concentrations of five constituents along an 8,013 m river reach
               </p>
             </header>
 
             {}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-6">Bảng điều khiển</h2>
+              <h2 className="text-xl font-semibold mb-6">Control panel</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {}
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-700">Thông số thời tiết</h3>
+                  <h3 className="font-medium text-gray-700">Weather inputs</h3>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Lượng mưa (mm/hr)
+                      Rainfall (mm/hr)
                     </label>
                     <Input
                       type="number"
@@ -517,7 +517,7 @@ export default function RiverMapPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Nhiệt độ (°C)
+                      Temperature (°C)
                     </label>
                     <Input
                       type="number"
@@ -545,20 +545,20 @@ export default function RiverMapPage() {
                     className="w-full"
                     type="button"
                   >
-                    {realtimeMode ? '🔴 Tắt Realtime' : '🟢 Bật Realtime'}
+                    {realtimeMode ? '🔴 Turn off realtime' : '🟢 Turn on realtime'}
                   </Button>
                   {realtimeMode && (
                     <div className="text-xs text-gray-500 text-center space-y-1">
                       {weatherLoading ? (
-                        <div className="text-blue-600 font-medium">🔄 Đang tải dữ liệu thời tiết...</div>
+                        <div className="text-blue-600 font-medium">🔄 Loading weather data...</div>
                       ) : weatherData ? (
                         <div>
-                          <div className="text-green-600 font-medium">✅ Kết nối OpenWeather API thành công</div>
-                          <div>📅 Cập nhật lúc: {new Date(weatherData.timestamp).toLocaleString('vi-VN')}</div>
-                          <div className="text-blue-600">⏱️ Tự động cập nhật mỗi 5 phút</div>
+                          <div className="text-green-600 font-medium">✅ Connected to OpenWeather API</div>
+                          <div>📅 Updated: {new Date(weatherData.timestamp).toLocaleString('en-US')}</div>
+                          <div className="text-blue-600">⏱️ Auto-refreshes every 5 minutes</div>
                         </div>
                       ) : (
-                        <div className="text-amber-600">⏳ Chờ dữ liệu thời tiết từ API...</div>
+                        <div className="text-amber-600">⏳ Waiting for weather data from API...</div>
                       )}
                     </div>
                   )}
@@ -566,26 +566,26 @@ export default function RiverMapPage() {
 
                 {}
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-700">Chọn vị trí (Z)</h3>
+                  <h3 className="font-medium text-gray-700">Select position (Z)</h3>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Nhập vị trí (0-8013m)
+                      Enter position (0–8013 m)
                     </label>
                     <div className="flex gap-2">
                       <Input
                         type="number"
                         value={manualPosition}
                         onChange={(e) => setManualPosition(e.target.value)}
-                        placeholder="Vị trí (m)"
+                        placeholder="Position (m)"
                         min="0"
                         max="8013"
                       />
-                      <Button onClick={handleManualPositionSubmit} type="button">Đi</Button>
+                      <Button onClick={handleManualPositionSubmit} type="button">Go</Button>
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Vị trí preset
+                      Preset positions
                     </label>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {RIVER_POSITIONS.map((pos, idx) => (
@@ -618,12 +618,12 @@ export default function RiverMapPage() {
                       className="w-full"
                       type="button"
                     >
-                      {heatmapMode === 'dynamic' ? '🎯 Chế độ: Giá trị động' : '📊 Chế độ: Giá trị cứng'}
+                      {heatmapMode === 'dynamic' ? '🎯 Mode: dynamic scale' : '📊 Mode: fixed scale'}
                     </Button>
                     <div className="text-xs text-gray-500 mt-1 text-center">
                       {heatmapMode === 'dynamic' 
-                        ? 'Dựa trên min/max thực tế của mỗi chất' 
-                        : 'Dựa trên thang đo tiêu chuẩn cố định'
+                        ? 'Based on actual min/max for each parameter' 
+                        : 'Based on a fixed standard scale'
                       }
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export default function RiverMapPage() {
                       type="button"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span className="font-medium">BOD5 mẫu 0</span>
+                        <span className="font-medium">BOD5 sample 0</span>
                         <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('BOD0').gradientStyle}></div>
                         <span className="text-xs opacity-70">{getParameterColorInfo('BOD0').description}</span>
                       </div>
@@ -651,7 +651,7 @@ export default function RiverMapPage() {
                       type="button"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span className="font-medium">BOD5 mẫu 1</span>
+                        <span className="font-medium">BOD5 sample 1</span>
                         <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('BOD1').gradientStyle}></div>
                         <span className="text-xs opacity-70">{getParameterColorInfo('BOD1').description}</span>
                       </div>
@@ -665,7 +665,7 @@ export default function RiverMapPage() {
                       type="button"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span className="font-medium">NH4+ mẫu 0</span>
+                        <span className="font-medium">NH4+ sample 0</span>
                         <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('NH40').gradientStyle}></div>
                         <span className="text-xs opacity-70">{getParameterColorInfo('NH40').description}</span>
                       </div>
@@ -679,7 +679,7 @@ export default function RiverMapPage() {
                       type="button"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span className="font-medium">NH4+ mẫu 1</span>
+                        <span className="font-medium">NH4+ sample 1</span>
                         <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('NH41').gradientStyle}></div>
                         <span className="text-xs opacity-70">{getParameterColorInfo('NH41').description}</span>
                       </div>
@@ -693,7 +693,7 @@ export default function RiverMapPage() {
                       type="button"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span className="font-medium">NO3- mẫu 1</span>
+                        <span className="font-medium">NO3- sample 1</span>
                         <div className="w-16 h-2 rounded-full border border-gray-300" style={getParameterColorInfo('NO3').gradientStyle}></div>
                         <span className="text-xs opacity-70">{getParameterColorInfo('NO3').description}</span>
                       </div>
@@ -705,46 +705,46 @@ export default function RiverMapPage() {
                     className="w-full"
                     type="button"
                   >
-                    Tắt Heatmap
+                    Turn off heatmap
                   </Button>
                 </div>
 
                 {}
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-700">Biểu đồ</h3>
+                  <h3 className="font-medium text-gray-700">Chart</h3>
                   <Button
                     onClick={() => setShowChart(!showChart)}
                     variant={showChart ? "default" : "outline"}
                     className="w-full"
                     type="button"
                   >
-                    {showChart ? '📈 Ẩn biểu đồ' : '📊 Hiện biểu đồ'}
+                    {showChart ? '📈 Hide chart' : '📊 Show chart'}
                   </Button>
                   
                   {}
                   {showChart && (
                     <div className="bg-gray-50 p-3 rounded border text-xs">
-                      <div className="font-medium text-gray-700 mb-2">🎨 Màu sắc đường:</div>
+                      <div className="font-medium text-gray-700 mb-2">🎨 Line colors:</div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#228B22'}}></div>
-                          <span>BOD5 mẫu 0</span>
+                          <span>BOD5 sample 0</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#FF8C00'}}></div>
-                          <span>BOD5 mẫu 1</span>
+                          <span>BOD5 sample 1</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#663399'}}></div>
-                          <span>NH4+ mẫu 0</span>
+                          <span>NH4+ sample 0</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#1E90FF'}}></div>
-                          <span>NH4+ mẫu 1</span>
+                          <span>NH4+ sample 1</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#90EE90'}}></div>
-                          <span>NO3- mẫu 1</span>
+                          <span>NO3- sample 1</span>
                         </div>
                       </div>
                     </div>
@@ -752,20 +752,20 @@ export default function RiverMapPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Điểm lấy mẫu giữa các cổng
+                      Sampling points between gates
                     </label>
                     <select
                       value={samplingStep}
                       onChange={(e) => setSamplingStep(parseInt(e.target.value))}
                       className="w-full p-2 border rounded text-sm"
                     >
-                      <option value={1}>1 điểm/segment (11 điểm tổng)</option>
-                      <option value={2}>2 điểm/segment (16 điểm tổng)</option>
-                      <option value={5}>5 điểm/segment (31 điểm tổng)</option>
-                      <option value={10}>10 điểm/segment (56 điểm tổng)</option>
+                      <option value={1}>1 point/segment (11 total)</option>
+                      <option value={2}>2 points/segment (16 total)</option>
+                      <option value={5}>5 points/segment (31 total)</option>
+                      <option value={10}>10 points/segment (56 total)</option>
                     </select>
                     <div className="text-xs text-gray-500 mt-1">
-                      💡 Số điểm hiển thị giữa mỗi cặp cổng liền kề
+                      💡 Points plotted between each adjacent pair of gates
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -781,18 +781,18 @@ export default function RiverMapPage() {
                 {}
                 {realtimeMode && weatherData && (
                   <div className="space-y-4 bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-medium text-gray-700">Chi tiết thời tiết</h3>
+                    <h3 className="font-medium text-gray-700">Weather details</h3>
                     <div className="space-y-2 text-sm">
                       {/* Top row: highlight rainfall & temperature */}
                       <div className="flex flex-col gap-2 mb-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-semibold text-blue-800">🌧️ Lượng mưa</span>
+                          <span className="text-xs font-semibold text-blue-800">🌧️ Rainfall</span>
                           <span className="px-2 py-1 rounded-full bg-blue-600 text-white text-sm font-bold shadow-sm">
                             {weatherData.rainfall.toFixed(2)} mm/hr
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-semibold text-orange-800">🌡️ Nhiệt độ</span>
+                          <span className="text-xs font-semibold text-orange-800">🌡️ Temperature</span>
                           <span className="px-2 py-1 rounded-full bg-orange-500 text-white text-sm font-bold shadow-sm">
                             {weatherData.temperature.toFixed(2)}°C
                           </span>
@@ -800,43 +800,43 @@ export default function RiverMapPage() {
                       </div>
 
                       <div className="flex justify-between">
-                        <span>📍 Vị trí:</span>
+                        <span>📍 Location:</span>
                         <span className="font-medium">{weatherData.location}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>🌅 Bình minh:</span>
+                        <span>🌅 Sunrise:</span>
                         <span className="font-medium">{new Date(weatherData.sunrise).toLocaleTimeString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>🌇 Hoàng hôn:</span>
+                        <span>🌇 Sunset:</span>
                         <span className="font-medium">{new Date(weatherData.sunset).toLocaleTimeString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>🌡️ Cảm giác:</span>
+                        <span>🌡️ Feels like:</span>
                         <span className="font-medium">{weatherData.feelsLike.toFixed(1)}°C</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>💧 Độ ẩm:</span>
+                        <span>💧 Humidity:</span>
                         <span className="font-medium">{weatherData.humidity}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>⚡ Áp suất:</span>
+                        <span>⚡ Pressure:</span>
                         <span className="font-medium">{weatherData.pressure} hPa {getPressureStatus(weatherData.pressure)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>🌬️ Gió:</span>
+                        <span>🌬️ Wind:</span>
                         <span className="font-medium">{weatherData.windSpeed.toFixed(1)} m/s</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>🧭 Hướng:</span>
+                        <span>🧭 Direction:</span>
                         <span className="font-medium">{getWindDirection(weatherData.windDirection)} ({weatherData.windDirection}°)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>👁️ Tầm nhìn:</span>
+                        <span>👁️ Visibility:</span>
                         <span className="font-medium">{(weatherData.visibility / 1000).toFixed(1)} km</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>☁️ Mây che:</span>
+                        <span>☁️ Cloud cover:</span>
                         <span className="font-medium">{weatherData.cloudiness}%</span>
                       </div>
                       <div className="mt-3 pt-2 border-t border-blue-200">
@@ -851,7 +851,7 @@ export default function RiverMapPage() {
                           <span className="text-xs capitalize">{weatherData.description}</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-2">
-                          Cập nhật: {new Date(weatherData.timestamp).toLocaleString()}
+                          Updated: {new Date(weatherData.timestamp).toLocaleString()}
                         </div>
                         <div className="mt-3 pt-2 border-t border-blue-200">
                           {(() => {
@@ -859,7 +859,7 @@ export default function RiverMapPage() {
                             return (
                               <div className={`flex items-center gap-2 ${quality.color} font-medium`}>
                                 <span>{quality.emoji}</span>
-                                <span>Chất lượng không khí: {quality.level}</span>
+                                <span>Air quality: {quality.level}</span>
                               </div>
                             );
                           })()}
@@ -875,41 +875,41 @@ export default function RiverMapPage() {
             {selectedPosition !== null && selectedPositionData && (
               <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                 <h2 className="text-xl font-semibold mb-4">
-                  Nồng độ tại vị trí {selectedPosition.toFixed(0)}m
+                  Concentration at {selectedPosition.toFixed(0)} m
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                   <div className="bg-green-50 p-3 rounded border" style={{borderColor: '#228B22'}}>
                     <div className="flex items-center gap-2 font-medium text-green-800">
                       <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#228B22'}}></div>
-                      BOD5 mẫu 0
+                      BOD5 sample 0
                     </div>
                     <div className="text-green-700 font-semibold">{selectedPositionData.BOD5_sample0.toFixed(3)} mg/L</div>
                   </div>
                   <div className="bg-orange-50 p-3 rounded border" style={{borderColor: '#FF8C00'}}>
                     <div className="flex items-center gap-2 font-medium text-orange-800">
                       <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#FF8C00'}}></div>
-                      BOD5 mẫu 1
+                      BOD5 sample 1
                     </div>
                     <div className="text-orange-700 font-semibold">{selectedPositionData.BOD5_sample1.toFixed(3)} mg/L</div>
                   </div>
                   <div className="bg-purple-50 p-3 rounded border" style={{borderColor: '#663399'}}>
                     <div className="flex items-center gap-2 font-medium text-purple-800">
                       <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#663399'}}></div>
-                      NH4+ mẫu 0
+                      NH4+ sample 0
                     </div>
                     <div className="text-purple-700 font-semibold">{selectedPositionData.NH4_sample0.toFixed(3)} mg/L</div>
                   </div>
                   <div className="bg-blue-50 p-3 rounded border" style={{borderColor: '#1E90FF'}}>
                     <div className="flex items-center gap-2 font-medium text-blue-800">
                       <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#1E90FF'}}></div>
-                      NH4+ mẫu 1
+                      NH4+ sample 1
                     </div>
                     <div className="text-blue-700 font-semibold">{selectedPositionData.NH4_sample1.toFixed(3)} mg/L</div>
                   </div>
                   <div className="bg-green-50 p-3 rounded border" style={{borderColor: '#90EE90'}}>
                     <div className="flex items-center gap-2 font-medium text-green-700">
                       <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#90EE90'}}></div>
-                      NO3- mẫu 1
+                      NO3- sample 1
                     </div>
                     <div className="text-green-600 font-semibold">{selectedPositionData.NO3_sample1.toFixed(3)} mg/L</div>
                   </div>
@@ -921,16 +921,16 @@ export default function RiverMapPage() {
             {showChart && (
               <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Biểu đồ nồng độ</h2>
+                  <h2 className="text-xl font-semibold">Concentration chart</h2>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(enabledSeries).map(([seriesName, enabled]) => {
                       
                       const seriesConfig = {
-                        'BOD5_sample0': { color: '#228B22', name: 'BOD5 mẫu 0', bgColor: 'bg-green-100' },
-                        'BOD5_sample1': { color: '#FF8C00', name: 'BOD5 mẫu 1', bgColor: 'bg-orange-100' },
-                        'NH4_sample0': { color: '#663399', name: 'NH4+ mẫu 0', bgColor: 'bg-purple-100' },
-                        'NH4_sample1': { color: '#1E90FF', name: 'NH4+ mẫu 1', bgColor: 'bg-blue-100' },
-                        'NO3_sample1': { color: '#90EE90', name: 'NO3- mẫu 1', bgColor: 'bg-green-50' }
+                        'BOD5_sample0': { color: '#228B22', name: 'BOD5 sample 0', bgColor: 'bg-green-100' },
+                        'BOD5_sample1': { color: '#FF8C00', name: 'BOD5 sample 1', bgColor: 'bg-orange-100' },
+                        'NH4_sample0': { color: '#663399', name: 'NH4+ sample 0', bgColor: 'bg-purple-100' },
+                        'NH4_sample1': { color: '#1E90FF', name: 'NH4+ sample 1', bgColor: 'bg-blue-100' },
+                        'NO3_sample1': { color: '#90EE90', name: 'NO3- sample 1', bgColor: 'bg-green-50' }
                       }[seriesName] || { color: '#666', name: seriesName, bgColor: 'bg-gray-100' };
 
                       return (
@@ -972,49 +972,49 @@ export default function RiverMapPage() {
                   {}
                   <div className="flex items-center gap-2">
                     <span>🌧️</span>
-                    <span><strong>Mưa thời tiết:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
+                    <span><strong>Weather rainfall:</strong> {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>💧</span>
-                    <span><strong>Mưa tính toán:</strong> {calculationValues.rainfall.toFixed(1)} mm/hr</span>
+                    <span><strong>Calculated rainfall:</strong> {calculationValues.rainfall.toFixed(1)} mm/hr</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🌡️</span>
-                    <span><strong>Nhiệt độ không khí:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
+                    <span><strong>Air temperature:</strong> {getCurrentWeatherValues().temperature.toFixed(1)}°C</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🧮</span>
-                    <span><strong>Nhiệt độ tính toán:</strong> {calculationValues.temperature.toFixed(1)}°C</span>
+                    <span><strong>Calculated temperature:</strong> {calculationValues.temperature.toFixed(1)}°C</span>
                   </div>
                   {realtimeMode && weatherData && (
                     <>
                       <div className="flex items-center gap-2">
                         <span>🌡️</span>
-                        <span><strong>Cảm giác:</strong> {weatherData.feelsLike.toFixed(1)}°C</span>
+                        <span><strong>Feels like:</strong> {weatherData.feelsLike.toFixed(1)}°C</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>💧</span>
-                        <span><strong>Độ ẩm:</strong> {weatherData.humidity}%</span>
+                        <span><strong>Humidity:</strong> {weatherData.humidity}%</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>🌬️</span>
-                        <span><strong>Gió:</strong> {weatherData.windSpeed.toFixed(1)} m/s</span>
+                        <span><strong>Wind:</strong> {weatherData.windSpeed.toFixed(1)} m/s</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>🧭</span>
-                        <span><strong>Hướng gió:</strong> {getWindDirection(weatherData.windDirection)} ({weatherData.windDirection}°)</span>
+                        <span><strong>Wind direction:</strong> {getWindDirection(weatherData.windDirection)} ({weatherData.windDirection}°)</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>🌫️</span>
-                        <span><strong>Tầm nhìn:</strong> {(weatherData.visibility / 1000).toFixed(1)} km</span>
+                        <span><strong>Visibility:</strong> {(weatherData.visibility / 1000).toFixed(1)} km</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>☁️</span>
-                        <span><strong>Mây che:</strong> {weatherData.cloudiness}%</span>
+                        <span><strong>Cloud cover:</strong> {weatherData.cloudiness}%</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>⚡</span>
-                        <span><strong>Áp suất:</strong> {weatherData.pressure} hPa {getPressureStatus(weatherData.pressure)}</span>
+                        <span><strong>Pressure:</strong> {weatherData.pressure} hPa {getPressureStatus(weatherData.pressure)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Image 
@@ -1024,7 +1024,7 @@ export default function RiverMapPage() {
                           height={24}
                           className="w-6 h-6"
                         />
-                        <span><strong>Mô tả:</strong> {weatherData.description}</span>
+                        <span><strong>Description:</strong> {weatherData.description}</span>
                       </div>
                     </>
                   )}
@@ -1034,17 +1034,17 @@ export default function RiverMapPage() {
                 <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4 text-xs text-gray-600">
                   {realtimeMode && weatherData && (
                     <span className="text-green-600 font-medium">
-                      🔄 Realtime - {weatherData.location} - Cập nhật: {new Date(weatherData.timestamp).toLocaleTimeString()}
+                      🔄 Realtime — {weatherData.location} — updated {new Date(weatherData.timestamp).toLocaleTimeString()}
                     </span>
                   )}
                   {realtimeMode && weatherLoading && (
-                    <span className="text-blue-600 font-medium animate-pulse">🔄 Đang tải dữ liệu thời tiết...</span>
+                    <span className="text-blue-600 font-medium animate-pulse">🔄 Loading weather data...</span>
                   )}
                   {weatherError && (
-                    <span className="text-red-600 font-medium">⚠️ Lỗi: {weatherError}</span>
+                    <span className="text-red-600 font-medium">⚠️ Error: {weatherError}</span>
                   )}
                   {!realtimeMode && (
-                    <span className="text-amber-600 font-medium">✏️ Chế độ thủ công - Dữ liệu nhập tay</span>
+                    <span className="text-amber-600 font-medium">✏️ Manual mode — values entered by hand</span>
                   )}
                 </div>
               </div>
@@ -1067,9 +1067,9 @@ export default function RiverMapPage() {
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Bản đồ sông Cầu Bây</h2>
+                  <h2 className="text-xl font-semibold">Cau Bay River map</h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    Điểm bắt đầu sông tại tọa độ 21.032323, 105.919651
+                    River origin at 21.032323, 105.919651
                   </p>
                 </div>
                 <button
@@ -1080,7 +1080,7 @@ export default function RiverMapPage() {
                       : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                   }`}
                 >
-                  {showHeatmap ? '🎨 Tắt Heatmap' : '📊 Bật Heatmap'}
+                  {showHeatmap ? '🎨 Turn off heatmap' : '📊 Turn on heatmap'}
                 </button>
               </div>
 {showHeatmap && selectedParameter && (() => {
@@ -1093,7 +1093,7 @@ export default function RiverMapPage() {
                     gradient: 'linear-gradient(to right, #ffffff, #ffcccc, #ff0000)',
                     midColor: 'bg-red-300',
                     maxColor: 'bg-red-600',
-                    colorName: 'đỏ'
+                    colorName: 'red'
                   };
                 } else if (selectedParameter === 'NH40' || selectedParameter === 'NH41') {
                   colorInfo = {
@@ -1102,7 +1102,7 @@ export default function RiverMapPage() {
                     gradient: 'linear-gradient(to right, #ffffff, #ffffcc, #ffff00)',
                     midColor: 'bg-yellow-300',
                     maxColor: 'bg-yellow-500',
-                    colorName: 'vàng'
+                    colorName: 'yellow'
                   };
                 } else if (selectedParameter === 'NO3') {
                   colorInfo = {
@@ -1111,7 +1111,7 @@ export default function RiverMapPage() {
                     gradient: 'linear-gradient(to right, #ffffff, #ccddff, #0066ff)',
                     midColor: 'bg-blue-300',
                     maxColor: 'bg-blue-600',
-                    colorName: 'xanh lam'
+                    colorName: 'blue'
                   };
                 } else {
                   colorInfo = {
@@ -1120,42 +1120,42 @@ export default function RiverMapPage() {
                     gradient: 'linear-gradient(to right, #ffffff, #ffcccc, #ff0000)',
                     midColor: 'bg-red-300',
                     maxColor: 'bg-red-600',
-                    colorName: 'đỏ'
+                    colorName: 'red'
                   };
                 }
                 
                 return (
                   <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded border border-blue-200 mb-4">
-                    <div className="font-semibold mb-2">📊 Heatmap hiển thị nồng độ {selectedParameter} từ mô phỏng (Thang màu động):</div>
+                    <div className="font-semibold mb-2">📊 Heatmap shows simulated {selectedParameter} concentration (dynamic color scale):</div>
                     
                     <div className="space-y-1 mb-2">
-                      <div className={`font-medium ${colorInfo.color}`}>{colorInfo.icon} {selectedParameter} - Thang màu động:</div>
+                      <div className={`font-medium ${colorInfo.color}`}>{colorInfo.icon} {selectedParameter} — dynamic color scale:</div>
                       <div className="flex items-center gap-2">
                         <span className="inline-block w-16 h-4 rounded border" style={{background: colorInfo.gradient}}></span>
                         <span>{range.min.toFixed(3)} mg/L → {range.max.toFixed(3)} mg/L</span>
                       </div>
                       <div className="text-xs mt-1 text-gray-600 space-y-1">
-                        <div>• <span className="inline-block w-3 h-3 mr-2 bg-white border"></span>Giá trị thấp nhất: <strong>{range.min.toFixed(3)} mg/L</strong> (màu trắng)</div>
-                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.midColor} border`}></span>Giá trị trung bình: <strong>{((range.min + range.max) / 2).toFixed(3)} mg/L</strong> (màu {colorInfo.colorName} nhạt)</div>
-                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.maxColor} border`}></span>Giá trị cao nhất: <strong>{range.max.toFixed(3)} mg/L</strong> (màu {colorInfo.colorName})</div>
+                        <div>• <span className="inline-block w-3 h-3 mr-2 bg-white border"></span>Lowest value: <strong>{range.min.toFixed(3)} mg/L</strong> (white)</div>
+                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.midColor} border`}></span>Mid-range value: <strong>{((range.min + range.max) / 2).toFixed(3)} mg/L</strong> (light {colorInfo.colorName})</div>
+                        <div>• <span className={`inline-block w-3 h-3 mr-2 ${colorInfo.maxColor} border`}></span>Highest value: <strong>{range.max.toFixed(3)} mg/L</strong> ({colorInfo.colorName})</div>
                       </div>
                       <div className="text-xs mt-2 text-gray-600 bg-white p-2 rounded border">
-                        {selectedParameter === 'BOD0' && '* BOD5 mẫu 0: Giá trị đo được từ mẫu thứ nhất'}
-                        {selectedParameter === 'BOD1' && '* BOD5 mẫu 1: Giá trị đo được từ mẫu thứ hai'}
-                        {selectedParameter === 'NH40' && '* NH4+ mẫu 0: Giá trị đo được từ mẫu thứ nhất'}
-                        {selectedParameter === 'NH41' && '* NH4+ mẫu 1: Giá trị đo được từ mẫu thứ hai'}
-                        {selectedParameter === 'NO3' && '* NO3- mẫu 1: Giá trị đo được từ mẫu thứ hai'}
+                        {selectedParameter === 'BOD0' && '* BOD5 sample 0: measured value from the first sample'}
+                        {selectedParameter === 'BOD1' && '* BOD5 sample 1: measured value from the second sample'}
+                        {selectedParameter === 'NH40' && '* NH4+ sample 0: measured value from the first sample'}
+                        {selectedParameter === 'NH41' && '* NH4+ sample 1: measured value from the second sample'}
+                        {selectedParameter === 'NO3' && '* NO3- sample 1: measured value from the second sample'}
                       </div>
                     </div>
                     
                     <div className="mt-2 text-gray-600 text-xs border-t pt-2">
-                      <strong>Điều kiện hiện tại:</strong> 
-                      <strong>Mưa tính toán:</strong> {calculationValues.rainfall.toFixed(1)}mm/hr (từ {getCurrentWeatherValues().rainfall.toFixed(1)}mm/hr thời tiết) | 
-                      <strong>Nhiệt độ tính toán:</strong> {calculationValues.temperature.toFixed(1)}°C (từ {getCurrentWeatherValues().temperature.toFixed(1)}°C không khí) |
-                      <strong>Chất:</strong> {selectedParameter}
+                      <strong>Current conditions:</strong>{' '}
+                      <strong>Calculated rainfall:</strong> {calculationValues.rainfall.toFixed(1)} mm/hr (from {getCurrentWeatherValues().rainfall.toFixed(1)} mm/hr weather) |{' '}
+                      <strong>Calculated temperature:</strong> {calculationValues.temperature.toFixed(1)}°C (from {getCurrentWeatherValues().temperature.toFixed(1)}°C air) |{' '}
+                      <strong>Parameter:</strong> {selectedParameter}
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
-                      💡 <em>Thang màu tự động điều chỉnh theo khoảng min-max thực tế của từng chất</em>
+                      💡 <em>The color scale auto-adjusts to each parameter’s actual min–max range</em>
                     </div>
                   </div>
                 );
@@ -1167,7 +1167,7 @@ export default function RiverMapPage() {
                 lng={105.919651}
                 zoom={14}
                 height="500px"
-                title="Sông Cầu Bây"
+                title="Cau Bay River"
                 showHeatmap={showHeatmap}
                 heatmapData={getHeatmapData()}
                 selectedParameter={selectedParameter || 'BOD5'}
