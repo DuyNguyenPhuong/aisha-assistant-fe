@@ -9,7 +9,7 @@ const SidebarLanguageToggle: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const languages = [
     { code: "en", label: "ENG", flag: "🇬🇧" },
-    { code: "ru", label: "RUS", flag: "🇷🇺" },
+    // { code: "ru", label: "RUS", flag: "🇷🇺" },
     { code: "vi", label: "VIE", flag: "🇻🇳" },
   ];
   const currentFlag =

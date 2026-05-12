@@ -12,7 +12,7 @@ export type VoiceRecorderProps = {
 };
 const languages = [
   { code: "en-US", label: "en", flag: "🇬🇧" },
-  { code: "ru-RU", label: "ru", flag: "🇷🇺" },
+  // { code: "ru-RU", label: "ru", flag: "🇷🇺" },
   { code: "vi-VN", label: "vi", flag: "🇻🇳" },
 ];
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
